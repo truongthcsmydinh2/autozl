@@ -1,0 +1,24 @@
+# GUI Application Dependencies
+# GUI wrapper for core1.py - Android automation tool
+# Core GUI framework
+PyQt6>=6.4.0
+
+# Android automation (using core1.py backend)
+uiautomator2>=2.16.0
+
+# System utilities
+psutil>=5.9.0
+watchdog>=3.0.0
+
+# File handling
+Pillow>=9.5.0
+
+# Configuration
+pyyaml>=6.0
+
+# Packaging (for building .exe)
+pyinstaller>=5.10.0
+
+# Development tools
+black>=23.0.0
+flake8>=6.0.0

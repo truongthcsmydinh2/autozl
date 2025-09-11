@@ -1,0 +1,840 @@
+{
+  "timestamp": "2025-09-11 17:03:09",
+  "total_pairs": 3,
+  "conversations": {
+    "pair_1": {
+      "devices": [
+        "192.168.5.93:5555",
+        "192.168.5.77:5555"
+      ],
+      "conversation": [
+        {
+          "message_id": 1,
+          "device_number": 1,
+          "content": "Ê dạo này sao rồi"
+        },
+        {
+          "message_id": 2,
+          "device_number": 2,
+          "content": "Cũng ổn ổn thôi"
+        },
+        {
+          "message_id": 3,
+          "device_number": 1,
+          "content": "Nghe có vẻ không vui lắm nha"
+        },
+        {
+          "message_id": 4,
+          "device_number": 2,
+          "content": "Ừ thì nhiều chuyện quá"
+        },
+        {
+          "message_id": 5,
+          "device_number": 1,
+          "content": "Chuyện gì kể t nghe coi"
+        },
+        {
+          "message_id": 6,
+          "device_number": 2,
+          "content": "Gia đình với công việc rối tung hết"
+        },
+        {
+          "message_id": 7,
+          "device_number": 1,
+          "content": "Lại căng thẳng hả"
+        },
+        {
+          "message_id": 8,
+          "device_number": 2,
+          "content": "Ừ, mẹ với tớ cãi nhau suốt"
+        },
+        {
+          "message_id": 9,
+          "device_number": 1,
+          "content": "Sao mà cãi nhau"
+        },
+        {
+          "message_id": 10,
+          "device_number": 2,
+          "content": "Mẹ cứ muốn t về quê làm việc"
+        },
+        {
+          "message_id": 11,
+          "device_number": 1,
+          "content": "Còn cậu thì sao"
+        },
+        {
+          "message_id": 12,
+          "device_number": 2,
+          "content": "T muốn ở lại thành phố"
+        },
+        {
+          "message_id": 13,
+          "device_number": 1,
+          "content": "Quan điểm khác nhau khó tránh"
+        },
+        {
+          "message_id": 14,
+          "device_number": 2,
+          "content": "Biết vậy nhưng áp lực ghê"
+        },
+        {
+          "message_id": 15,
+          "device_number": 1,
+          "content": "Còn công việc thì sao"
+        },
+        {
+          "message_id": 16,
+          "device_number": 2,
+          "content": "Sếp giao việc liên tục, không kịp thở"
+        },
+        {
+          "message_id": 17,
+          "device_number": 1,
+          "content": "Nghe thôi đã mệt rồi"
+        },
+        {
+          "message_id": 18,
+          "device_number": 2,
+          "content": "Lúc nào cũng phải tăng ca"
+        },
+        {
+          "message_id": 19,
+          "device_number": 1,
+          "content": "Vậy thời gian đâu cho bản thân"
+        },
+        {
+          "message_id": 20,
+          "device_number": 2,
+          "content": "Không có luôn ấy :((("
+        },
+        {
+          "message_id": 21,
+          "device_number": 1,
+          "content": "Cậu phải nghỉ ngơi chút chứ"
+        },
+        {
+          "message_id": 22,
+          "device_number": 2,
+          "content": "Muốn lắm nhưng không biết bắt đầu từ đâu"
+        },
+        {
+          "message_id": 23,
+          "device_number": 1,
+          "content": "Hay cuối tuần đi đâu xả stress đi"
+        },
+        {
+          "message_id": 24,
+          "device_number": 2,
+          "content": "Không biết đi đâu hợp"
+        },
+        {
+          "message_id": 25,
+          "device_number": 1,
+          "content": "Đi biển được không"
+        },
+        {
+          "message_id": 26,
+          "device_number": 2,
+          "content": "Xa quá, đi gần thôi"
+        },
+        {
+          "message_id": 27,
+          "device_number": 1,
+          "content": "Vậy lên núi chơi"
+        },
+        {
+          "message_id": 28,
+          "device_number": 2,
+          "content": "Nghe cũng hay đó"
+        },
+        {
+          "message_id": 29,
+          "device_number": 1,
+          "content": "Có nhóm bạn tớ đi cùng nữa"
+        },
+        {
+          "message_id": 30,
+          "device_number": 2,
+          "content": "Thật hả, đi đông vui nhỉ :)))"
+        },
+        {
+          "message_id": 31,
+          "device_number": 1,
+          "content": "Ừ, vừa vui vừa đỡ buồn"
+        },
+        {
+          "message_id": 32,
+          "device_number": 2,
+          "content": "Nhưng mẹ tớ có cho đi không đây"
+        },
+        {
+          "message_id": 33,
+          "device_number": 1,
+          "content": "Cứ xin thử xem"
+        },
+        {
+          "message_id": 34,
+          "device_number": 2,
+          "content": "Nếu mẹ không đồng ý thì sao"
+        },
+        {
+          "message_id": 35,
+          "device_number": 1,
+          "content": "Thì cậu nói đi cho khuây khỏa thôi mà"
+        },
+        {
+          "message_id": 36,
+          "device_number": 2,
+          "content": "Ừ để thử xem"
+        },
+        {
+          "message_id": 37,
+          "device_number": 1,
+          "content": "Đi đổi gió biết đâu tinh thần khá hơn"
+        },
+        {
+          "message_id": 38,
+          "device_number": 2,
+          "content": "Tớ cũng mong vậy"
+        },
+        {
+          "message_id": 39,
+          "device_number": 1,
+          "content": "Nhóm này toàn người dễ thương thôi"
+        },
+        {
+          "message_id": 40,
+          "device_number": 2,
+          "content": "Cậu hứa nhé"
+        },
+        {
+          "message_id": 41,
+          "device_number": 1,
+          "content": "Hứa luôn"
+        },
+        {
+          "message_id": 42,
+          "device_number": 2,
+          "content": "Khi nào đi vậy"
+        },
+        {
+          "message_id": 43,
+          "device_number": 1,
+          "content": "Cuối tuần này luôn"
+        },
+        {
+          "message_id": 44,
+          "device_number": 2,
+          "content": "Chuẩn bị gì không"
+        },
+        {
+          "message_id": 45,
+          "device_number": 1,
+          "content": "Đồ thoải mái với chút đồ ăn nhẹ"
+        },
+        {
+          "message_id": 46,
+          "device_number": 2,
+          "content": "Ok, tớ note lại"
+        },
+        {
+          "message_id": 47,
+          "device_number": 1,
+          "content": "À nhớ mang áo khoác nha"
+        },
+        {
+          "message_id": 48,
+          "device_number": 2,
+          "content": "Biết rồi"
+        },
+        {
+          "message_id": 49,
+          "device_number": 1,
+          "content": "Chuyến đi này vui cho mà xem"
+        },
+        {
+          "message_id": 50,
+          "device_number": 2,
+          "content": "Hy vọng vậy"
+        },
+        {
+          "message_id": 51,
+          "device_number": 1,
+          "content": "Mọi chuyện rồi sẽ ổn thôi"
+        },
+        {
+          "message_id": 52,
+          "device_number": 2,
+          "content": "Nghe câu đó thấy nhẹ lòng thật sự"
+        },
+        {
+          "message_id": 53,
+          "device_number": 1,
+          "content": "Bạn bè mà, lúc nào cũng có tớ ở đây"
+        },
+        {
+          "message_id": 54,
+          "device_number": 2,
+          "content": "Cảm ơn cậu nhiều nha"
+        },
+        {
+          "message_id": 55,
+          "device_number": 1,
+          "content": "Không có gì, tối gặp lên kế hoạch chi tiết"
+        },
+        {
+          "message_id": 56,
+          "device_number": 2,
+          "content": "Tối gặp!"
+        }
+      ]
+    },
+    "pair_2": {
+      "devices": [
+        "192.168.5.88:5555",
+        "192.168.5.78:5555"
+      ],
+      "conversation": [
+        {
+          "message_id": 1,
+          "device_number": 1,
+          "content": "Ê hôm nay đi làm sao rồi"
+        },
+        {
+          "message_id": 2,
+          "device_number": 2,
+          "content": "Mệt muốn xỉu luôn"
+        },
+        {
+          "message_id": 3,
+          "device_number": 1,
+          "content": "Lại bị khách hành hạ hả"
+        },
+        {
+          "message_id": 4,
+          "device_number": 2,
+          "content": "Ừ gặp một bà khó tính cực"
+        },
+        {
+          "message_id": 5,
+          "device_number": 1,
+          "content": "Bà nói gì"
+        },
+        {
+          "message_id": 6,
+          "device_number": 2,
+          "content": "Than phiền đủ thứ, dù lỗi không phải do tớ"
+        },
+        {
+          "message_id": 7,
+          "device_number": 1,
+          "content": "Trời nghe tức ghê"
+        },
+        {
+          "message_id": 8,
+          "device_number": 2,
+          "content": "Lúc đó chỉ biết cười cho qua thôi :((("
+        },
+        {
+          "message_id": 9,
+          "device_number": 1,
+          "content": "Làm dịch vụ khổ vậy đó"
+        },
+        {
+          "message_id": 10,
+          "device_number": 2,
+          "content": "Đúng, lúc nào cũng phải giả vờ vui vẻ"
+        },
+        {
+          "message_id": 11,
+          "device_number": 1,
+          "content": "Về nhà nghỉ chưa"
+        },
+        {
+          "message_id": 12,
+          "device_number": 2,
+          "content": "Vừa tắm xong nằm luôn nè"
+        },
+        {
+          "message_id": 13,
+          "device_number": 1,
+          "content": "Có ăn gì chưa"
+        },
+        {
+          "message_id": 14,
+          "device_number": 2,
+          "content": "Chưa, lười nấu quá"
+        },
+        {
+          "message_id": 15,
+          "device_number": 1,
+          "content": "Gọi ship đi cho nhanh"
+        },
+        {
+          "message_id": 16,
+          "device_number": 2,
+          "content": "Đang suy nghĩ ăn gì đây"
+        },
+        {
+          "message_id": 17,
+          "device_number": 1,
+          "content": "Ăn gà rán không"
+        },
+        {
+          "message_id": 18,
+          "device_number": 2,
+          "content": "Ừ cũng được đó"
+        },
+        {
+          "message_id": 19,
+          "device_number": 1,
+          "content": "Đặt cho cả tớ luôn nha :)))"
+        },
+        {
+          "message_id": 20,
+          "device_number": 2,
+          "content": "Haha ok"
+        },
+        {
+          "message_id": 21,
+          "device_number": 1,
+          "content": "Dạo này công ty có gì mới không"
+        },
+        {
+          "message_id": 22,
+          "device_number": 2,
+          "content": "Nghe đồn sắp có đợt cắt giảm nhân sự"
+        },
+        {
+          "message_id": 23,
+          "device_number": 1,
+          "content": "Hả, căng vậy"
+        },
+        {
+          "message_id": 24,
+          "device_number": 2,
+          "content": "Ừ tớ cũng lo lắm"
+        },
+        {
+          "message_id": 25,
+          "device_number": 1,
+          "content": "Cậu có nằm trong diện nguy hiểm không"
+        },
+        {
+          "message_id": 26,
+          "device_number": 2,
+          "content": "Chắc chưa đâu nhưng vẫn sợ"
+        },
+        {
+          "message_id": 27,
+          "device_number": 1,
+          "content": "Phải chuẩn bị sẵn phương án mới yên tâm"
+        },
+        {
+          "message_id": 28,
+          "device_number": 2,
+          "content": "Đúng, tớ cũng tính tìm việc khác rồi"
+        },
+        {
+          "message_id": 29,
+          "device_number": 1,
+          "content": "Tìm việc gì thế"
+        },
+        {
+          "message_id": 30,
+          "device_number": 2,
+          "content": "Chắc liên quan đến marketing"
+        },
+        {
+          "message_id": 31,
+          "device_number": 1,
+          "content": "Nghe hợp đó, cậu giỏi khoản này mà"
+        },
+        {
+          "message_id": 32,
+          "device_number": 2,
+          "content": "Nhưng sợ cạnh tranh cao"
+        },
+        {
+          "message_id": 33,
+          "device_number": 1,
+          "content": "Chỗ nào cũng vậy thôi"
+        },
+        {
+          "message_id": 34,
+          "device_number": 2,
+          "content": "Ừ, nghĩ mà áp lực ghê"
+        },
+        {
+          "message_id": 35,
+          "device_number": 1,
+          "content": "Đừng lo, tớ giúp cậu tìm thông tin"
+        },
+        {
+          "message_id": 36,
+          "device_number": 2,
+          "content": "Thiệt hả, cảm ơn nha"
+        },
+        {
+          "message_id": 37,
+          "device_number": 1,
+          "content": "Bạn bè mà"
+        },
+        {
+          "message_id": 38,
+          "device_number": 2,
+          "content": "Có cậu tớ thấy đỡ lo hơn nhiều"
+        },
+        {
+          "message_id": 39,
+          "device_number": 1,
+          "content": "Cuối tuần đi dạo không, đổi gió chút"
+        },
+        {
+          "message_id": 40,
+          "device_number": 2,
+          "content": "Ý hay đó, tớ đang stress"
+        },
+        {
+          "message_id": 41,
+          "device_number": 1,
+          "content": "Đi công viên hay đi cà phê"
+        },
+        {
+          "message_id": 42,
+          "device_number": 2,
+          "content": "Đi công viên, vừa đi bộ vừa nói chuyện"
+        },
+        {
+          "message_id": 43,
+          "device_number": 1,
+          "content": "Ok deal luôn"
+        },
+        {
+          "message_id": 44,
+          "device_number": 2,
+          "content": "3h chiều được không"
+        },
+        {
+          "message_id": 45,
+          "device_number": 1,
+          "content": "Được, tớ qua đón"
+        },
+        {
+          "message_id": 46,
+          "device_number": 2,
+          "content": "Đừng có trễ đó nha :)))"
+        },
+        {
+          "message_id": 47,
+          "device_number": 1,
+          "content": "Haha yên tâm lần này đúng giờ"
+        },
+        {
+          "message_id": 48,
+          "device_number": 2,
+          "content": "Nói trước thôi chứ hay trễ lắm"
+        },
+        {
+          "message_id": 49,
+          "device_number": 1,
+          "content": "Biết rồi mà"
+        },
+        {
+          "message_id": 50,
+          "device_number": 2,
+          "content": "Thật sự mong cuối tuần đến sớm"
+        },
+        {
+          "message_id": 51,
+          "device_number": 1,
+          "content": "Ráng chịu đựng vài ngày nữa"
+        },
+        {
+          "message_id": 52,
+          "device_number": 2,
+          "content": "Ừ cố gắng vậy"
+        },
+        {
+          "message_id": 53,
+          "device_number": 1,
+          "content": "Mọi chuyện rồi sẽ ổn thôi"
+        },
+        {
+          "message_id": 54,
+          "device_number": 2,
+          "content": "Hy vọng là vậy"
+        },
+        {
+          "message_id": 55,
+          "device_number": 1,
+          "content": "Lạc quan lên nào"
+        },
+        {
+          "message_id": 56,
+          "device_number": 2,
+          "content": "Cảm ơn cậu nhiều lắm"
+        },
+        {
+          "message_id": 57,
+          "device_number": 1,
+          "content": "Không có gì, bạn bè phải giúp nhau"
+        },
+        {
+          "message_id": 58,
+          "device_number": 2,
+          "content": "Cuối tuần gặp nhé"
+        },
+        {
+          "message_id": 59,
+          "device_number": 1,
+          "content": "Cuối tuần gặp!"
+        }
+      ]
+    },
+    "pair_3": {
+      "devices": [
+        "192.168.5.82:5555",
+        "192.168.5.92:5555"
+      ],
+      "conversation": [
+        {
+          "message_id": 1,
+          "device_number": 1,
+          "content": "Nè cuối tuần mặc đồ thoải mái nha"
+        },
+        {
+          "message_id": 2,
+          "device_number": 2,
+          "content": "Ok để tớ chuẩn bị"
+        },
+        {
+          "message_id": 3,
+          "device_number": 1,
+          "content": "Mang giày thể thao luôn nhé, đi bộ nhiều đó"
+        },
+        {
+          "message_id": 4,
+          "device_number": 2,
+          "content": "Biết rồi mà :)))"
+        },
+        {
+          "message_id": 5,
+          "device_number": 1,
+          "content": "Có đem đồ ăn nhẹ không"
+        },
+        {
+          "message_id": 6,
+          "device_number": 2,
+          "content": "Tính mua vài gói snack"
+        },
+        {
+          "message_id": 7,
+          "device_number": 1,
+          "content": "Tớ mang thêm nước uống"
+        },
+        {
+          "message_id": 8,
+          "device_number": 2,
+          "content": "Quá hợp lý luôn"
+        },
+        {
+          "message_id": 9,
+          "device_number": 1,
+          "content": "À đem cả loa bluetooth đi nữa, nghe nhạc cho vui"
+        },
+        {
+          "message_id": 10,
+          "device_number": 2,
+          "content": "Ý tưởng hay đó"
+        },
+        {
+          "message_id": 11,
+          "device_number": 1,
+          "content": "Dạo này cậu hay nghe bài gì"
+        },
+        {
+          "message_id": 12,
+          "device_number": 2,
+          "content": "Toàn mấy bài chill chill"
+        },
+        {
+          "message_id": 13,
+          "device_number": 1,
+          "content": "Đúng gu tớ luôn"
+        },
+        {
+          "message_id": 14,
+          "device_number": 2,
+          "content": "Vậy tớ làm playlist luôn nha"
+        },
+        {
+          "message_id": 15,
+          "device_number": 1,
+          "content": "Ok khỏi lo vụ nhạc nữa"
+        },
+        {
+          "message_id": 16,
+          "device_number": 2,
+          "content": "À này, có chuyện muốn nói"
+        },
+        {
+          "message_id": 17,
+          "device_number": 1,
+          "content": "Chuyện gì thế"
+        },
+        {
+          "message_id": 18,
+          "device_number": 2,
+          "content": "Dạo này tớ thấy hơi mất phương hướng"
+        },
+        {
+          "message_id": 19,
+          "device_number": 1,
+          "content": "Trong công việc hả"
+        },
+        {
+          "message_id": 20,
+          "device_number": 2,
+          "content": "Ừ, cứ thấy mình bị mắc kẹt"
+        },
+        {
+          "message_id": 21,
+          "device_number": 1,
+          "content": "Muốn nghỉ làm không"
+        },
+        {
+          "message_id": 22,
+          "device_number": 2,
+          "content": "Cũng nghĩ tới rồi nhưng chưa dám"
+        },
+        {
+          "message_id": 23,
+          "device_number": 1,
+          "content": "Nghỉ rồi làm gì"
+        },
+        {
+          "message_id": 24,
+          "device_number": 2,
+          "content": "Chắc đi học thêm, tìm thứ mình thật sự thích"
+        },
+        {
+          "message_id": 25,
+          "device_number": 1,
+          "content": "Ý tưởng hay đó, còn trẻ mà"
+        },
+        {
+          "message_id": 26,
+          "device_number": 2,
+          "content": "Nhưng sợ gia đình không đồng ý"
+        },
+        {
+          "message_id": 27,
+          "device_number": 1,
+          "content": "Chuyện của mình thì mình phải quyết thôi"
+        },
+        {
+          "message_id": 28,
+          "device_number": 2,
+          "content": "Tớ cũng nghĩ vậy nhưng vẫn lo"
+        },
+        {
+          "message_id": 29,
+          "device_number": 1,
+          "content": "Cuối tuần ra ngoài nói chuyện rõ hơn nha"
+        },
+        {
+          "message_id": 30,
+          "device_number": 2,
+          "content": "Ok, tớ cần ai đó lắng nghe"
+        },
+        {
+          "message_id": 31,
+          "device_number": 1,
+          "content": "Luôn có tớ ở đây mà"
+        },
+        {
+          "message_id": 32,
+          "device_number": 2,
+          "content": "Cảm ơn nhiều nha"
+        },
+        {
+          "message_id": 33,
+          "device_number": 1,
+          "content": "Không có gì đâu"
+        },
+        {
+          "message_id": 34,
+          "device_number": 2,
+          "content": "À mai nhớ nhắn trước giờ đi nhé"
+        },
+        {
+          "message_id": 35,
+          "device_number": 1,
+          "content": "Biết rồi, yên tâm"
+        },
+        {
+          "message_id": 36,
+          "device_number": 2,
+          "content": "Lần trước cậu đến trễ đó nha :)))"
+        },
+        {
+          "message_id": 37,
+          "device_number": 1,
+          "content": "Haha lần này không đâu"
+        },
+        {
+          "message_id": 38,
+          "device_number": 2,
+          "content": "Hy vọng vậy"
+        },
+        {
+          "message_id": 39,
+          "device_number": 1,
+          "content": "Tớ sẽ cố gắng đúng giờ"
+        },
+        {
+          "message_id": 40,
+          "device_number": 2,
+          "content": "Deal nha"
+        },
+        {
+          "message_id": 41,
+          "device_number": 1,
+          "content": "Deal luôn"
+        },
+        {
+          "message_id": 42,
+          "device_number": 2,
+          "content": "Thôi tớ đi ngủ sớm đây, mệt quá"
+        },
+        {
+          "message_id": 43,
+          "device_number": 1,
+          "content": "Ngủ sớm đi cho khỏe"
+        },
+        {
+          "message_id": 44,
+          "device_number": 2,
+          "content": "Ừ, chúc ngủ ngon"
+        },
+        {
+          "message_id": 45,
+          "device_number": 1,
+          "content": "Ngủ ngon nha"
+        },
+        {
+          "message_id": 46,
+          "device_number": 2,
+          "content": "Mai nói chuyện tiếp nhé"
+        },
+        {
+          "message_id": 47,
+          "device_number": 1,
+          "content": "Ok mai gặp!"
+        }
+      ]
+    }
+  }
+}

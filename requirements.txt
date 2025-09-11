@@ -1,0 +1,27 @@
+# Phone Automation Tool - Required Dependencies
+
+# For colored terminal output and cross-platform compatibility
+colorama>=0.4.4
+psutil>=5.8.0
+
+# For rich CLI interface with better formatting
+rich>=13.0.0
+
+# For network scanning and device discovery
+python-nmap>=0.7.1
+
+# For HTTP requests (if needed for API calls)
+requests>=2.31.0
+
+# For file watching and hot reload in realtime mode
+watchdog>=3.0.0
+
+# For JSON handling (built-in, but listed for clarity)
+# json - built-in module
+
+# For system operations (built-in)
+# os, sys, subprocess, socket, time - built-in modules
+
+# Note: ADB (Android Debug Bridge) needs to be installed separately
+# Download from: https://developer.android.com/studio/releases/platform-tools
+# Make sure 'adb' command is available in system PATH
