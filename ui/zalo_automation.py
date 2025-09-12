@@ -519,6 +519,10 @@ class ZaloAutomationWidget(QWidget):
             # Update status
             self.status_label.setText("🔄 Đang tải devices...")
             
+            # Đồng bộ với ADB devices trước
+            device_count = data_manager.sync_with_adb_devices()
+            print(f"Synced {device_count} devices with ADB")
+            
             # Reload data from DataManager
             data_manager.reload_data()
             

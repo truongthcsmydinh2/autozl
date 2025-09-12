@@ -1,22 +1,62 @@
 {
-  "192.168.5.77": {
-    "zalo_number": "567513830",
-    "device_info": {
-      "id": "192.168.5.77",
-      "type": "LAN",
-      "status": "Connected",
-      "platform": "Android (ADB)"
+    "192.168.5.88:5555": {
+        "zalo_number": "",
+        "device_info": {
+            "model": "Unknown",
+            "android_version": "Unknown",
+            "resolution": "Unknown",
+            "status": "device"
+        },
+        "last_updated": "2025-01-12 21:30:00"
     },
-    "last_updated": "2025-09-09 16:03:30"
-  },
-  "192.168.5.92": {
-    "zalo_number": "587191813",
-    "device_info": {
-      "id": "192.168.5.92",
-      "type": "LAN",
-      "status": "Connected",
-      "platform": "Android (ADB)"
+    "192.168.5.92:5555": {
+        "zalo_number": "",
+        "device_info": {
+            "model": "Unknown",
+            "android_version": "Unknown",
+            "resolution": "Unknown",
+            "status": "device"
+        },
+        "last_updated": "2025-01-12 21:30:00"
     },
-    "last_updated": "2025-09-09 16:03:38"
-  }
+    "192.168.5.77:5555": {
+        "zalo_number": "",
+        "device_info": {
+            "model": "Unknown",
+            "android_version": "Unknown",
+            "resolution": "Unknown",
+            "status": "device"
+        },
+        "last_updated": "2025-01-12 21:30:00"
+    },
+    "192.168.5.74:5555": {
+        "zalo_number": "",
+        "device_info": {
+            "model": "Unknown",
+            "android_version": "Unknown",
+            "resolution": "Unknown",
+            "status": "device"
+        },
+        "last_updated": "2025-01-12 21:30:00"
+    },
+    "192.168.5.93:5555": {
+        "zalo_number": "",
+        "device_info": {
+            "model": "Unknown",
+            "android_version": "Unknown",
+            "resolution": "Unknown",
+            "status": "device"
+        },
+        "last_updated": "2025-01-12 21:30:00"
+    },
+    "192.168.5.78:5555": {
+        "zalo_number": "",
+        "device_info": {
+            "model": "Unknown",
+            "android_version": "Unknown",
+            "resolution": "Unknown",
+            "status": "device"
+        },
+        "last_updated": "2025-01-12 21:30:00"
+    }
 }

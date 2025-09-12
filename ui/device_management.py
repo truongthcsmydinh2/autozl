@@ -428,6 +428,11 @@ class DeviceManagementWidget(QWidget):
             return
             
         try:
+            # Đồng bộ với ADB devices trước
+            from utils.data_manager import data_manager
+            device_count = data_manager.sync_with_adb_devices()
+            print(f"Synced {device_count} devices with ADB")
+            
             # Get connected devices
             devices = self.device_manager.get_devices()
             
@@ -448,6 +453,7 @@ class DeviceManagementWidget(QWidget):
                 
             # Update phone mapping available devices
             self.phone_mapping.update_available_devices(device_ids)
+            self.phone_mapping.refresh_devices()  # Refresh phone mapping table
             
         except Exception as e:
             print(f"Error refreshing devices: {e}")

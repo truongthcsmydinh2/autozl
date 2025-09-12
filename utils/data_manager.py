@@ -79,7 +79,9 @@ class DataManager:
         """Save JSON file safely"""
         try:
             # Create directory if not exists
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            dir_path = os.path.dirname(file_path)
+            if dir_path:  # Only create directory if path is not empty
+                os.makedirs(dir_path, exist_ok=True)
             
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
@@ -214,6 +216,55 @@ class DataManager:
         self._device_data.clear()
         self._load_all_data()
         print("[DataManager] Data reloaded from all sources")
+    
+    def sync_with_adb_devices(self):
+        """Đồng bộ dữ liệu với ADB devices thực tế"""
+        import subprocess
+        try:
+            # Lấy danh sách devices từ ADB
+            result = subprocess.run(['adb', 'devices'], capture_output=True, text=True, timeout=10)
+            lines = result.stdout.strip().split('\n')[1:]  # Skip header
+            
+            current_devices = set()
+            for line in lines:
+                if line.strip() and '\t' in line:
+                    device_id = line.split('\t')[0]
+                    status = line.split('\t')[1]
+                    if status == 'device':  # Chỉ lấy devices sẵn sàng
+                        current_devices.add(device_id)
+            
+            # Clear old data để tránh trùng lặp
+            self._device_data.clear()
+            self._phone_mapping.clear()
+            
+            # Cập nhật device_data.json
+            for device_id in current_devices:
+                # Tạo entry mới cho device
+                self._device_data[device_id] = {
+                    "phone": "",
+                    "note": "",
+                    "last_updated": self._get_current_timestamp()
+                }
+            
+            # Cập nhật phone_mapping (chỉ dùng IP, không có port)
+            for device_id in current_devices:
+                ip = device_id.split(':')[0] if ':' in device_id else device_id
+                self._phone_mapping[ip] = ""
+            
+            # Lưu vào file
+            self._save_all_data()
+            
+            print(f"[DataManager] Synced {len(current_devices)} devices with ADB")
+            return len(current_devices)
+            
+        except Exception as e:
+            print(f"[DataManager] Error syncing with ADB devices: {e}")
+            return 0
+    
+    def _get_current_timestamp(self):
+        """Lấy timestamp hiện tại"""
+        from datetime import datetime
+        return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 # Singleton instance
 data_manager = DataManager()
