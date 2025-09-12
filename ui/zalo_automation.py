@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, 
     QPushButton, QTextEdit, QScrollArea, QFrame, QProgressBar,
     QMessageBox, QGroupBox, QGridLayout, QSpacerItem, QSizePolicy,
-    QLineEdit
+    QLineEdit, QSplitter
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt6.QtGui import QFont
@@ -82,20 +82,28 @@ class DeviceCheckBox(QCheckBox):
         
         # Format display text
         display_text = device_id
-        if phone_number:
+        if phone_number and phone_number != "Chưa có số":
             display_text += f" ({phone_number})"
         
         self.setText(display_text)
+        self.setFixedHeight(22)  # Further reduced height for more devices
+        self.setMinimumWidth(200)  # Minimum width for proper display
         self.setStyleSheet("""
             QCheckBox {
                 color: #ffffff;
-                font-size: 14px;
-                padding: 8px;
-                spacing: 10px;
+                font-size: 13px;
+                padding: 4px 8px;
+                margin: 1px 0px;
+                spacing: 8px;
+                border: 1px solid transparent;
+                border-radius: 4px;
+                min-height: 24px;
+                max-height: 28px;
             }
             QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
+                width: 16px;
+                height: 16px;
+                margin-right: 8px;
             }
             QCheckBox::indicator:unchecked {
                 background-color: #2d2d2d;
@@ -109,10 +117,16 @@ class DeviceCheckBox(QCheckBox):
             }
             QCheckBox::indicator:checked:hover {
                 background-color: #106ebe;
+                border: 2px solid #106ebe;
             }
             QCheckBox:hover {
                 background-color: #3d3d3d;
-                border-radius: 5px;
+                border: 1px solid #555555;
+                border-radius: 4px;
+            }
+            QCheckBox:focus {
+                border: 1px solid #0078d4;
+                outline: none;
             }
         """)
 
@@ -160,8 +174,9 @@ class ZaloAutomationWidget(QWidget):
         layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
     
     def create_device_section(self, layout):
-        """Tạo section chọn devices"""
+        """Tạo section chọn devices với QSplitter và fixed sizes"""
         device_group = QGroupBox("📱 Chọn Devices")
+        device_group.setFixedHeight(400)  # Fixed height for entire section
         device_group.setStyleSheet("""
             QGroupBox {
                 color: #ffffff;
@@ -170,7 +185,8 @@ class ZaloAutomationWidget(QWidget):
                 border: 2px solid #555555;
                 border-radius: 8px;
                 margin-top: 10px;
-                padding-top: 10px;
+                padding-top: 15px;
+                padding-bottom: 10px;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
@@ -179,47 +195,63 @@ class ZaloAutomationWidget(QWidget):
             }
         """)
         
-        device_layout = QVBoxLayout(device_group)
+        # Main splitter for vertical layout
+        main_splitter = QSplitter(Qt.Orientation.Vertical)
+        main_splitter.setChildrenCollapsible(False)
         
-        # Refresh button
+        # Top frame for refresh button
+        refresh_frame = QFrame()
+        refresh_frame.setFixedHeight(40)
+        refresh_frame.setFrameStyle(QFrame.Shape.Box)
+        refresh_frame.setStyleSheet("QFrame { border: 1px solid #333; background-color: #2a2a2a; }")
+        refresh_layout = QHBoxLayout(refresh_frame)
+        refresh_layout.setContentsMargins(5, 5, 5, 5)
+        
         refresh_btn = QPushButton("🔄 Refresh Devices")
         refresh_btn.clicked.connect(self.load_devices)
-        
-        # Load devices on startup
+        refresh_btn.setFixedSize(150, 30)
         QTimer.singleShot(100, self.load_devices)
         refresh_btn.setStyleSheet("""
             QPushButton {
                 background-color: #0078d4;
                 color: white;
                 border: none;
-                padding: 8px 16px;
+                padding: 5px 10px;
                 border-radius: 5px;
-                font-size: 14px;
+                font-size: 12px;
                 font-weight: bold;
             }
             QPushButton:hover {
                 background-color: #106ebe;
             }
-            QPushButton:pressed {
-                background-color: #005a9e;
-            }
         """)
-        device_layout.addWidget(refresh_btn)
+        refresh_layout.addWidget(refresh_btn)
+        refresh_layout.addStretch()
+        main_splitter.addWidget(refresh_frame)
         
-        # Search bar
-        search_layout = QHBoxLayout()
+        # Search frame
+        search_frame = QFrame()
+        search_frame.setFixedHeight(35)
+        search_frame.setFrameStyle(QFrame.Shape.Box)
+        search_frame.setStyleSheet("QFrame { border: 1px solid #333; background-color: #2a2a2a; }")
+        search_layout = QHBoxLayout(search_frame)
+        search_layout.setContentsMargins(5, 5, 5, 5)
+        
         search_label = QLabel("Tìm kiếm:")
+        search_label.setFixedSize(60, 25)
         search_label.setStyleSheet("color: #ffffff; font-weight: bold;")
+        
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Nhập IP hoặc số điện thoại...")
+        self.search_input.setFixedHeight(25)
         self.search_input.setStyleSheet("""
             QLineEdit {
                 background-color: #1e1e1e;
                 color: white;
                 border: 1px solid #555;
                 border-radius: 4px;
-                padding: 5px;
-                font-size: 12px;
+                padding: 3px 6px;
+                font-size: 11px;
             }
             QLineEdit:focus {
                 border: 2px solid #0078d4;
@@ -229,53 +261,102 @@ class ZaloAutomationWidget(QWidget):
         
         search_layout.addWidget(search_label)
         search_layout.addWidget(self.search_input)
-        device_layout.addLayout(search_layout)
+        main_splitter.addWidget(search_frame)
         
-        # Device counter
+        # Counter frame
+        counter_frame = QFrame()
+        counter_frame.setFixedHeight(25)
+        counter_frame.setFrameStyle(QFrame.Shape.Box)
+        counter_frame.setStyleSheet("QFrame { border: 1px solid #333; background-color: #2a2a2a; }")
+        counter_layout = QHBoxLayout(counter_frame)
+        counter_layout.setContentsMargins(5, 2, 5, 2)
+        
         self.device_counter_label = QLabel("Đã chọn: 0 devices")
         self.device_counter_label.setStyleSheet("""
             QLabel {
                 color: #00ff00;
                 font-weight: bold;
-                font-size: 14px;
-                padding: 5px;
+                font-size: 12px;
             }
         """)
-        device_layout.addWidget(self.device_counter_label)
+        counter_layout.addWidget(self.device_counter_label)
+        main_splitter.addWidget(counter_frame)
         
-        # Scroll area for devices (increased height)
+        # Scroll area frame
+        scroll_frame = QFrame()
+        scroll_frame.setFixedHeight(350)
+        scroll_frame.setFrameStyle(QFrame.Shape.Box)
+        scroll_frame.setStyleSheet("QFrame { border: 1px solid #333; background-color: #2a2a2a; }")
+        scroll_layout = QVBoxLayout(scroll_frame)
+        scroll_layout.setContentsMargins(2, 2, 2, 2)
+        
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setMinimumHeight(300)  # Increased from 200
-        scroll_area.setMaximumHeight(400)  # Added max height
+        scroll_area.setFixedHeight(345)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll_area.setStyleSheet("""
             QScrollArea {
-                border: 1px solid #555555;
-                border-radius: 5px;
+                border: none;
                 background-color: #2d2d2d;
+            }
+            QScrollBar:vertical {
+                background-color: #3d3d3d;
+                width: 10px;
+                border-radius: 5px;
+            }
+            QScrollBar::handle:vertical {
+                background-color: #555555;
+                border-radius: 5px;
+                min-height: 15px;
             }
         """)
         
         self.device_container = QWidget()
         self.device_layout = QVBoxLayout(self.device_container)
+        self.device_layout.setSpacing(0)
+        self.device_layout.setContentsMargins(2, 2, 2, 2)
         scroll_area.setWidget(self.device_container)
         
-        device_layout.addWidget(scroll_area)
+        scroll_layout.addWidget(scroll_area)
+        main_splitter.addWidget(scroll_frame)
         
-        # Select all/none buttons
-        button_layout = QHBoxLayout()
+        # Button frame
+        button_frame = QFrame()
+        button_frame.setFixedHeight(45)
+        button_frame.setFrameStyle(QFrame.Shape.Box)
+        button_frame.setStyleSheet("QFrame { border: 1px solid #333; background-color: #2a2a2a; }")
+        button_layout = QHBoxLayout(button_frame)
+        button_layout.setContentsMargins(5, 5, 5, 5)
+        button_layout.setSpacing(10)
         
         select_all_btn = QPushButton("✅ Chọn tất cả")
         select_all_btn.clicked.connect(self.select_all_devices)
+        select_all_btn.setFixedSize(120, 35)
         select_all_btn.setStyleSheet(self.get_button_style("#28a745"))
         
         select_none_btn = QPushButton("❌ Bỏ chọn tất cả")
         select_none_btn.clicked.connect(self.select_none_devices)
+        select_none_btn.setFixedSize(120, 35)
         select_none_btn.setStyleSheet(self.get_button_style("#dc3545"))
         
         button_layout.addWidget(select_all_btn)
         button_layout.addWidget(select_none_btn)
-        device_layout.addLayout(button_layout)
+        button_layout.addStretch()
+        main_splitter.addWidget(button_frame)
+        
+        # Set splitter sizes to prevent resizing
+        main_splitter.setSizes([40, 35, 25, 350, 45])
+        main_splitter.setStretchFactor(0, 0)
+        main_splitter.setStretchFactor(1, 0)
+        main_splitter.setStretchFactor(2, 0)
+        main_splitter.setStretchFactor(3, 1)
+        main_splitter.setStretchFactor(4, 0)
+        
+        # Add splitter to group
+        group_layout = QVBoxLayout(device_group)
+        group_layout.setContentsMargins(10, 20, 10, 10)
+        group_layout.addWidget(main_splitter)
         
         layout.addWidget(device_group)
     
@@ -310,7 +391,7 @@ class ZaloAutomationWidget(QWidget):
         
         self.conversation_text = QTextEdit()
         self.conversation_text.setPlaceholderText("Nhập đoạn hội thoại ở đây...\nVí dụ: Xin chào! Bạn có khỏe không?")
-        self.conversation_text.setMaximumHeight(120)
+        self.conversation_text.setMaximumHeight(80)
         self.conversation_text.setStyleSheet("""
             QTextEdit {
                 background-color: #2d2d2d;
@@ -433,76 +514,130 @@ class ZaloAutomationWidget(QWidget):
         return color
     
     def load_devices(self):
-        """Load available devices using DataManager"""
-        # Clear existing checkboxes
-        for checkbox in self.device_checkboxes:
-            checkbox.setParent(None)
-        self.device_checkboxes.clear()
-        
+        """Load available devices using DataManager with proper error handling"""
         try:
+            # Update status
+            self.status_label.setText("🔄 Đang tải devices...")
+            
             # Reload data from DataManager
             data_manager.reload_data()
             
             # Get devices with phone numbers
             devices = data_manager.get_devices_with_phone_numbers()
             
-            if not devices:
-                no_device_label = QLabel("❌ Không tìm thấy device nào. Vui lòng kết nối devices và nhấn Refresh.")
-                no_device_label.setStyleSheet("color: #ff6b6b; font-size: 14px; padding: 20px; text-align: center;")
-                self.device_layout.addWidget(no_device_label)
-                return
+            # Store all devices for filtering
+            self.all_devices = devices if devices else []
             
-            self.all_devices = devices
-            self.display_devices(devices)
+            # Display devices (this will handle empty list properly)
+            self.display_devices(self.all_devices)
             
-            self.status_label.setText(f"✅ Tìm thấy {len(devices)} devices")
+            # Update status
+            if devices:
+                self.status_label.setText(f"✅ Tìm thấy {len(devices)} devices")
+                self.status_label.setStyleSheet("color: #00ff00; font-weight: bold;")
+            else:
+                self.status_label.setText("⚠️ Không tìm thấy device nào. Vui lòng kết nối devices và nhấn Refresh.")
+                self.status_label.setStyleSheet("color: #ff9800; font-weight: bold;")
                 
         except Exception as e:
-            error_label = QLabel(f"❌ Lỗi load devices: {str(e)}")
-            error_label.setStyleSheet("color: #ff6b6b; font-size: 14px; padding: 20px;")
-            self.device_layout.addWidget(error_label)
+            # Clear devices on error
+            self.all_devices = []
+            self.display_devices([])
+            
+            # Show error in status
+            error_msg = f"❌ Lỗi load devices: {str(e)}"
+            self.status_label.setText(error_msg)
+            self.status_label.setStyleSheet("color: #ff6b6b; font-weight: bold;")
+            
+            # Also show error message box for critical errors
+            QMessageBox.warning(self, "Lỗi", error_msg)
     
     def display_devices(self, devices):
-        """Display devices in the UI"""
-        # Clear existing checkboxes
+        """Display devices in the UI with proper layout management"""
+        # Clear existing checkboxes and layout items
         for checkbox in self.device_checkboxes:
             checkbox.setParent(None)
+            checkbox.deleteLater()
         self.device_checkboxes.clear()
         
-        for device in devices:
-            phone_number = device['phone'] if device['phone'] else "Chưa có số"
-            
-            checkbox = DeviceCheckBox(device['ip'], phone_number)
-            # Store device info in checkbox
-            checkbox.device_info = device
-            checkbox.stateChanged.connect(self.update_device_counter)
-            
-            self.device_checkboxes.append(checkbox)
-            self.device_layout.addWidget(checkbox)
+        # Clear all items from layout
+        while self.device_layout.count():
+            child = self.device_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+            elif child.spacerItem():
+                del child
         
-        # Add spacer at the end
-        spacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        if not devices:
+            no_device_label = QLabel("❌ Không tìm thấy device nào")
+            no_device_label.setStyleSheet("""
+                QLabel {
+                    color: #ff6b6b;
+                    font-size: 14px;
+                    padding: 20px;
+                    text-align: center;
+                    background-color: #2d2d2d;
+                    border-radius: 5px;
+                    margin: 10px;
+                }
+            """)
+            no_device_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.device_layout.addWidget(no_device_label)
+        else:
+            for device in devices:
+                phone_number = device['phone'] if device['phone'] else "Chưa có số"
+                
+                checkbox = DeviceCheckBox(device['ip'], phone_number)
+                # Store device info in checkbox
+                checkbox.device_info = device
+                checkbox.stateChanged.connect(self.update_device_counter)
+                
+                self.device_checkboxes.append(checkbox)
+                self.device_layout.addWidget(checkbox)
+        
+        # Add spacer at the end to push content to top
+        spacer = QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
         self.device_layout.addItem(spacer)
+        
+        # Update container size
+        self.device_container.adjustSize()
         
         self.update_device_counter()
     
     def filter_devices(self):
-        """Filter devices based on search input"""
-        search_text = self.search_input.text().lower()
+        """Filter devices based on search text with improved performance"""
+        search_text = self.search_input.text().lower().strip()
+        
+        if not hasattr(self, 'all_devices') or not self.all_devices:
+            # No devices to filter
+            self.display_devices([])
+            return
         
         if not search_text:
             # Show all devices
             self.display_devices(self.all_devices)
         else:
-            # Filter devices
+            # Filter devices with multiple criteria
             filtered_devices = []
             for device in self.all_devices:
-                if (search_text in device['ip'].lower() or 
-                    search_text in (device['phone'] or '').lower() or
-                    search_text in (device['note'] or '').lower()):
+                # Search in IP and phone number
+                ip_text = device.get('ip', '').lower()
+                phone_text = device.get('phone', '').lower()
+                
+                # Check if search text matches IP or phone
+                if (search_text in ip_text or 
+                    search_text in phone_text or
+                    search_text in f"{ip_text} {phone_text}"):
                     filtered_devices.append(device)
             
             self.display_devices(filtered_devices)
+            
+            # Update search status
+            if filtered_devices:
+                self.status_label.setText(f"🔍 Tìm thấy {len(filtered_devices)}/{len(self.all_devices)} devices")
+            else:
+                self.status_label.setText(f"🔍 Không tìm thấy device nào với từ khóa '{search_text}'")
+                self.status_label.setStyleSheet("color: #ff9800; font-weight: bold;")
     
     def update_device_counter(self):
         """Update device counter and validate even number"""
