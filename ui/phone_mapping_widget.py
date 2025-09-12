@@ -231,7 +231,7 @@ class PhoneMappingWidget(QWidget):
             
             # Validate phone number nếu có
             if phone and not self.validate_phone_number(phone):
-                QMessageBox.warning(self, "Warning", "Invalid phone number format")
+                QMessageBox.warning(self, "Warning", "Invalid phone number format. Please enter 9 digits (without 0) or 10 digits (with 0).")
                 return
             
             # Extract IP from device_id
@@ -240,6 +240,12 @@ class PhoneMappingWidget(QWidget):
             # Save using DataManager
             data_manager.set_phone_mapping(ip, phone)
             data_manager.set_device_note(ip, note)
+            
+            # Update local device_data to persist changes
+            if device_id not in self.device_data:
+                self.device_data[device_id] = {}
+            self.device_data[device_id]['phone'] = phone
+            self.device_data[device_id]['note'] = note
             
             # Emit signal
             self.device_info_changed.emit(self.device_data)
@@ -277,6 +283,21 @@ class PhoneMappingWidget(QWidget):
         try:
             # Reload data from all sources
             data_manager.reload_data()
+            
+            # Load device data into local storage
+            self.device_data = data_manager.get_device_data()
+            
+            # Also get phone mapping data
+            phone_mapping = data_manager.get_phone_mapping()
+            
+            # Merge phone mapping into device_data if not already present
+            for ip, phone in phone_mapping.items():
+                device_key = f"{ip}:5555"
+                if device_key not in self.device_data:
+                    self.device_data[device_key] = {}
+                if 'phone' not in self.device_data[device_key] or not self.device_data[device_key]['phone']:
+                    self.device_data[device_key]['phone'] = phone
+            
             self.refresh_devices()
         except Exception as e:
             print(f"Error loading device data: {e}")
@@ -287,11 +308,20 @@ class PhoneMappingWidget(QWidget):
         pass
             
     def validate_phone_number(self, phone):
-        """Validate phone number format"""
+        """Validate phone number format - supports 9 digits (without 0) or 10 digits (with 0)"""
         import re
-        # Basic phone number validation
-        pattern = r'^[+]?[0-9]{10,15}$'
-        return bool(re.match(pattern, phone))
+        # Remove any spaces or special characters
+        clean_phone = re.sub(r'[^0-9]', '', phone)
+        
+        # Check for 9 digits (without leading 0) or 10 digits (with leading 0)
+        if len(clean_phone) == 9:
+            # 9 digits without leading 0
+            return clean_phone[0] != '0'
+        elif len(clean_phone) == 10:
+            # 10 digits with leading 0
+            return clean_phone[0] == '0'
+        else:
+            return False
             
     def showEvent(self, event):
         """Được gọi khi widget được hiển thị"""

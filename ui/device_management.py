@@ -343,6 +343,12 @@ class PhoneMappingWidget(QWidget):
         """Set phone mapping từ external source"""
         self.phone_mapping = mapping.copy()
         self.refresh_table()
+        
+    def refresh_devices(self):
+        """Refresh devices - compatibility method"""
+        # This method is called by DeviceManagementWidget.refresh_devices()
+        # Just refresh the table to update the display
+        self.refresh_table()
 
 class DeviceManagementWidget(QWidget):
     """Main device management widget"""
