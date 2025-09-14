@@ -166,7 +166,12 @@ class DeviceWorker(QThread):
         """Main thread execution"""
         try:
             # Initialize device
-            self.device = Device(self.device_id)
+            # Đảm bảo device_id có format IP:5555 cho network devices
+            device_id = self.device_id
+            if ':' not in device_id and '.' in device_id:  # IP address without port
+                device_id = f"{device_id}:5555"
+            
+            self.device = Device(device_id)
             if not self.device.connect():
                 self.log("❌ Không thể kết nối device", "ERROR")
                 self.flow_finished.emit(self.device_id, False)
@@ -246,6 +251,10 @@ class DeviceManager(QObject):
         """Kết nối đến device"""
         if device_id in self.connected_devices:
             return True
+        
+        # Đảm bảo device_id có format IP:5555 cho network devices
+        if ':' not in device_id and '.' in device_id:  # IP address without port
+            device_id = f"{device_id}:5555"
         
         device = Device(device_id)
         if device.connect():

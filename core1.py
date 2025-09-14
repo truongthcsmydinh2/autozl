@@ -432,7 +432,12 @@ class DeviceWorker:
     def initialize_device(self):
         """Khởi tạo device"""
         try:
-            self.device = Device(self.device_id)
+            # Đảm bảo device_id có format IP:5555 cho network devices
+            device_id = self.device_id
+            if ':' not in device_id and '.' in device_id:  # IP address without port
+                device_id = f"{device_id}:5555"
+            
+            self.device = Device(device_id)
             if self.device.connect():
                 return True
             else:
@@ -510,6 +515,10 @@ def run_flow_once(flow_fn, dev: Device, all_devices=None):
 
 def main_single_device(device_id, all_devices=None):
     """Single device mode - chỉ chạy một lần với group support"""
+    # Đảm bảo device_id có format IP:5555 cho network devices
+    if ':' not in device_id and '.' in device_id:  # IP address without port
+        device_id = f"{device_id}:5555"
+    
     device = Device(device_id)
     
     if not device.connect():
@@ -939,7 +948,8 @@ def setup_phone_mapping_for_pairs(device_pairs):
     
     for i, device in enumerate(all_devices, 1):
         ip = device.split(':')[0] if ':' in device else device
-        current_phone = PHONE_MAP.get(ip, "")
+        # Try both formats: with and without port
+        current_phone = PHONE_MAP.get(device, "") or PHONE_MAP.get(ip, "")
         
         print(f"\n📱 Device {i}/{len(all_devices)}: {device}")
         if current_phone:
@@ -952,16 +962,16 @@ def setup_phone_mapping_for_pairs(device_pairs):
                     if not phone:
                         phone = current_phone
                         # Lưu số hiện tại vào mapping
-                        phone_mapping[ip] = phone
-                        print(f"  📋 Giữ nguyên: {ip} -> {phone}")
+                        phone_mapping[device] = phone
+                        print(f"  📋 Giữ nguyên: {device} -> {phone}")
                         break
                 else:
                     phone = input("📞 Nhập số điện thoại: ").strip()
                 
                 if phone:
                     if validate_phone_number(phone):
-                        phone_mapping[ip] = phone
-                        print(f"  ✅ {ip} -> {phone}")
+                        phone_mapping[device] = phone
+                        print(f"  ✅ {device} -> {phone}")
                         break
                     else:
                         print("  ❌ Số điện thoại không hợp lệ (9-15 chữ số, có thể có +)")
@@ -973,8 +983,8 @@ def setup_phone_mapping_for_pairs(device_pairs):
                 return {}
     
     print(f"\n📞 PHONE MAPPING HOÀN THÀNH ({len(phone_mapping)} devices):")
-    for ip, phone in phone_mapping.items():
-        print(f"  {ip} -> {phone}")
+    for device, phone in phone_mapping.items():
+        print(f"  {device} -> {phone}")
     
     return phone_mapping
 
@@ -1412,6 +1422,293 @@ def main():
         # Multi-device mode - sử dụng group-based conversation
         main_multi_device(valid_devices)
 
+def run_zalo_automation(device_pairs, conversations, phone_mapping, progress_callback=None, stop_event=None, status_callback=None):
+    """
+    Hàm chính để chạy automation từ GUI Zalo
+    
+    Args:
+        device_pairs: List[Tuple[dict, dict]] - Danh sách cặp thiết bị
+        conversations: List[str] - Danh sách hội thoại
+        phone_mapping: Dict[str, str] - Mapping IP -> số điện thoại
+        progress_callback: callable - Callback để báo cáo tiến trình
+    
+    Returns:
+        dict: Kết quả automation với format {"pair_1": {"status": "completed"}, ...}
+    """
+    global PHONE_MAP
+    try:
+        if progress_callback:
+            progress_callback("🚀 Bắt đầu automation từ Zalo GUI...")
+        
+        print(f"\n🚀 Bắt đầu Zalo automation với {len(device_pairs)} cặp thiết bị")
+        print(f"💬 Có {len(conversations)} hội thoại")
+        print(f"📞 Có {len(phone_mapping)} mapping số điện thoại")
+        
+        # Debug logs chi tiết
+        print("\n[DEBUG] ===== AUTOMATION DEBUG INFO =====")
+        print(f"[DEBUG] Device pairs received: {len(device_pairs)}")
+        for i, (d1, d2) in enumerate(device_pairs):
+            print(f"[DEBUG] Pair {i+1}: {d1['ip']} ↔ {d2['ip']}")
+        
+        print(f"[DEBUG] Conversations: {conversations}")
+        print(f"[DEBUG] Phone mapping: {phone_mapping}")
+        print(f"[DEBUG] Progress callback: {'Available' if progress_callback else 'None'}")
+        print(f"[DEBUG] Current global PHONE_MAP: {PHONE_MAP}")
+        print("[DEBUG] =====================================\n")
+        
+        # Cập nhật global PHONE_MAP với mapping từ GUI
+        PHONE_MAP.update(phone_mapping)
+        
+        # Lưu phone mapping vào file để đồng bộ
+        if phone_mapping:
+            save_phone_map_to_file(phone_mapping)
+            if progress_callback:
+                progress_callback(f"📞 Đã tải {len(phone_mapping)} mapping số điện thoại.")
+        
+        results = {}
+        
+        # Xử lý từng cặp thiết bị
+        for pair_index, (device1, device2) in enumerate(device_pairs, 1):
+            # Check stop signal before processing each pair
+            if stop_event and stop_event.is_set():
+                if progress_callback:
+                    progress_callback("⏹️ Automation đã được dừng.")
+                break
+                
+            pair_name = f"pair_{pair_index}"
+            
+            if progress_callback:
+                progress_callback(f"🔄 Xử lý cặp {pair_index}/{len(device_pairs)}: {device1['ip']} ↔ {device2['ip']}")
+            
+            print(f"\n📱 Cặp {pair_index}: {device1['ip']} ↔ {device2['ip']}")
+            
+            # Chuẩn bị danh sách devices cho cặp này với format IP:5555
+            device_ips = []
+            for device_info in [device1, device2]:
+                device_ip = device_info['ip']
+                if ':' not in device_ip:
+                    device_ip = f"{device_ip}:5555"
+                device_ips.append(device_ip)
+            
+            # Kết nối devices
+            connected_devices = []
+            connection_results = {}
+            
+            for device_info in [device1, device2]:
+                # Đảm bảo device_ip có format IP:5555
+                device_ip = device_info['ip']
+                if ':' not in device_ip:
+                    device_ip = f"{device_ip}:5555"
+                
+                try:
+                    if progress_callback:
+                        progress_callback(f"🔌 Kết nối {device_ip}...")
+                    
+                    print(f"🔌 Kết nối device: {device_ip}")
+                    dev = Device(device_ip)
+                    if dev.connect():
+                        connected_devices.append(dev)
+                        connection_results[device_ip] = {"status": "connected", "result": None}
+                        print(f"✅ Kết nối thành công: {device_ip}")
+                    else:
+                        connection_results[device_ip] = {"status": "connection_failed", "result": None}
+                        print(f"❌ Kết nối thất bại: {device_ip}")
+                except Exception as e:
+                    connection_results[device_ip] = {"status": "error", "result": str(e)}
+                    print(f"❌ Lỗi kết nối {device_ip}: {e}")
+            
+            if len(connected_devices) < 2:
+                error_msg = f"Chỉ kết nối được {len(connected_devices)}/2 devices trong cặp {pair_index}"
+                print(f"❌ {error_msg}")
+                results[pair_name] = {"status": "connection_failed", "error": error_msg}
+                
+                # Cleanup devices đã kết nối
+                for dev in connected_devices:
+                    try:
+                        dev.disconnect()
+                    except:
+                        pass
+                continue
+            
+            # Chạy automation trên cặp devices
+            try:
+                if progress_callback:
+                    progress_callback(f"🎯 Bắt đầu automation cặp {pair_index}...")
+                
+                print(f"🎯 Bắt đầu automation cặp {pair_index} với {len(connected_devices)} devices")
+                
+                # Chạy automation trên từng device trong cặp với parallel processing
+                import threading
+                import queue
+                
+                pair_results = {}
+                result_queue = queue.Queue()
+                threads = []
+                
+                def run_device_automation(dev, device_index, delay_before_start=0):
+                    """Chạy automation trên một device với delay trước khi bắt đầu"""
+                    device_ip = dev.device_id
+                    
+                    try:
+                        # Emit device status update
+                        if status_callback:
+                            status_callback('device_status', device_ip, 'Đang chuẩn bị', '')
+                        
+                        # Check stop signal before starting
+                        if stop_event and stop_event.is_set():
+                            if status_callback:
+                                status_callback('device_status', device_ip, 'Đã dừng', '')
+                            result_queue.put((device_ip, {"status": "stopped", "result": "Automation stopped"}))
+                            return
+                            
+                        # Delay trước khi bắt đầu để stagger start times
+                        if delay_before_start > 0:
+                            print(f"⏸️ Device {device_ip} delay {delay_before_start}s trước khi bắt đầu...")
+                            if progress_callback:
+                                progress_callback(f"⏸️ Device {device_ip} delay {delay_before_start}s...")
+                            
+                            if status_callback:
+                                status_callback('device_status', device_ip, f'Đang delay {delay_before_start}s', '')
+                            
+                            # Check stop signal during delay
+                            for i in range(delay_before_start):
+                                if stop_event and stop_event.is_set():
+                                    if status_callback:
+                                        status_callback('device_status', device_ip, 'Đã dừng', '')
+                                    result_queue.put((device_ip, {"status": "stopped", "result": "Automation stopped during delay"}))
+                                    return
+                                time.sleep(1)
+                        
+                        print(f"📱 Chạy automation trên {device_ip} (device {device_index+1}/{len(connected_devices)})")
+                        if progress_callback:
+                            progress_callback(f"📱 Bắt đầu automation trên {device_ip}...")
+                        
+                        if status_callback:
+                            status_callback('device_status', device_ip, 'Đang chạy automation', '')
+                        
+                        # Check stop signal before running flow
+                        if stop_event and stop_event.is_set():
+                            if status_callback:
+                                status_callback('device_status', device_ip, 'Đã dừng', '')
+                            result_queue.put((device_ip, {"status": "stopped", "result": "Automation stopped before flow"}))
+                            return
+                            
+                        result = flow(dev, all_devices=device_ips, stop_event=stop_event, status_callback=status_callback)
+                        
+                        # Check stop signal after flow
+                        if stop_event and stop_event.is_set():
+                            if status_callback:
+                                status_callback('device_status', device_ip, 'Đã dừng', '')
+                            result_queue.put((device_ip, {"status": "stopped", "result": "Automation stopped after flow"}))
+                        else:
+                            if status_callback:
+                                status_callback('device_status', device_ip, 'Hoàn thành', str(result))
+                            result_queue.put((device_ip, {"status": "completed", "result": result}))
+                            print(f"✅ Hoàn thành automation trên {device_ip}: {result}")
+                            
+                            if progress_callback:
+                                progress_callback(f"✅ Hoàn thành {device_ip}: {result}")
+                            
+                    except Exception as e:
+                        if status_callback:
+                            status_callback('device_status', device_ip, 'Lỗi', str(e))
+                        result_queue.put((device_ip, {"status": "error", "result": str(e)}))
+                        print(f"❌ Lỗi automation trên {device_ip}: {e}")
+                        
+                        if progress_callback:
+                            progress_callback(f"❌ Lỗi {device_ip}: {str(e)}")
+                
+                # Tạo và start threads với staggered delays
+                for i, dev in enumerate(connected_devices):
+                    # Tăng delay giữa các devices từ 5+i*2 lên 8+i*3
+                    delay_before_start = 8 + (i * 3) if i > 0 else 0  # 0s, 11s, 14s...
+                    
+                    thread = threading.Thread(
+                        target=run_device_automation,
+                        args=(dev, i, delay_before_start),
+                        name=f"Device-{dev.device_id}"
+                    )
+                    threads.append(thread)
+                    thread.start()
+                    
+                    # Nhỏ delay giữa việc start các threads để tránh race condition
+                    time.sleep(0.5)
+                
+                # Đợi tất cả threads hoàn thành hoặc stop signal
+                print(f"⏳ Đợi tất cả {len(threads)} devices hoàn thành automation...")
+                if progress_callback:
+                    progress_callback(f"⏳ Đợi {len(threads)} devices hoàn thành...")
+                
+                for thread in threads:
+                    if stop_event and stop_event.is_set():
+                        break
+                    thread.join(timeout=1.0)  # Check every second for stop signal
+                
+                # Thu thập kết quả từ queue
+                while not result_queue.empty():
+                    device_ip, result = result_queue.get()
+                    pair_results[device_ip] = result
+                
+                # Kiểm tra xem có device nào failed to open app không
+                app_open_failures = []
+                for device_ip, result in pair_results.items():
+                    if result.get("result") == "APP_OPEN_FAILED":
+                        app_open_failures.append(device_ip)
+                
+                if app_open_failures:
+                    print(f"⚠️ Một số devices không mở được Zalo app: {app_open_failures}")
+                    if progress_callback:
+                        progress_callback(f"⚠️ Devices không mở được app: {', '.join(app_open_failures)}")
+                
+                # Tổng hợp kết quả cặp
+                success_count = sum(1 for r in pair_results.values() if r["status"] == "completed" and r.get("result") not in ["APP_OPEN_FAILED", "LOGIN_REQUIRED"])
+                if success_count == len(connected_devices):
+                    results[pair_name] = {"status": "completed", "devices": pair_results}
+                    if progress_callback:
+                        progress_callback(f"✅ Hoàn thành cặp {pair_index}: {success_count}/{len(connected_devices)} thành công")
+                else:
+                    results[pair_name] = {"status": "partial_success", "devices": pair_results}
+                    if progress_callback:
+                        progress_callback(f"⚠️ Cặp {pair_index} hoàn thành một phần: {success_count}/{len(connected_devices)} thành công")
+                
+            except Exception as e:
+                error_msg = f"Lỗi automation cặp {pair_index}: {str(e)}"
+                print(f"❌ {error_msg}")
+                results[pair_name] = {"status": "error", "error": error_msg}
+                if progress_callback:
+                    progress_callback(f"❌ {error_msg}")
+            
+            # Cleanup devices
+            for dev in connected_devices:
+                try:
+                    dev.disconnect()
+                except:
+                    pass
+            
+            # Delay giữa các cặp
+            if pair_index < len(device_pairs):
+                print(f"⏸️ Nghỉ 2 giây trước cặp tiếp theo...")
+                time.sleep(2)
+        
+        # Tổng hợp kết quả cuối cùng
+        total_pairs = len(device_pairs)
+        success_pairs = sum(1 for r in results.values() if r["status"] == "completed")
+        
+        final_message = f"Hoàn thành: {success_pairs}/{total_pairs} thành công."
+        print(f"\n🏁 {final_message}")
+        
+        if progress_callback:
+            progress_callback(f"🏁 {final_message}")
+        
+        return results
+        
+    except Exception as e:
+        error_msg = f"Lỗi chung trong automation: {str(e)}"
+        print(f"❌ {error_msg}")
+        if progress_callback:
+            progress_callback(f"❌ {error_msg}")
+        return {"error": error_msg}
+
 if __name__ == "__main__":
     main()
 
@@ -1759,9 +2056,15 @@ def load_conversation_from_file(group_id):
 
 def determine_group_and_role(device_ip, all_devices):
     """Xác định nhóm và role của device dựa trên IP"""
+    # Chuẩn hóa device_ip để chỉ lấy phần IP (bỏ port nếu có)
+    clean_device_ip = device_ip.split(':')[0] if ':' in device_ip else device_ip
+    
+    # Chuẩn hóa all_devices để chỉ lấy phần IP (bỏ port nếu có)
+    clean_all_devices = [d.split(':')[0] if ':' in d else d for d in all_devices]
+    
     # Sắp xếp devices theo IP để đảm bảo consistent grouping
-    sorted_devices = sorted(all_devices)
-    device_index = sorted_devices.index(device_ip)
+    sorted_devices = sorted(clean_all_devices)
+    device_index = sorted_devices.index(clean_device_ip)
     
     # Chia thành các nhóm 2 máy
     group_id = (device_index // 2) + 1
@@ -1832,7 +2135,7 @@ def calculate_smart_delay(message_length, is_first_message=False):
     # Đảm bảo delay trong khoảng hợp lý (2-15s)
     return max(2, min(15, final_delay))
 
-def run_conversation(dev, device_role, debug=False, all_devices=None):
+def run_conversation(dev, device_role, debug=False, all_devices=None, stop_event=None, status_callback=None):
     """Chạy cuộc hội thoại với message_id synchronization và smart timing"""
     import random
     import time as time_module
@@ -1893,6 +2196,22 @@ def run_conversation(dev, device_role, debug=False, all_devices=None):
     for msg in conversation:
         message_id = msg["message_id"]
         
+        # Kiểm tra stop signal trước xử lý mỗi message
+        if stop_event and stop_event.is_set():
+            print(f"[DEBUG] Stop signal received during conversation for {device_ip}")
+            return False
+        
+        # Emit status update cho message hiện tại
+        if status_callback:
+            status_callback('message_status_updated', {
+                'device_ip': device_ip,
+                'message_id': message_id,
+                'content': msg['message'],
+                'status': 'processing',
+                'sender': msg['sender'],
+                'role_in_group': role_in_group
+            })
+        
         if msg["sender"] == role_in_group:
             # Đợi đến lượt message_id này
             print(f"⏳ Nhóm {group_id} - Đợi lượt message_id {message_id}...")
@@ -1900,19 +2219,64 @@ def run_conversation(dev, device_role, debug=False, all_devices=None):
                 print(f"❌ Nhóm {group_id} - Timeout đợi message_id {message_id}, bỏ qua")
                 continue
             
+            # Kiểm tra stop signal sau wait
+            if stop_event and stop_event.is_set():
+                print(f"[DEBUG] Stop signal received after waiting for message turn for {device_ip}")
+                return False
+            
             # Tính delay thông minh
             is_first = (message_id == 1)
             smart_delay = calculate_smart_delay(msg['message'], is_first)
             
             if not is_first:
                 print(f"⏳ Nhóm {group_id} - Smart delay {smart_delay:.1f}s cho message_id {message_id}...")
+                
+                # Emit status update cho delay
+                if status_callback:
+                    status_callback('message_status_updated', {
+                        'device_ip': device_ip,
+                        'message_id': message_id,
+                        'content': msg['message'],
+                        'status': 'delaying',
+                        'delay_time': smart_delay,
+                        'sender': msg['sender'],
+                        'role_in_group': role_in_group
+                    })
+                
+                # Kiểm tra stop signal trước smart delay
+                if stop_event and stop_event.is_set():
+                    print(f"[DEBUG] Stop signal received during smart delay for {device_ip}")
+                    return False
+                
                 time_module.sleep(smart_delay)
             
             print(f"📤 Nhóm {group_id} - Máy {role_in_group} gửi message_id {message_id}: {msg['message']}")
             
+            # Emit status update cho việc gửi
+            if status_callback:
+                status_callback('message_status_updated', {
+                    'device_ip': device_ip,
+                    'message_id': message_id,
+                    'content': msg['message'],
+                    'status': 'sending',
+                    'sender': msg['sender'],
+                    'role_in_group': role_in_group
+                })
+            
             # Gửi tin nhắn với human-like typing
             if send_message(dev, msg["message"], debug=debug):
                 print(f"✅ Nhóm {group_id} - Đã gửi message_id {message_id}: {msg['message']}")
+                
+                # Emit status update cho việc gửi thành công
+                if status_callback:
+                    status_callback('message_status_updated', {
+                        'device_ip': device_ip,
+                        'message_id': message_id,
+                        'content': msg['message'],
+                        'status': 'sent',
+                        'sender': msg['sender'],
+                        'role_in_group': role_in_group
+                    })
                 
                 # Cập nhật current_message_id để device khác có thể tiếp tục
                 next_message_id = message_id + 1
@@ -1922,6 +2286,12 @@ def run_conversation(dev, device_role, debug=False, all_devices=None):
                 # Delay ngắn sau khi gửi (1-3 giây)
                 post_send_wait = random.uniform(1, 3)
                 print(f"⏸️ Nhóm {group_id} - Nghỉ {post_send_wait:.1f}s sau message_id {message_id}...")
+                
+                # Kiểm tra stop signal trước post send delay
+                if stop_event and stop_event.is_set():
+                    print(f"[DEBUG] Stop signal received during post send delay for {device_ip}")
+                    return False
+                
                 time_module.sleep(post_send_wait)
             else:
                 print(f"❌ Nhóm {group_id} - Không thể gửi message_id {message_id}: {msg['message']}")
@@ -2117,20 +2487,122 @@ def show_current_config():
     for ip, phone in current_map.items():
         print(f"  {ip} -> {phone}")
 
-def flow(dev, all_devices=None):
+def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     """Main flow function - UIAutomator2 version với group-based conversation automation"""
     
-    # Mở app Zalo
-    dev.app(PKG)
-    time.sleep(2)
+    # DEBUG: Log thông tin device
+    device_ip = dev.device_id
+    print(f"[DEBUG] Starting flow for device: {device_ip}")
+    print(f"[DEBUG] All devices passed to flow: {all_devices}")
+    
+    # Mở app Zalo với retry logic và delay
+    print(f"[DEBUG] Opening Zalo app on {device_ip}...")
+    
+    # Thêm delay ngẫu nhiên để tránh conflict khi nhiều device cùng mở
+    import random
+    initial_delay = random.uniform(1, 3)
+    print(f"[DEBUG] Initial delay: {initial_delay:.2f}s")
+    
+    # Kiểm tra stop signal trước delay
+    if stop_event and stop_event.is_set():
+        print(f"[DEBUG] Stop signal received during initial delay for {device_ip}")
+        return "STOPPED"
+    
+    time.sleep(initial_delay)
+    
+    # Enhanced retry logic cho việc mở app với better error handling
+    max_retries = 5  # Tăng số lần retry
+    app_opened_successfully = False
+    
+    for attempt in range(max_retries):
+        try:
+            print(f"[DEBUG] Attempt {attempt + 1}/{max_retries} to open Zalo on {device_ip}")
+            
+            # Thử force stop app trước khi mở lại (trừ lần đầu)
+            if attempt > 0:
+                try:
+                    dev.app_stop(PKG)
+                    time.sleep(1)
+                    print(f"[DEBUG] Force stopped Zalo app before retry")
+                except:
+                    pass
+            
+            # Mở app
+            dev.app(PKG)
+            
+            # Đợi app mở hoàn toàn với progressive delay
+            base_delay = 4 + (attempt * 1)  # Tăng delay theo số lần retry
+            app_open_delay = base_delay + random.uniform(0, 2)
+            print(f"[DEBUG] Waiting {app_open_delay:.2f}s for app to fully load...")
+            
+            # Kiểm tra stop signal trước delay
+            if stop_event and stop_event.is_set():
+                print(f"[DEBUG] Stop signal received during app open delay for {device_ip}")
+                return "STOPPED"
+            
+            time.sleep(app_open_delay)
+            
+            # Kiểm tra app đã mở thành công chưa với multiple checks
+            success_indicators = [
+                ("maintab_root_layout", "com.zing.zalo:id/maintab_root_layout"),
+                ("message_list", RID_MSG_LIST),
+                ("login_button", "com.zing.zalo:id/btnLogin"),
+                ("action_bar", RID_ACTION_BAR),
+                ("tab_message", RID_TAB_MESSAGE)
+            ]
+            
+            found_indicator = None
+            for indicator_name, resource_id in success_indicators:
+                if dev.element_exists(resourceId=resource_id):
+                    found_indicator = indicator_name
+                    break
+            
+            if found_indicator:
+                print(f"[DEBUG] Zalo app opened successfully on {device_ip} (found: {found_indicator})")
+                app_opened_successfully = True
+                break
+            else:
+                print(f"[DEBUG] App not fully loaded on attempt {attempt + 1}, no success indicators found")
+                if attempt < max_retries - 1:
+                    retry_delay = 2 + (attempt * 1)  # Progressive retry delay
+                    print(f"[DEBUG] Waiting {retry_delay}s before retry...")
+                    
+                    # Kiểm tra stop signal trước retry delay
+                    if stop_event and stop_event.is_set():
+                        print(f"[DEBUG] Stop signal received during retry delay for {device_ip}")
+                        return "STOPPED"
+                    
+                    time.sleep(retry_delay)
+                    
+        except Exception as e:
+            print(f"[DEBUG] Error opening app on attempt {attempt + 1}: {e}")
+            if attempt < max_retries - 1:
+                retry_delay = 3 + (attempt * 1)
+                print(f"[DEBUG] Exception occurred, waiting {retry_delay}s before retry...")
+                
+                # Kiểm tra stop signal trước exception retry delay
+                if stop_event and stop_event.is_set():
+                    print(f"[DEBUG] Stop signal received during exception retry delay for {device_ip}")
+                    return "STOPPED"
+                
+                time.sleep(retry_delay)
+    
+    if not app_opened_successfully:
+        print(f"[ERROR] Failed to open Zalo app after {max_retries} attempts on {device_ip}")
+        return "APP_OPEN_FAILED"
+    
+    print(f"[DEBUG] Zalo app opening process completed on {device_ip}")
     
     # Kiểm tra đăng nhập
+    print(f"[DEBUG] Checking login status for {device_ip}...")
     if is_login_required(dev, debug=True):
         ip = dev.device_id.split(":")[0] if ":" in dev.device_id else dev.device_id
+        print(f"[DEBUG] Login required for {device_ip}")
         print(f"IP: {ip} - chưa đăng nhập → thoát flow.")
         return "LOGIN_REQUIRED"
     
     ip = dev.device_id.split(":")[0] if ":" in dev.device_id else dev.device_id
+    print(f"[DEBUG] Login check passed for {device_ip}")
     print(f"IP: {ip} - đã đăng nhập. Bắt đầu flow…")
     
     # DEBUG: Log thông tin đầu vào
@@ -2158,29 +2630,29 @@ def flow(dev, all_devices=None):
     
     # Xác định nhóm và role trong nhóm
     if all_devices:
-        group_id, role_in_group = determine_group_and_role(ip, all_devices)
+        # Chuẩn hóa all_devices để chỉ chứa IP không có port cho việc xác định role
+        normalized_devices = []
+        for device in all_devices:
+            clean_ip = device.split(':')[0] if ':' in device else device
+            normalized_devices.append(clean_ip)
+        
+        group_id, role_in_group = determine_group_and_role(ip, normalized_devices)
         print(f"📱 Device {ip} - Nhóm {group_id}, Role {role_in_group}")
         
         # Tìm partner trong cùng nhóm
-        sorted_devices = sorted(all_devices)
+        sorted_devices = sorted(normalized_devices)
         print(f"[DEBUG] Sorted devices: {sorted_devices}")
         
         try:
             device_index = sorted_devices.index(ip)
             print(f"[DEBUG] Device index: {device_index}")
         except ValueError:
-            print(f"[DEBUG] IP {ip} not found in sorted_devices, trying with :5555")
-            ip_with_port = f"{ip}:5555"
-            try:
-                device_index = sorted_devices.index(ip_with_port)
-                print(f"[DEBUG] Found device index with port: {device_index}")
-            except ValueError:
-                print(f"[DEBUG] Neither {ip} nor {ip_with_port} found in devices")
-                target_phone = ""
-                partner_ip = ""
-                device_role = 1
-                print(f"[DEBUG] Fallback: target_phone={target_phone}, partner_ip={partner_ip}")
-                return "SUCCESS"
+            print(f"[DEBUG] IP {ip} not found in sorted_devices")
+            target_phone = ""
+            partner_ip = ""
+            device_role = 1
+            print(f"[DEBUG] Fallback: target_phone={target_phone}, partner_ip={partner_ip}")
+            return "SUCCESS"
         
         if role_in_group == 1:
             partner_index = device_index + 1
@@ -2191,11 +2663,16 @@ def flow(dev, all_devices=None):
         
         if 0 <= partner_index < len(sorted_devices):
             partner_ip = sorted_devices[partner_index]
-            # Normalize partner IP (remove port if exists)
-            partner_ip_clean = partner_ip.split(':')[0] if ':' in partner_ip else partner_ip
-            target_phone = PHONE_MAP.get(partner_ip_clean, "")
-            print(f"[DEBUG] Partner IP: {partner_ip} -> Clean: {partner_ip_clean}")
+            # Tìm target_phone trong PHONE_MAP với cả 2 format: có port và không có port
+            partner_ip_with_port = f"{partner_ip}:5555"
+            target_phone = PHONE_MAP.get(partner_ip_with_port, "") or PHONE_MAP.get(partner_ip, "")
+            print(f"[DEBUG] Partner IP: {partner_ip}")
+            print(f"[DEBUG] Trying PHONE_MAP keys: {partner_ip_with_port}, {partner_ip}")
             print(f"[DEBUG] Target phone from PHONE_MAP: {target_phone}")
+            
+            if not target_phone:
+                print(f"[DEBUG] No phone mapping found for partner {partner_ip}")
+                print(f"[DEBUG] Available PHONE_MAP keys: {list(PHONE_MAP.keys())}")
         else:
             target_phone = ""
             partner_ip = ""
@@ -2204,13 +2681,24 @@ def flow(dev, all_devices=None):
         # Fallback về logic cũ cho 2 máy
         device_role = 1 if ip == "192.168.5.74" else 2
         target_ip = "192.168.5.82" if ip == "192.168.5.74" else "192.168.5.74"
-        target_phone = PHONE_MAP.get(target_ip, "")
+        target_ip_with_port = f"{target_ip}:5555"
+        target_phone = PHONE_MAP.get(target_ip_with_port, "") or PHONE_MAP.get(target_ip, "")
         print(f"📱 Device role: Máy {device_role} (fallback mode)")
         print(f"[DEBUG] Fallback target_phone: {target_phone}")
+    
+    # Kiểm tra stop signal trước chuyển tab
+    if stop_event and stop_event.is_set():
+        print(f"[DEBUG] Stop signal received before switching to messages tab for {device_ip}")
+        return "STOPPED"
     
     # Ép về tab Tin nhắn trước
     ensure_on_messages_tab(dev, debug=True)
     time.sleep(0.4)
+    
+    # Kiểm tra stop signal trước mở search
+    if stop_event and stop_event.is_set():
+        print(f"[DEBUG] Stop signal received before opening search for {device_ip}")
+        return "STOPPED"
     
     print("• Mở ô tìm kiếm…")
     if not open_search_strong(dev, debug=True):
@@ -2221,6 +2709,11 @@ def flow(dev, all_devices=None):
             print("❌ Không mở được ô tìm kiếm. Thoát flow.")
             return "SUCCESS"
     
+    # Kiểm tra stop signal trước nhập số
+    if stop_event and stop_event.is_set():
+        print(f"[DEBUG] Stop signal received before entering phone number for {device_ip}")
+        return "STOPPED"
+    
     # Nhập số điện thoại của partner để tìm kiếm
     if target_phone:
         print(f"• Nhập số đối tác: {target_phone}")
@@ -2229,17 +2722,33 @@ def flow(dev, all_devices=None):
         print("• Không có số trong map, nhập 'gxe'")
         enter_query_and_submit(dev, "gxe", debug=True)
     
+    # Kiểm tra stop signal trước click search result
+    if stop_event and stop_event.is_set():
+        print(f"[DEBUG] Stop signal received before clicking search result for {device_ip}")
+        return "STOPPED"
+    
     print("• Chọn kết quả đầu tiên…")
     if click_first_search_result(dev, preferred_text=target_phone, debug=True):
         print("✅ Đã vào chat. Đợi 3 giây trước khi bắt đầu cuộc hội thoại...")
+        
+        # Kiểm tra stop signal trước delay
+        if stop_event and stop_event.is_set():
+            print(f"[DEBUG] Stop signal received before conversation delay for {device_ip}")
+            return "STOPPED"
+        
         time.sleep(3)
+        
+        # Kiểm tra stop signal trước bắt đầu conversation
+        if stop_event and stop_event.is_set():
+            print(f"[DEBUG] Stop signal received before starting conversation for {device_ip}")
+            return "STOPPED"
         
         # Bắt đầu cuộc hội thoại với group support
         print("💬 Bắt đầu cuộc hội thoại tự động...")
         if all_devices:
-            run_conversation(dev, role_in_group, debug=True, all_devices=all_devices)
+            run_conversation(dev, role_in_group, debug=True, all_devices=all_devices, stop_event=stop_event, status_callback=status_callback)
         else:
-            run_conversation(dev, device_role, debug=True)
+            run_conversation(dev, device_role, debug=True, stop_event=stop_event, status_callback=status_callback)
     else:
         print("❌ Không thể vào chat")
     
@@ -2290,11 +2799,11 @@ def run_automation_from_gui(selected_devices, conversation_text=None):
         return results
     
     # Chạy automation trên tất cả devices đã kết nối
-    device_ips = [dev.device_id.split(':')[0] for dev in connected_devices]
+    device_ips = [dev.device_id for dev in connected_devices]
     print(f"\n🎯 Bắt đầu automation với {len(connected_devices)} devices")
     
     for dev in connected_devices:
-        device_ip = dev.device_id.split(':')[0]
+        device_ip = dev.device_id
         try:
             print(f"\n📱 Chạy automation trên {device_ip}")
             result = flow(dev, all_devices=device_ips)

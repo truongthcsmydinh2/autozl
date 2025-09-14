@@ -23,10 +23,14 @@ from core.device_manager import DeviceManager
 from core.config_manager import ConfigManager
 
 # Import UI components
+import importlib
 from ui.device_management import DeviceManagementWidget
 from ui.phone_mapping_widget import PhoneMappingWidget
-from ui.zalo_automation import ZaloAutomationWidget
 from ui.theme_manager import ThemeManager
+
+# Import ZaloAutomationWidget using importlib to handle module name starting with number
+zalo_module = importlib.import_module('ui.1zalo_automation')
+ZaloAutomationWidget = zalo_module.ZaloAutomationWidget
 
 class SidebarWidget(QWidget):
     """Sidebar navigation widget"""

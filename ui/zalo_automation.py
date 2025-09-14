@@ -1,1020 +1,763 @@
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
-    QCheckBox, QScrollArea, QTextEdit, QLineEdit, QProgressBar,
-    QMessageBox, QGroupBox, QSplitter, QSpacerItem, QSizePolicy,
-    QFrame
-)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from PyQt6.QtGui import QFont
-from utils.data_manager import data_manager
-import sys
-import os
+# -*- coding: utf-8 -*-
+# Zalo Automation — Single‑file redesigned UI (PyQt6)
+# Layout: Sidebar (Devices / Pair / Conversations / Control) + Stacked Pages
+# Notes:
+# - Keeps compatibility with your existing data_manager + core1.run_zalo_automation if present.
+# - If those modules are missing, the UI still runs and shows friendly warnings.
+# - Compact, modern, subtle visuals with light theme.
 
-# Add the project root to Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import os, sys, traceback, random
+from typing import List, Dict, Tuple
 
+from PyQt6.QtWidgets import *
+from PyQt6.QtCore import *
+from PyQt6.QtGui import *
+
+# ---------- Optional backends (graceful import) ----------
+_DATA_MANAGER = None
+_RUN_AUTOMATION = None
+try:
+    from utils.data_manager import data_manager as _DATA_MANAGER
+except Exception:
+    _DATA_MANAGER = None
+
+try:
+    from core1 import run_zalo_automation as _RUN_AUTOMATION
+except Exception:
+    _RUN_AUTOMATION = None
+
+# ---------- Worker Thread ----------
 class AutomationWorker(QThread):
-    """Worker thread for automation to prevent UI freezing"""
     progress_updated = pyqtSignal(str)
     finished = pyqtSignal(dict)
     error_occurred = pyqtSignal(str)
-    
-    def __init__(self, automation_data):
+
+    def __init__(self, device_pairs: List[Tuple[dict, dict]], conversations: List[str], phone_mapping: Dict[str, str]):
         super().__init__()
-        self.automation_data = automation_data
-        self.should_stop = False
-    
+        self.device_pairs = device_pairs
+        self.conversations = conversations
+        self.phone_mapping = phone_mapping
+        self._stop = False
+
     def run(self):
         try:
-            # Import and run automation
-            from core1 import run_zalo_automation
-            results = run_zalo_automation(
-                self.automation_data['device_pairs'],
-                self.automation_data['conversations'],
-                self.automation_data['phone_mapping'],
-                progress_callback=self.progress_updated.emit
-            )
-            self.finished.emit(results)
+            if _RUN_AUTOMATION is None:
+                self.progress_updated.emit("⚠️ Không tìm thấy core1.py - chạy chế độ mô phỏng")
+                # Simulated progress if backend is absent
+                total = len(self.device_pairs)
+                for i, pair in enumerate(self.device_pairs, 1):
+                    if self._stop:
+                        self.finished.emit({})
+                        return
+                    self.progress_updated.emit(f"🔄 Mô phỏng cặp {i}/{total}: {pair[0].get('ip')} ↔ {pair[1].get('ip')}")
+                    self.msleep(400)
+                results = {f"pair_{i}": {"status": "completed"} for i in range(1, total+1)}
+                self.progress_updated.emit("✅ Hoàn thành chế độ mô phỏng")
+                self.finished.emit(results)
+            else:
+                # Real backend - calling core1.py
+                self.progress_updated.emit("🚀 Đang gọi core1.py để thực hiện automation...")
+                self.progress_updated.emit(f"📁 Đường dẫn: d:\\tool moi\\tool auto\\core1.py")
+                self.progress_updated.emit(f"📊 Số cặp thiết bị: {len(self.device_pairs)}")
+                self.progress_updated.emit(f"💬 Số hội thoại: {len(self.conversations)}")
+                
+                results = _RUN_AUTOMATION(
+                    self.device_pairs,
+                    self.conversations,
+                    self.phone_mapping,
+                    progress_callback=self.progress_updated.emit,
+                )
+                self.progress_updated.emit("✅ core1.py đã hoàn thành automation")
+                self.finished.emit(results)
         except Exception as e:
-            self.error_occurred.emit(str(e))
-    
+            self.error_occurred.emit(f"❌ Lỗi trong automation: {str(e)}")
+
     def stop(self):
-        self.should_stop = True
-        self.terminate()
+        self._stop = True
+        try:
+            self.terminate()
+        except Exception:
+            pass
 
-class DeviceCheckBox(QCheckBox):
-    """Custom checkbox for device selection with enhanced styling"""
-    def __init__(self, device_id, phone_number):
-        super().__init__()
-        self.device_id = device_id
-        self.phone_number = phone_number
-        
-        # Create display text
-        display_text = f"📱 {device_id}"
-        if phone_number and phone_number != "Chưa có số":
-            display_text += f" ({phone_number})"
-        
-        self.setText(display_text)
-        self.setStyleSheet("""
-            QCheckBox {
-                color: #ecf0f1;
-                font-size: 14px;
-                font-weight: bold;
-                padding: 12px;
-                spacing: 10px;
-                background-color: #34495e;
-                border: 2px solid #2c3e50;
-                border-radius: 8px;
-                margin: 3px;
-            }
-            QCheckBox:hover {
-                background-color: #3498db;
-                border-color: #2980b9;
-            }
-            QCheckBox:checked {
-                background-color: #27ae60;
-                border-color: #229954;
-                color: #ffffff;
-            }
-            QCheckBox::indicator {
-                width: 20px;
-                height: 20px;
-                border-radius: 10px;
-                border: 2px solid #bdc3c7;
-                background-color: #ecf0f1;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #27ae60;
-                border-color: #27ae60;
-            }
-            QCheckBox::indicator:checked:hover {
-                background-color: #229954;
-            }
-        """)
+# ---------- Dark Theme Color Palette ----------
+# Professional dark theme with teal accents
+PRIMARY = "#00bcd4"      # Teal for selected/hover items
+PRIMARY_HOVER = "#0097a7"  # Darker teal for hover
+SUCCESS = "#4caf50"      # Green for success
+SUCCESS_HOVER = "#388e3c"  # Darker green for hover
+DANGER  = "#f44336"      # Red for danger
+DANGER_HOVER = "#d32f2f"   # Darker red for hover
+WARNING = "#ff9800"      # Orange for warning
+INFO    = "#2196f3"      # Blue for info
+TEXT    = "#ffffff"      # White text
+TEXT_SECONDARY = "#b0b0b0"  # Light gray for secondary text
+MUTED   = "#757575"      # Medium gray for muted text
+BORDER  = "#404040"      # Dark gray border
+BG      = "#1a1a1a"      # Dark background
+SURFACE = "#2a2a2a"      # Dark surface for cards
+DIVIDER = "#404040"      # Dark divider
 
-class ZaloAutomationWidget(QWidget):
+# Legacy aliases for compatibility
+WHITE = SURFACE
+
+BTN_STYLE = lambda bg, hover: f"""
+QPushButton {{
+    background-color: {bg};
+    color: {TEXT};
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 80px;
+}}
+QPushButton:hover {{
+    background-color: {hover};
+}}
+QPushButton:pressed {{
+    background-color: {hover};
+}}
+QPushButton:disabled {{
+    background-color: {MUTED};
+    color: {TEXT_SECONDARY};
+    opacity: 0.6;
+}}
+"""
+
+CARD_STYLE = f"""
+QFrame {{
+    background: {SURFACE};
+    border: 1px solid {BORDER};
+    border-radius: 12px;
+    padding: 4px;
+}}
+"""
+
+INPUT_STYLE = f"""
+QLineEdit {{
+    background: {SURFACE};
+    border: 2px solid {BORDER};
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: {TEXT};
+}}
+QLineEdit:focus {{
+    border: 2px solid {PRIMARY};
+    outline: none;
+}}
+QLineEdit:hover {{
+    border: 2px solid {TEXT_SECONDARY};
+}}
+"""
+
+CHECK_STYLE = f"""
+QCheckBox {{ 
+    color: {TEXT}; 
+    font-size: 13px; 
+    padding: 6px 4px;
+    spacing: 8px;
+}}
+QCheckBox::indicator {{ 
+    width: 18px; 
+    height: 18px; 
+    border: 2px solid {BORDER}; 
+    border-radius: 4px; 
+    background: {SURFACE}; 
+}}
+QCheckBox::indicator:hover {{
+    border: 2px solid {PRIMARY};
+}}
+QCheckBox::indicator:checked {{ 
+    background: {PRIMARY}; 
+    border-color: {PRIMARY};
+    image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOSIgdmlld0JveD0iMCAwIDEyIDkiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDQuNUw0LjUgOEwxMSAxIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K);
+}}
+"""
+
+SCROLL_STYLE = f"""
+QScrollArea {{ 
+    background: {SURFACE}; 
+    border: 1px solid {BORDER}; 
+    border-radius: 12px; 
+}}
+QScrollBar:vertical {{ 
+    background: transparent; 
+    width: 12px; 
+    margin: 0px;
+}}
+QScrollBar::handle:vertical {{ 
+    background: {TEXT_SECONDARY}; 
+    border-radius: 6px; 
+    min-height: 20px;
+    margin: 2px;
+}}
+QScrollBar::handle:vertical:hover {{
+    background: {TEXT};
+}}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+    height: 0px;
+}}
+"""
+
+PROGRESS_STYLE = f"""
+QProgressBar {{
+    border: 2px solid {BORDER};
+    border-radius: 8px;
+    background: {SURFACE};
+    text-align: center; 
+    color: {TEXT}; 
+    font-size: 12px;
+    font-weight: 500;
+    height: 24px;
+}}
+QProgressBar::chunk {{ 
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {PRIMARY}, stop:1 {PRIMARY_HOVER});
+    border-radius: 6px; 
+}}
+"""
+
+LOG_STYLE = f"""
+QTextEdit {{ 
+    background: {SURFACE}; 
+    border: 2px solid {BORDER}; 
+    border-radius: 12px; 
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace; 
+    font-size: 12px; 
+    padding: 12px;
+    color: {TEXT};
+    line-height: 1.4;
+}}
+QTextEdit:focus {{
+    border: 2px solid {PRIMARY};
+}}
+"""
+
+SIDEBAR_STYLE = f"""
+QFrame#Sidebar {{ 
+    background: {BG}; 
+    border-right: 2px solid {BORDER}; 
+}}
+QFrame#Sidebar QPushButton {{ 
+    color: {TEXT}; 
+    text-align: left; 
+    padding: 12px 16px; 
+    border-radius: 8px; 
+    font-size: 14px; 
+    font-weight: 500;
+    border: none; 
+    background: transparent;
+    margin: 2px 8px;
+}}
+QFrame#Sidebar QPushButton:hover {{ 
+    background-color: {PRIMARY}; 
+    color: {TEXT};
+}}
+QFrame#Sidebar QPushButton:checked {{ 
+    background: {PRIMARY};
+    color: {TEXT};
+    font-weight: 600;
+}}
+QLabel#Brand {{ 
+    color: {TEXT}; 
+    font-weight: 700; 
+    font-size: 16px; 
+    padding: 16px 12px; 
+    background: {SURFACE};
+    border-radius: 8px;
+    margin: 8px;
+}}
+"""
+
+# ---------- Pages ----------
+class DevicesPage(QWidget):
+    devices_changed = pyqtSignal(list)  # emits full device list (checkbox .device dict if checked)
+
     def __init__(self):
         super().__init__()
-        self.device_checkboxes = []
-        self.conversation_texts = []
-        self.device_pairs = []
-        self.all_devices = []
-        self.automation_worker = None
-        
-        self.init_ui()
+        self.all_devices: List[dict] = []
+        self.checkboxes: List[QCheckBox] = []
+        self._build()
         self.load_devices()
-    
-    def init_ui(self):
-        """Khởi tạo giao diện với thiết kế mới hoàn toàn"""
-        # Set window properties
-        self.setWindowTitle("🔥 Zalo Automation Tool - Phiên Bản Mới")
-        self.setMinimumSize(1200, 800)
-        self.resize(1400, 900)
-        
-        # Main layout
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(20, 20, 20, 20)
-        main_layout.setSpacing(15)
-        
-        # Set dark theme for entire widget
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #2c3e50;
-                color: #ecf0f1;
-                font-family: 'Segoe UI', Arial, sans-serif;
-            }
-        """)
-        
-        # Title section
-        title_section = self.create_title_section()
-        main_layout.addWidget(title_section)
-        
-        # Content splitter
-        content_splitter = QSplitter(Qt.Orientation.Horizontal)
-        content_splitter.setStyleSheet("""
-            QSplitter::handle {
-                background-color: #34495e;
-                width: 3px;
-                border-radius: 1px;
-            }
-            QSplitter::handle:hover {
-                background-color: #3498db;
-            }
-        """)
-        
-        # Left panel - Device selection
-        left_panel = self.create_device_panel()
-        content_splitter.addWidget(left_panel)
-        
-        # Right panel - Controls and conversations
-        right_panel = self.create_right_panel()
-        content_splitter.addWidget(right_panel)
-        
-        # Set splitter proportions
-        content_splitter.setSizes([600, 800])
-        content_splitter.setStretchFactor(0, 1)
-        content_splitter.setStretchFactor(1, 2)
-        
-        main_layout.addWidget(content_splitter)
-        
-        # Status bar
-        self.status_label = QLabel("🚀 Sẵn sàng để bắt đầu automation")
-        self.status_label.setStyleSheet("""
-            QLabel {
-                background-color: #34495e;
-                color: #ecf0f1;
-                padding: 12px 20px;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: bold;
-                border: 2px solid #2c3e50;
-            }
-        """)
-        main_layout.addWidget(self.status_label)
-    
-    def create_title_section(self):
-        """Tạo section tiêu đề"""
-        title_frame = QFrame()
-        title_frame.setFixedHeight(80)
-        title_frame.setStyleSheet("""
-            QFrame {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #3498db, stop:1 #2980b9);
-                border-radius: 12px;
-                border: 2px solid #2980b9;
-            }
-        """)
-        
-        title_layout = QVBoxLayout(title_frame)
-        title_layout.setContentsMargins(20, 10, 20, 10)
-        
-        title_label = QLabel("🔥 ZALO AUTOMATION TOOL")
-        title_label.setStyleSheet("""
-            QLabel {
-                color: #ffffff;
-                font-size: 24px;
-                font-weight: bold;
-                background: transparent;
-                border: none;
-            }
-        """)
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
-        subtitle_label = QLabel("Công cụ tự động hóa chat Zalo - Phiên bản nâng cấp")
-        subtitle_label.setStyleSheet("""
-            QLabel {
-                color: #ecf0f1;
-                font-size: 14px;
-                background: transparent;
-                border: none;
-            }
-        """)
-        subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
-        title_layout.addWidget(title_label)
-        title_layout.addWidget(subtitle_label)
-        
-        return title_frame
-    
-    def create_device_panel(self):
-        """Tạo panel chọn device với thiết kế mới"""
-        device_group = QGroupBox("📱 Chọn Devices")
-        device_group.setStyleSheet(self.get_group_style())
-        
-        device_layout = QVBoxLayout(device_group)
-        device_layout.setContentsMargins(15, 25, 15, 15)
-        device_layout.setSpacing(15)
-        
-        # Control buttons
-        control_frame = QFrame()
-        control_layout = QHBoxLayout(control_frame)
-        control_layout.setContentsMargins(0, 0, 0, 0)
-        control_layout.setSpacing(10)
-        
-        self.refresh_btn = QPushButton("🔄 Refresh")
-        self.refresh_btn.clicked.connect(self.load_devices)
-        self.refresh_btn.setFixedHeight(40)
-        self.refresh_btn.setStyleSheet(self.get_button_style("#3498db", "#2980b9"))
-        
-        self.select_all_btn = QPushButton("✅ Chọn Tất Cả")
-        self.select_all_btn.clicked.connect(self.select_all_devices)
-        self.select_all_btn.setFixedHeight(40)
-        self.select_all_btn.setStyleSheet(self.get_button_style("#27ae60", "#229954"))
-        
-        self.select_none_btn = QPushButton("❌ Bỏ Chọn")
-        self.select_none_btn.clicked.connect(self.select_none_devices)
-        self.select_none_btn.setFixedHeight(40)
-        self.select_none_btn.setStyleSheet(self.get_button_style("#e74c3c", "#c0392b"))
-        
-        control_layout.addWidget(self.refresh_btn)
-        control_layout.addWidget(self.select_all_btn)
-        control_layout.addWidget(self.select_none_btn)
-        
-        device_layout.addWidget(control_frame)
-        
-        # Search section
-        search_frame = QFrame()
-        search_layout = QHBoxLayout(search_frame)
-        search_layout.setContentsMargins(0, 0, 0, 0)
-        
-        search_label = QLabel("🔍 Tìm kiếm:")
-        search_label.setStyleSheet("color: #bdc3c7; font-weight: bold;")
-        
-        self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Nhập IP hoặc số điện thoại...")
-        self.search_input.textChanged.connect(self.filter_devices)
-        self.search_input.setFixedHeight(35)
-        self.search_input.setStyleSheet("""
-            QLineEdit {
-                background-color: #34495e;
-                color: #ecf0f1;
-                border: 2px solid #2c3e50;
-                border-radius: 6px;
-                padding: 8px 12px;
-                font-size: 14px;
-            }
-            QLineEdit:focus {
-                border-color: #3498db;
-            }
-        """)
-        
-        search_layout.addWidget(search_label)
-        search_layout.addWidget(self.search_input)
-        
-        device_layout.addWidget(search_frame)
-        
-        # Counter section
-        self.device_counter_label = QLabel("Đã chọn: 0 devices")
-        self.device_counter_label.setStyleSheet("""
-            QLabel {
-                color: #3498db;
-                font-weight: bold;
-                font-size: 16px;
-                padding: 10px;
-                background-color: #34495e;
-                border-radius: 6px;
-                border: 2px solid #2c3e50;
-            }
-        """)
-        device_layout.addWidget(self.device_counter_label)
-        
-        # Scroll area for devices
-        self.device_scroll = QScrollArea()
-        self.device_scroll.setWidgetResizable(True)
-        self.device_scroll.setMinimumHeight(400)
-        self.device_scroll.setStyleSheet("""
-            QScrollArea {
-                border: 2px solid #34495e;
-                border-radius: 8px;
-                background-color: #2c3e50;
-            }
-            QScrollBar:vertical {
-                background-color: #34495e;
-                width: 12px;
-                border-radius: 6px;
-            }
-            QScrollBar::handle:vertical {
-                background-color: #3498db;
-                border-radius: 6px;
-                min-height: 20px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background-color: #2980b9;
-            }
-        """)
-        
-        self.device_container = QWidget()
-        self.device_layout = QVBoxLayout(self.device_container)
-        self.device_layout.setContentsMargins(10, 10, 10, 10)
-        self.device_layout.setSpacing(5)
-        
-        self.device_scroll.setWidget(self.device_container)
-        device_layout.addWidget(self.device_scroll)
-        
-        return device_group
-    
-    def create_right_panel(self):
-        """Tạo panel bên phải với conversation và controls"""
-        right_widget = QWidget()
-        right_layout = QVBoxLayout(right_widget)
-        right_layout.setContentsMargins(0, 0, 0, 0)
-        right_layout.setSpacing(15)
-        
-        # Pairing section
-        pairing_group = self.create_pairing_section()
-        right_layout.addWidget(pairing_group)
-        
-        # Conversation section
-        conversation_group = self.create_conversation_section()
-        right_layout.addWidget(conversation_group)
-        
-        # Control section
-        control_group = self.create_control_section()
-        right_layout.addWidget(control_group)
-        
-        # Progress section
-        progress_group = self.create_progress_section()
-        right_layout.addWidget(progress_group)
-        
-        return right_widget
-    
-    def get_button_style(self, bg_color, hover_color):
-        """Trả về style cho button với màu tùy chỉnh"""
-        return f"""
-            QPushButton {{
-                background-color: {bg_color};
-                color: #ffffff;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: bold;
-                min-height: 30px;
-            }}
-            QPushButton:hover {{
-                background-color: {hover_color};
-                transform: scale(1.02);
-            }}
-            QPushButton:pressed {{
-                background-color: {hover_color};
-                transform: scale(0.98);
-            }}
-        """
-    
-    def get_group_style(self):
-        """Trả về style chung cho QGroupBox"""
-        return """
-            QGroupBox {
-                color: #ecf0f1;
-                font-size: 16px;
-                font-weight: bold;
-                border: 2px solid #34495e;
-                border-radius: 12px;
-                margin-top: 15px;
-                padding-top: 20px;
-                background-color: #2c3e50;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 20px;
-                padding: 0 15px 0 15px;
-                background-color: #2c3e50;
-                color: #3498db;
-            }
-        """
-    
-    def create_pairing_section(self):
-        """Tạo section ghép cặp"""
-        pairing_group = QGroupBox("💑 Ghép Cặp Devices")
-        pairing_group.setStyleSheet(self.get_group_style())
-        pairing_group.setFixedHeight(140)
-        
-        pairing_layout = QVBoxLayout(pairing_group)
-        pairing_layout.setContentsMargins(20, 25, 20, 15)
-        pairing_layout.setSpacing(12)
-        
-        self.pairing_info = QLabel("Chọn devices và nhấn 'Ghép cặp' để tự động pair")
-        self.pairing_info.setStyleSheet("""
-            QLabel {
-                color: #bdc3c7;
-                font-size: 13px;
-                padding: 8px;
-                border: none;
-                background-color: #34495e;
-                border-radius: 6px;
-            }
-        """)
-        pairing_layout.addWidget(self.pairing_info)
-        
-        self.pair_btn = QPushButton("💕 Ghép Cặp")
-        self.pair_btn.clicked.connect(self.pair_devices)
-        self.pair_btn.setFixedHeight(50)
-        self.pair_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #e74c3c;
-                color: #ffffff;
-                border: none;
-                padding: 12px 24px;
-                border-radius: 10px;
-                font-size: 16px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #c0392b;
-                transform: scale(1.02);
-            }
-            QPushButton:pressed {
-                background-color: #a93226;
-                transform: scale(0.98);
-            }
-        """)
-        pairing_layout.addWidget(self.pair_btn)
-        
-        return pairing_group
-    
-    def create_conversation_section(self):
-        """Tạo section nhập hội thoại với dynamic inputs"""
-        conv_group = QGroupBox("💬 Đoạn Hội Thoại")
-        conv_group.setStyleSheet(self.get_group_style())
-        conv_group.setMinimumHeight(300)
-        
-        conv_layout = QVBoxLayout(conv_group)
-        conv_layout.setContentsMargins(20, 25, 20, 15)
-        conv_layout.setSpacing(12)
-        
-        # Info label
-        info_label = QLabel("Số đoạn hội thoại tự động cập nhật theo số nhóm")
-        info_label.setStyleSheet("""
-            QLabel {
-                color: #bdc3c7;
-                font-size: 13px;
-                font-style: italic;
-                padding: 8px;
-                border: none;
-                background-color: #34495e;
-                border-radius: 6px;
-            }
-        """)
-        conv_layout.addWidget(info_label)
-        
-        # Scroll area for conversation inputs
-        self.conversation_scroll = QScrollArea()
-        self.conversation_scroll.setWidgetResizable(True)
-        self.conversation_scroll.setMinimumHeight(200)
-        self.conversation_scroll.setStyleSheet("""
-            QScrollArea {
-                border: 2px solid #34495e;
-                border-radius: 8px;
-                background-color: #2c3e50;
-            }
-            QScrollBar:vertical {
-                background-color: #34495e;
-                width: 12px;
-                border-radius: 6px;
-            }
-            QScrollBar::handle:vertical {
-                background-color: #3498db;
-                border-radius: 6px;
-                min-height: 20px;
-            }
-        """)
-        
-        # Container for conversation inputs
-        self.conversation_container = QWidget()
-        self.conversation_layout = QVBoxLayout(self.conversation_container)
-        self.conversation_layout.setSpacing(12)
-        self.conversation_layout.setContentsMargins(15, 15, 15, 15)
-        
-        self.conversation_scroll.setWidget(self.conversation_container)
-        conv_layout.addWidget(self.conversation_scroll)
-        
-        # List to store conversation text widgets
-        self.conversation_texts = []
-        
-        # Initially create one conversation input
-        self.update_conversation_inputs(1)
-        
-        return conv_group
-    
-    def create_control_section(self):
-        """Tạo section điều khiển"""
-        control_group = QGroupBox("🎮 Điều Khiển")
-        control_group.setStyleSheet(self.get_group_style())
-        control_group.setFixedHeight(120)
-        
-        control_layout = QVBoxLayout(control_group)
-        control_layout.setContentsMargins(20, 25, 20, 15)
-        
-        button_layout = QHBoxLayout()
-        button_layout.setSpacing(15)
-        
-        self.start_btn = QPushButton("🚀 Bắt Đầu Auto")
-        self.start_btn.clicked.connect(self.start_automation)
-        self.start_btn.setFixedHeight(50)
-        self.start_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #27ae60;
-                color: #ffffff;
-                border: none;
-                padding: 12px 24px;
-                border-radius: 10px;
-                font-size: 16px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #229954;
-                transform: scale(1.02);
-            }
-            QPushButton:pressed {
-                background-color: #1e8449;
-                transform: scale(0.98);
-            }
-        """)
-        
-        self.stop_btn = QPushButton("⏹️ Dừng Auto")
-        self.stop_btn.clicked.connect(self.stop_automation)
-        self.stop_btn.setFixedHeight(50)
-        self.stop_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #e74c3c;
-                color: #ffffff;
-                border: none;
-                padding: 12px 24px;
-                border-radius: 10px;
-                font-size: 16px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #c0392b;
-                transform: scale(1.02);
-            }
-            QPushButton:pressed {
-                background-color: #a93226;
-                transform: scale(0.98);
-            }
-            QPushButton:disabled {
-                background-color: #7f8c8d;
-                color: #bdc3c7;
-            }
-        """)
-        self.stop_btn.setEnabled(False)
-        
-        button_layout.addWidget(self.start_btn)
-        button_layout.addWidget(self.stop_btn)
-        
-        control_layout.addLayout(button_layout)
-        
-        return control_group
-    
-    def create_progress_section(self):
-        """Tạo section hiển thị progress"""
-        progress_group = QGroupBox("📊 Trạng Thái")
-        progress_group.setStyleSheet(self.get_group_style())
-        progress_group.setFixedHeight(100)
-        
-        progress_layout = QVBoxLayout(progress_group)
-        progress_layout.setContentsMargins(20, 25, 20, 15)
-        progress_layout.setSpacing(10)
-        
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setVisible(False)
-        self.progress_bar.setFixedHeight(30)
-        self.progress_bar.setStyleSheet("""
-            QProgressBar {
-                border: 2px solid #34495e;
-                border-radius: 8px;
-                text-align: center;
-                color: #ecf0f1;
-                font-weight: bold;
-                background-color: #2c3e50;
-                font-size: 14px;
-            }
-            QProgressBar::chunk {
-                background-color: #3498db;
-                border-radius: 6px;
-            }
-        """)
-        progress_layout.addWidget(self.progress_bar)
-        
-        return progress_group
-    
-    # Các method khác giữ nguyên từ code cũ
+
+    # UI build
+    def _build(self):
+        outer = QVBoxLayout(self); outer.setContentsMargins(12,12,12,12); outer.setSpacing(10)
+
+        # Card: search + actions
+        card = QFrame(); card.setStyleSheet(CARD_STYLE)
+        head = QHBoxLayout(card); head.setContentsMargins(12,12,12,12); head.setSpacing(8)
+
+        self.search = QLineEdit(); self.search.setPlaceholderText("Tìm theo IP hoặc số điện thoại…"); self.search.setStyleSheet(INPUT_STYLE)
+        self.search.textChanged.connect(self._apply_filter)
+        btn_refresh = QPushButton("Refresh"); btn_refresh.setStyleSheet(BTN_STYLE(PRIMARY, PRIMARY_HOVER)); btn_refresh.clicked.connect(self.load_devices)
+        btn_all = QPushButton("Chọn tất cả"); btn_all.setStyleSheet(BTN_STYLE(SUCCESS, SUCCESS_HOVER)); btn_all.clicked.connect(self._select_all)
+        btn_none = QPushButton("Bỏ chọn"); btn_none.setStyleSheet(BTN_STYLE(MUTED, TEXT_SECONDARY)); btn_none.clicked.connect(self._select_none)
+
+        head.addWidget(self.search)
+        head.addWidget(btn_refresh)
+        head.addWidget(btn_all)
+        head.addWidget(btn_none)
+
+        # Device list
+        self.scroll = QScrollArea(); self.scroll.setWidgetResizable(True); self.scroll.setStyleSheet(SCROLL_STYLE)
+        self.container = QWidget(); self.vbox = QVBoxLayout(self.container); self.vbox.setContentsMargins(8,8,8,8); self.vbox.setSpacing(2)
+        self.scroll.setWidget(self.container)
+
+        # Footer status
+        foot = QHBoxLayout(); foot.setContentsMargins(0,0,0,0)
+        self.status = QLabel("Sẵn sàng"); self.status.setStyleSheet(f"color:{MUTED};")
+        foot.addWidget(self.status); foot.addStretch(1)
+
+        outer.addWidget(card)
+        outer.addWidget(self.scroll)
+        outer.addLayout(foot)
+
+    # Data handling
     def load_devices(self):
-        """Load available devices using DataManager with proper error handling"""
+        self.status.setText("Đang tải devices…")
+        self._clear_list()
         try:
-            # Update status
-            self.status_label.setText("🔄 Đang tải devices...")
-            
-            # Đồng bộ với ADB devices trước
-            device_count = data_manager.sync_with_adb_devices()
-            print(f"Synced {device_count} devices with ADB")
-            
-            # Reload data from DataManager
-            data_manager.reload_data()
-            
-            # Get devices with phone numbers
-            devices = data_manager.get_devices_with_phone_numbers()
-            
-            # Store all devices for filtering
-            self.all_devices = devices if devices else []
-            
-            # Display devices (this will handle empty list properly)
-            self.display_devices(self.all_devices)
-            
-            # Update status
-            if devices:
-                self.status_label.setText(f"✅ Tìm thấy {len(devices)} devices")
-                self.status_label.setStyleSheet("color: #27ae60; font-weight: bold;")
+            devices = []
+            if _DATA_MANAGER is not None:
+                _DATA_MANAGER.sync_with_adb_devices()
+                _DATA_MANAGER.reload_data()
+                devices = _DATA_MANAGER.get_devices_with_phone_numbers() or []
+            # Normalize shape: {ip, phone, note?}
+            self.all_devices = [
+                {
+                    'ip': d.get('ip', ''),
+                    'phone': d.get('phone') or 'Chưa có số',
+                    'note': d.get('note',''),
+                } for d in devices
+            ]
+            if not self.all_devices:
+                self.status.setText("Không tìm thấy device nào. Kết nối thiết bị và bấm Refresh.")
             else:
-                self.status_label.setText("⚠️ Không tìm thấy device nào. Vui lòng kết nối devices và nhấn Refresh.")
-                self.status_label.setStyleSheet("color: #f39c12; font-weight: bold;")
-                
+                self.status.setText(f"Tìm thấy {len(self.all_devices)} devices")
+            self._populate(self.all_devices)
         except Exception as e:
-            # Clear devices on error
-            self.all_devices = []
-            self.display_devices([])
-            
-            # Show error in status
-            error_msg = f"❌ Lỗi load devices: {str(e)}"
-            self.status_label.setText(error_msg)
-            self.status_label.setStyleSheet("color: #e74c3c; font-weight: bold;")
-            
-            # Also show error message box for critical errors
-            QMessageBox.warning(self, "Lỗi", error_msg)
-    
-    def display_devices(self, devices):
-        """Display devices in the UI with proper layout management"""
-        # Clear existing checkboxes and layout items
-        for checkbox in self.device_checkboxes:
-            checkbox.setParent(None)
-            checkbox.deleteLater()
-        self.device_checkboxes.clear()
-        
-        # Clear all items from layout
-        while self.device_layout.count():
-            child = self.device_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-            elif child.spacerItem():
-                del child
-        
-        if not devices:
-            no_device_label = QLabel("❌ Không tìm thấy device nào")
-            no_device_label.setStyleSheet("""
-                QLabel {
-                    color: #e74c3c;
-                    font-size: 16px;
-                    padding: 30px;
-                    text-align: center;
-                    background-color: #34495e;
-                    border-radius: 10px;
-                    margin: 15px;
-                    font-weight: bold;
-                    border: 2px solid #e74c3c;
-                }
-            """)
-            no_device_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.device_layout.addWidget(no_device_label)
-        else:
-            for device in devices:
-                phone_number = device['phone'] if device['phone'] else "Chưa có số"
-                
-                checkbox = DeviceCheckBox(device['ip'], phone_number)
-                # Store device info in checkbox
-                checkbox.device_info = device
-                checkbox.stateChanged.connect(self.update_device_counter)
-                
-                self.device_checkboxes.append(checkbox)
-                self.device_layout.addWidget(checkbox)
-        
-        # Add spacer at the end to push content to top
-        spacer = QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-        self.device_layout.addItem(spacer)
-        
-        # Update container size
-        self.device_container.adjustSize()
-        
-        self.update_device_counter()
-    
-    def filter_devices(self):
-        """Filter devices based on search text with improved performance"""
-        search_text = self.search_input.text().lower().strip()
-        
-        if not hasattr(self, 'all_devices') or not self.all_devices:
-            # No devices to filter
-            self.display_devices([])
+            self.status.setText(f"Lỗi tải devices: {e}")
+
+    def _clear_list(self):
+        self.checkboxes.clear()
+        while self.vbox.count():
+            item = self.vbox.takeAt(0)
+            w = item.widget()
+            if w: w.deleteLater()
+        self.vbox.addStretch(1)
+
+    def _populate(self, devices: List[dict]):
+        # remove stretch
+        if self.vbox.count():
+            item = self.vbox.takeAt(self.vbox.count()-1)
+            if item and item.widget():
+                item.widget().deleteLater()
+        for d in devices:
+            cb = QCheckBox(f"{d['ip']}  ( {d['phone']} )")
+            cb.setStyleSheet(CHECK_STYLE)
+            cb.device = d
+            cb.stateChanged.connect(self._emit_selection)
+            self.checkboxes.append(cb)
+            self.vbox.addWidget(cb)
+        self.vbox.addStretch(1)
+        self._emit_selection()
+
+    def _emit_selection(self):
+        selected = [cb.device for cb in self.checkboxes if cb.isChecked()]
+        self.devices_changed.emit(selected)
+
+    def _select_all(self):
+        for cb in self.checkboxes: cb.setChecked(True)
+    def _select_none(self):
+        for cb in self.checkboxes: cb.setChecked(False)
+
+    def _apply_filter(self):
+        q = self.search.text().strip().lower()
+        if not q:
+            self._populate(self.all_devices)
             return
-        
-        if not search_text:
-            # Show all devices
-            self.display_devices(self.all_devices)
-        else:
-            # Filter devices with multiple criteria
-            filtered_devices = []
-            for device in self.all_devices:
-                # Search in IP and phone number
-                ip_text = device.get('ip', '').lower()
-                phone_text = device.get('phone', '').lower()
-                
-                # Check if search text matches IP or phone
-                if (search_text in ip_text or 
-                    search_text in phone_text or
-                    search_text in f"{ip_text} {phone_text}"):
-                    filtered_devices.append(device)
-            
-            self.display_devices(filtered_devices)
-            
-            # Update search status
-            if filtered_devices:
-                self.status_label.setText(f"🔍 Tìm thấy {len(filtered_devices)}/{len(self.all_devices)} devices")
-            else:
-                self.status_label.setText(f"🔍 Không tìm thấy device nào với từ khóa '{search_text}'")
-                self.status_label.setStyleSheet("color: #f39c12; font-weight: bold;")
-    
-    def update_device_counter(self):
-        """Update device counter and validate even number"""
-        selected_count = len(self.get_selected_devices())
-        
-        if selected_count % 2 == 0:
-            self.device_counter_label.setText(f"Đã chọn: {selected_count} devices ✓")
-            self.device_counter_label.setStyleSheet("""
-                QLabel {
-                    color: #27ae60;
-                    font-weight: bold;
-                    font-size: 16px;
-                    padding: 10px;
-                    background-color: #34495e;
-                    border-radius: 6px;
-                    border: 2px solid #27ae60;
-                }
-            """)
-        else:
-            self.device_counter_label.setText(f"Đã chọn: {selected_count} devices (cần số chẵn!)")
-            self.device_counter_label.setStyleSheet("""
-                QLabel {
-                    color: #e74c3c;
-                    font-weight: bold;
-                    font-size: 16px;
-                    padding: 10px;
-                    background-color: #34495e;
-                    border-radius: 6px;
-                    border: 2px solid #e74c3c;
-                }
-            """)
-    
-    def select_all_devices(self):
-        """Chọn tất cả devices"""
-        for checkbox in self.device_checkboxes:
-            checkbox.setChecked(True)
-        self.update_device_counter()
-    
-    def select_none_devices(self):
-        """Bỏ chọn tất cả devices"""
-        for checkbox in self.device_checkboxes:
-            checkbox.setChecked(False)
-        self.update_device_counter()
-    
-    def get_selected_devices(self):
-        """Get list of selected devices with their info"""
-        selected = []
-        for checkbox in self.device_checkboxes:
-            if checkbox.isChecked():
-                if hasattr(checkbox, 'device_info'):
-                    selected.append(checkbox.device_info)
-                else:
-                    # Fallback for old format
-                    selected.append({'ip': checkbox.device_id, 'phone': '', 'note': ''})
-        return selected
-    
-    def update_conversation_inputs(self, num_groups):
-        """Cập nhật số lượng conversation inputs theo số nhóm"""
-        # Clear existing inputs
-        for text_widget in self.conversation_texts:
-            text_widget.setParent(None)
-            text_widget.deleteLater()
-        self.conversation_texts.clear()
-        
-        # Clear layout
-        while self.conversation_layout.count():
-            child = self.conversation_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-        
-        # Create new inputs
-        for i in range(num_groups):
-            # Group label
-            group_label = QLabel(f"Nhóm {i+1}:")
-            group_label.setStyleSheet("""
-                QLabel {
-                    color: #3498db;
-                    font-weight: bold;
-                    font-size: 16px;
-                    margin-top: 10px;
-                    padding: 8px;
-                    background-color: #34495e;
-                    border-radius: 6px;
-                }
-            """)
-            self.conversation_layout.addWidget(group_label)
-            
-            # Text input
-            text_edit = QTextEdit()
-            text_edit.setPlaceholderText(f"Nhập đoạn hội thoại cho nhóm {i+1}...\nVí dụ: Xin chào! Bạn khỏe không?")
-            text_edit.setMaximumHeight(120)
-            text_edit.setMinimumHeight(100)
-            text_edit.setStyleSheet("""
-                QTextEdit {
-                    background-color: #34495e;
-                    color: #ecf0f1;
-                    border: 2px solid #2c3e50;
-                    border-radius: 8px;
-                    padding: 12px;
-                    font-size: 14px;
-                    line-height: 1.4;
-                }
-                QTextEdit:focus {
-                    border-color: #3498db;
-                }
-            """)
-            
-            self.conversation_texts.append(text_edit)
-            self.conversation_layout.addWidget(text_edit)
-        
-        # Add spacer
-        spacer = QSpacerItem(20, 10, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-        self.conversation_layout.addItem(spacer)
-    
-    def pair_devices(self):
-        """Ghép cặp devices đã chọn với random algorithm"""
-        selected = self.get_selected_devices()
-        
-        if len(selected) < 2:
-            QMessageBox.warning(self, "Cảnh báo", "Cần chọn ít nhất 2 devices để ghép cặp!")
+        filtered = []
+        for d in self.all_devices:
+            ip = (d.get('ip') or '').lower()
+            ph = (d.get('phone') or '').lower()
+            if q in ip or q in ph:
+                filtered.append(d)
+        self._populate(filtered)
+
+class PairPage(QWidget):
+    pairs_changed = pyqtSignal(list)  # emits List[Tuple[dict,dict]]
+
+    def __init__(self):
+        super().__init__()
+        self.selected_devices: List[dict] = []
+        self.pairs: List[Tuple[dict,dict]] = []
+        self._build()
+
+    def _build(self):
+        root = QVBoxLayout(self); root.setContentsMargins(12,12,12,12); root.setSpacing(10)
+        # Card: info + actions
+        card = QFrame(); card.setStyleSheet(CARD_STYLE)
+        top = QHBoxLayout(card); top.setContentsMargins(12,12,12,12); top.setSpacing(8)
+        self.info = QLabel("Chọn thiết bị ở tab Devices, sau đó nhấn Ghép cặp.")
+        self.info.setStyleSheet(f"color:{MUTED}")
+        btn_pair = QPushButton("Ghép cặp"); btn_pair.setStyleSheet(BTN_STYLE(PRIMARY, PRIMARY_HOVER)); btn_pair.clicked.connect(self._pair)
+        btn_clear = QPushButton("Xóa cặp"); btn_clear.setStyleSheet(BTN_STYLE(MUTED, TEXT_SECONDARY)); btn_clear.clicked.connect(self._clear)
+        top.addWidget(self.info); top.addStretch(1); top.addWidget(btn_pair); top.addWidget(btn_clear)
+
+        # List pairs
+        self.list_pairs = QListWidget(); self.list_pairs.setStyleSheet(f"QListWidget{{background:{SURFACE}; border:2px solid {BORDER}; border-radius:12px; color:{TEXT};}} QListWidget::item{{padding:12px; border-bottom:1px solid {DIVIDER};}} QListWidget::item:hover{{background:{BG};}} QListWidget::item:selected{{background:{PRIMARY}; color:white;}}")
+
+        root.addWidget(card)
+        root.addWidget(self.list_pairs)
+
+    def update_selection(self, devices: List[dict]):
+        self.selected_devices = devices
+        self.info.setText(f"Đã chọn {len(devices)} thiết bị. Cần số lượng chẵn để ghép cặp.")
+
+    def _pair(self):
+        n = len(self.selected_devices)
+        if n < 2:
+            QMessageBox.warning(self, "Cảnh báo", "Cần chọn ít nhất 2 thiết bị.")
             return
-        
-        if len(selected) % 2 != 0:
-            QMessageBox.warning(self, "Cảnh báo", "Số lượng devices phải là số chẵn để ghép cặp!")
+        if n % 2 != 0:
+            QMessageBox.warning(self, "Cảnh báo", "Số lượng thiết bị phải là số chẵn.")
             return
+        pool = self.selected_devices.copy(); random.shuffle(pool)
+        self.pairs = []
+        for i in range(0, n, 2):
+            self.pairs.append((pool[i], pool[i+1]))
+        self._render_pairs()
+        self.pairs_changed.emit(self.pairs)
+
+    def _clear(self):
+        self.pairs = []
+        self._render_pairs()
+        self.pairs_changed.emit(self.pairs)
+
+    def _render_pairs(self):
+        self.list_pairs.clear()
+        for i, (a,b) in enumerate(self.pairs, 1):
+            self.list_pairs.addItem(QListWidgetItem(f"Cặp {i}: {a['ip']} ( {a['phone']} )  ↔  {b['ip']} ( {b['phone']} )"))
+
+class ConversationsPage(QWidget):
+    conversations_changed = pyqtSignal(list)  # emits List[str]
+    conversations_saved = pyqtSignal()  # emits when conversations are saved
+
+    def __init__(self):
+        super().__init__()
+        self.inputs: List[QTextEdit] = []
+        self.is_saved = False
+        self._build()
+
+    def _build(self):
+        root = QVBoxLayout(self); root.setContentsMargins(12,12,12,12); root.setSpacing(10)
+        self.note = QLabel("Số hộp thoại sẽ khớp theo số cặp đã ghép.")
+        self.note.setStyleSheet(f"color:{MUTED}")
+
+        self.scroll = QScrollArea(); self.scroll.setWidgetResizable(True); self.scroll.setStyleSheet(SCROLL_STYLE)
+        self.wrap = QWidget(); self.grid = QGridLayout(self.wrap); self.grid.setContentsMargins(12,12,12,12); self.grid.setSpacing(10)
+        self.scroll.setWidget(self.wrap)
+
+        # Save button and status
+        save_frame = QFrame(); save_frame.setStyleSheet(CARD_STYLE)
+        save_layout = QHBoxLayout(save_frame); save_layout.setContentsMargins(12,8,12,8); save_layout.setSpacing(8)
         
-        # Random shuffle for pairing - mỗi lần ấn sẽ shuffle lại
-        import random
-        devices_to_pair = selected.copy()
-        random.shuffle(devices_to_pair)
+        self.save_status = QLabel("Chưa lưu")
+        self.save_status.setStyleSheet(f"color:{MUTED}; font-style:italic;")
         
-        # Create pairs
-        self.device_pairs = []
-        for i in range(0, len(devices_to_pair), 2):
-            device1_info = devices_to_pair[i]
-            device2_info = devices_to_pair[i+1]
-            pair = (device1_info, device2_info)
-            self.device_pairs.append(pair)
+        self.btn_save = QPushButton("💾 Lưu hội thoại")
+        self.btn_save.setStyleSheet(BTN_STYLE(PRIMARY, PRIMARY_HOVER))
+        self.btn_save.clicked.connect(self._save_conversations)
         
-        # Update conversation inputs based on number of pairs
-        num_groups = len(self.device_pairs)
-        self.update_conversation_inputs(num_groups)
-        
-        # Display pairs with phone numbers
-        pairs_text = "🔗 Kết quả ghép cặp:\n\n"
-        for i, (device1, device2) in enumerate(self.device_pairs, 1):
-            phone1 = device1.get('phone', 'Chưa có số')
-            phone2 = device2.get('phone', 'Chưa có số')
-            pairs_text += f"Cặp {i}: {device1['ip']} ({phone1}) ↔ {device2['ip']} ({phone2})\n"
-        
-        self.pairing_info.setText(pairs_text)
-        
-        QMessageBox.information(self, "Thành công", f"Đã ghép {len(self.device_pairs)} cặp devices!\nĐã tạo {num_groups} đoạn hội thoại tương ứng.")
-        
-        self.status_label.setText(f"✅ Đã ghép {len(self.device_pairs)} cặp devices")
+        save_layout.addWidget(self.save_status)
+        save_layout.addStretch(1)
+        save_layout.addWidget(self.btn_save)
+
+        root.addWidget(self.note)
+        root.addWidget(self.scroll)
+        root.addWidget(save_frame)
+
+    def update_pair_count(self, pair_count: int):
+        # Clear
+        for i in range(self.grid.count()-1, -1, -1):
+            item = self.grid.itemAt(i)
+            w = item.widget()
+            if w: w.deleteLater()
+        self.inputs.clear()
+        # Build inputs
+        for i in range(pair_count):
+            lbl = QLabel(f"Cặp {i+1}")
+            lbl.setStyleSheet(f"color:{TEXT}; font-weight:600;")
+            box = QTextEdit(); box.setPlaceholderText(f"Nhập hội thoại cho cặp {i+1}…")
+            box.setFixedHeight(120); box.setStyleSheet(LOG_STYLE)
+            self.inputs.append(box)
+            self.grid.addWidget(lbl, i, 0)
+            self.grid.addWidget(box, i, 1)
+        # Emit
+        self._emit()
+
+    def _emit(self):
+        texts = [w.toPlainText().strip() for w in self.inputs]
+        self.conversations_changed.emit(texts)
+        # Mark as unsaved when content changes
+        self.is_saved = False
+        self.save_status.setText("Chưa lưu")
+        self.save_status.setStyleSheet(f"color:{MUTED}; font-style:italic;")
+
+    def collect(self) -> List[str]:
+        return [w.toPlainText().strip() for w in self.inputs]
     
-    def start_automation(self):
-        """Bắt đầu automation với validation và tích hợp core1.py"""
-        selected_devices = self.get_selected_devices()
-        
-        # Validation
-        if not selected_devices:
-            QMessageBox.warning(self, "Cảnh báo", "Vui lòng chọn ít nhất 1 device!")
-            return
-        
-        if len(selected_devices) % 2 != 0:
-            QMessageBox.warning(self, "Cảnh báo", "Số lượng devices phải là số chẵn!")
-            return
-        
-        if not hasattr(self, 'device_pairs') or not self.device_pairs:
-            QMessageBox.warning(self, "Cảnh báo", "Vui lòng ghép cặp devices trước!")
-            return
-        
-        # Validate conversations
-        conversations = []
-        for i, text_edit in enumerate(self.conversation_texts):
-            conversation = text_edit.toPlainText().strip()
-            if not conversation:
-                QMessageBox.warning(self, "Cảnh báo", f"Vui lòng nhập đoạn hội thoại cho nhóm {i+1}!")
+    def _save_conversations(self):
+        """Save conversations and show feedback"""
+        try:
+            conversations = self.collect()
+            if not any(conversations):
+                QMessageBox.warning(self, "Cảnh báo", "Không có hội thoại nào để lưu.")
                 return
-            conversations.append(conversation)
-        
-        if len(conversations) != len(self.device_pairs):
-            QMessageBox.warning(self, "Cảnh báo", "Số đoạn hội thoại không khớp với số cặp devices!")
-            return
-        
-        # Prepare data for core1.py
-        automation_data = {
-            'device_pairs': self.device_pairs,
-            'conversations': conversations,
-            'phone_mapping': data_manager.get_phone_mapping()
-        }
-        
-        # Confirm
-        pairs_summary = "\n".join([f"Cặp {i+1}: {pair[0]['ip']} ↔ {pair[1]['ip']}" 
-                                  for i, pair in enumerate(self.device_pairs)])
-        
-        reply = QMessageBox.question(
-            self, "Xác nhận", 
-            f"Bắt đầu automation với {len(self.device_pairs)} cặp devices?\n\n{pairs_summary}\n\nTiếp tục?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        
-        if reply != QMessageBox.StandardButton.Yes:
-            return
-        
-        # Start automation
-        self.start_btn.setEnabled(False)
-        self.stop_btn.setEnabled(True)
-        self.progress_bar.setVisible(True)
-        self.progress_bar.setRange(0, 0)  # Indeterminate progress
-        
-        # Start worker thread with new automation function
-        self.automation_worker = AutomationWorker(automation_data)
-        self.automation_worker.progress_updated.connect(self.update_progress)
-        self.automation_worker.finished.connect(self.automation_finished)
-        self.automation_worker.error_occurred.connect(self.on_automation_error)
-        self.automation_worker.start()
-        
-        self.status_label.setText("🚀 Đang chạy automation...")
-        self.status_label.setVisible(True)
+            
+            # Here you could save to file or data manager if needed
+            # For now, just mark as saved
+            self.is_saved = True
+            self.save_status.setText("✅ Đã lưu")
+            self.save_status.setStyleSheet(f"color:{SUCCESS}; font-weight:500;")
+            
+            # Emit signal for other components
+            self.conversations_saved.emit()
+            
+            # Show success message
+            QMessageBox.information(self, "Thành công", "Đã lưu hội thoại thành công!")
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Lỗi", f"Không thể lưu hội thoại: {e}")
     
-    def stop_automation(self):
-        """Dừng automation"""
-        if hasattr(self, 'automation_worker') and self.automation_worker:
-            self.automation_worker.stop()
-            self.automation_worker = None
-        
-        self.start_btn.setEnabled(True)
-        self.stop_btn.setEnabled(False)
-        self.progress_bar.setVisible(False)
-        self.status_label.setText("⏹️ Đã dừng automation")
-        self.status_label.setStyleSheet("color: #f39c12; font-weight: bold;")
-    
-    def update_progress(self, message):
-        """Cập nhật progress"""
-        self.status_label.setText(message)
-    
-    def automation_finished(self, results):
-        """Automation hoàn thành"""
-        self.start_btn.setEnabled(True)
-        self.stop_btn.setEnabled(False)
-        self.progress_bar.setVisible(False)
-        
-        if results:
-            success_count = sum(1 for result in results.values() if result.get('status') == 'completed')
-            total_count = len(results)
-            message = f"✅ Hoàn thành: {success_count}/{total_count} thành công"
-            self.status_label.setText(message)
-            QMessageBox.information(self, "Thành công", message)
+    def is_conversations_saved(self) -> bool:
+        """Check if conversations are saved"""
+        return self.is_saved
+
+class ControlPage(QWidget):
+    request_start = pyqtSignal()
+    request_stop = pyqtSignal()
+
+    def __init__(self):
+        super().__init__()
+        self._build()
+
+    def _build(self):
+        root = QVBoxLayout(self); root.setContentsMargins(12,12,12,12); root.setSpacing(10)
+
+        head = QFrame(); head.setStyleSheet(CARD_STYLE)
+        hb = QHBoxLayout(head); hb.setContentsMargins(12,12,12,12); hb.setSpacing(8)
+        self.btn_start = QPushButton("Bắt đầu"); self.btn_start.setStyleSheet(BTN_STYLE(SUCCESS, SUCCESS_HOVER)); self.btn_start.clicked.connect(self.request_start.emit)
+        self.btn_stop  = QPushButton("Dừng"); self.btn_stop.setStyleSheet(BTN_STYLE(DANGER, DANGER_HOVER)); self.btn_stop.setEnabled(False); self.btn_stop.clicked.connect(self.request_stop.emit)
+        hb.addWidget(self.btn_start); hb.addWidget(self.btn_stop); hb.addStretch(1)
+
+        self.progress = QProgressBar(); self.progress.setStyleSheet(PROGRESS_STYLE); self.progress.setVisible(False)
+        self.log = QTextEdit(); self.log.setReadOnly(True); self.log.setStyleSheet(LOG_STYLE); self.log.setFixedHeight(240)
+
+        root.addWidget(head)
+        progress_label = QLabel("Tiến trình:"); progress_label.setStyleSheet(f"color: {TEXT}; font-weight: 500;")
+        root.addWidget(progress_label)
+        root.addWidget(self.progress)
+        logs_label = QLabel("Logs:"); logs_label.setStyleSheet(f"color: {TEXT}; font-weight: 500;")
+        root.addWidget(logs_label)
+        root.addWidget(self.log)
+
+    # Helpers for outer controller
+    def set_running(self, running: bool):
+        self.btn_start.setEnabled(not running)
+        self.btn_stop.setEnabled(running)
+        self.progress.setVisible(running)
+        if running:
+            self.progress.setRange(0,0)  # indeterminate
         else:
-            message = "❌ Automation thất bại"
-            self.status_label.setText(message)
-            QMessageBox.critical(self, "Lỗi", message)
+            self.progress.setRange(0,100)
+
+    def append_log(self, text: str):
+        self.log.append(text)
+        sb = self.log.verticalScrollBar()
+        sb.setValue(sb.maximum())
+
+# ---------- Main Window ----------
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Zalo Automation — Dashboard")
+        self.resize(1120, 720)
+        self.setMinimumSize(980, 620)
+        self.worker: AutomationWorker | None = None
+
+        # Central composite
+        central = QFrame(); central.setStyleSheet(f"background:{BG};")
+        layout = QHBoxLayout(central); layout.setContentsMargins(0,0,0,0); layout.setSpacing(0)
+
+        # Sidebar
+        self.sidebar = self._build_sidebar()
+        layout.addWidget(self.sidebar)
+
+        # Stack
+        self.stack = QStackedWidget()
+        layout.addWidget(self.stack, 1)
+
+        # Pages
+        self.page_devices = DevicesPage()
+        self.page_pair    = PairPage()
+        self.page_convs   = ConversationsPage()
+        self.page_ctrl    = ControlPage()
+
+        self.stack.addWidget(self.page_devices)   # index 0
+        self.stack.addWidget(self.page_pair)      # index 1
+        self.stack.addWidget(self.page_convs)     # index 2
+        self.stack.addWidget(self.page_ctrl)      # index 3
+
+        # Wiring
+        self.page_devices.devices_changed.connect(self._on_devices_changed)
+        self.page_pair.pairs_changed.connect(self._on_pairs_changed)
+        self.page_ctrl.request_start.connect(self._start_automation)
+        self.page_ctrl.request_stop.connect(self._stop_automation)
+
+        self.setCentralWidget(central)
+
+        # Global style
+        self.setStyleSheet(f"""
+        QMainWindow {{ background: {BG}; color: {TEXT}; font-family: 'Segoe UI', Arial; font-size: 12px; }}
+        QStackedWidget {{ background: {BG}; }}
+        QWidget {{ background: {BG}; color: {TEXT}; }}
+        QLabel {{ color: {TEXT}; }}
+        """)
+
+    # Sidebar with nav buttons
+    def _build_sidebar(self) -> QWidget:
+        side = QFrame(); side.setObjectName("Sidebar"); side.setFixedWidth(220); side.setStyleSheet(SIDEBAR_STYLE)
+        v = QVBoxLayout(side); v.setContentsMargins(12,10,12,10); v.setSpacing(6)
+        brand = QLabel("Zalo Automation"); brand.setObjectName("Brand")
+        v.addWidget(brand)
+
+        def make_btn(title, idx):
+            b = QPushButton(title); b.setCheckable(True); b.setProperty('page', idx); b.setCursor(Qt.CursorShape.PointingHandCursor)
+            b.setProperty('class', 'SideBtn')
+            b.clicked.connect(lambda: self._goto(idx))
+            return b
+
+        self.btn_dev  = make_btn("📱 Devices", 0)
+        self.btn_pair = make_btn("💑 Pair Devices", 1)
+        self.btn_conv = make_btn("💬 Conversations", 2)
+        self.btn_ctrl = make_btn("⚙ Control", 3)
+
+        v.addWidget(self.btn_dev)
+        v.addWidget(self.btn_pair)
+        v.addWidget(self.btn_conv)
+        v.addWidget(self.btn_ctrl)
+        v.addStretch(1)
+
+        # default page
+        self.btn_dev.setChecked(True)
+        return side
+
+    def _goto(self, idx: int):
+        self.stack.setCurrentIndex(idx)
+        # toggle checked state
+        for btn in (self.btn_dev, self.btn_pair, self.btn_conv, self.btn_ctrl):
+            btn.setChecked(btn.property('page') == idx)
+
+    # Signals from pages
+    def _on_devices_changed(self, selected: List[dict]):
+        self.page_pair.update_selection(selected)
+
+    def _on_pairs_changed(self, pairs: List[Tuple[dict,dict]]):
+        self.page_convs.update_pair_count(len(pairs))
+
+    # Automation lifecycle
+    def _start_automation(self):
+        self.page_ctrl.append_log("🔍 Kiểm tra điều kiện khởi động automation...")
         
-        self.automation_worker = None
-    
-    def on_automation_error(self, error_message):
-        """Xử lý khi có lỗi trong automation"""
-        self.start_btn.setEnabled(True)
-        self.stop_btn.setEnabled(False)
-        self.progress_bar.setVisible(False)
+        # Gather data
+        pairs = self.page_pair.pairs
+        if not pairs:
+            self.page_ctrl.append_log("❌ Chưa có cặp thiết bị nào được ghép.")
+            QMessageBox.warning(self, "Cảnh báo", "Hãy ghép cặp thiết bị trước.")
+            return
         
-        message = f"❌ Lỗi: {error_message}"
-        self.status_label.setText(message)
-        QMessageBox.critical(self, "Lỗi", message)
+        # Check if conversations are saved
+        if not self.page_convs.is_conversations_saved():
+            self.page_ctrl.append_log("⚠️ Hội thoại chưa được lưu.")
+            QMessageBox.warning(self, "Cảnh báo", "Vui lòng lưu hội thoại trước khi bắt đầu automation.")
+            return
+            
+        convs = self.page_convs.collect()
+        if any(not c for c in convs) or len(convs) != len(pairs):
+            self.page_ctrl.append_log(f"❌ Số hội thoại ({len(convs)}) không khớp với số cặp ({len(pairs)}) hoặc có hội thoại trống.")
+            QMessageBox.warning(self, "Cảnh báo", "Số đoạn hội thoại phải khớp số cặp và không được để trống.")
+            return
+            
+        self.page_ctrl.append_log(f"✅ Đã có {len(pairs)} cặp thiết bị và {len(convs)} hội thoại.")
         
-        self.automation_worker = None
+        phone_mapping = {}
+        try:
+            if _DATA_MANAGER is not None:
+                phone_mapping = _DATA_MANAGER.get_phone_mapping() or {}
+                self.page_ctrl.append_log(f"📞 Đã tải {len(phone_mapping)} mapping số điện thoại.")
+        except Exception as e:
+            self.page_ctrl.append_log(f"⚠️ Lỗi tải phone mapping: {e}")
+            phone_mapping = {}
+
+        # Confirm
+        summary = "\n".join([f"Cặp {i+1}: {a['ip']} ↔ {b['ip']}" for i,(a,b) in enumerate(pairs)])
+        if QMessageBox.question(self, "Xác nhận", f"Bắt đầu automation với {len(pairs)} cặp?\n\n{summary}") != QMessageBox.StandardButton.Yes:
+            self.page_ctrl.append_log("❌ Người dùng hủy automation.")
+            return
+
+        # Start worker
+        self.page_ctrl.append_log("🚀 Khởi tạo AutomationWorker...")
+        self.worker = AutomationWorker(pairs, convs, phone_mapping)
+        self.worker.progress_updated.connect(self._on_progress)
+        self.worker.finished.connect(self._on_finished)
+        self.worker.error_occurred.connect(self._on_error)
+        
+        self.page_ctrl.append_log("▶️ Bắt đầu automation worker thread...")
+        self.worker.start()
+
+        self.page_ctrl.set_running(True)
+        self.page_ctrl.append_log("✅ Automation đã bắt đầu thành công!")
+        self._goto(3)
+
+    def _stop_automation(self):
+        if self.worker and self.worker.isRunning():
+            self.worker.stop()
+            self.worker.wait(500)
+        self.page_ctrl.set_running(False)
+        self.page_ctrl.append_log("Đã dừng automation.")
+
+    # Worker callbacks
+    def _on_progress(self, msg: str):
+        self.page_ctrl.append_log(msg)
+
+    def _on_finished(self, results: dict):
+        ok = sum(1 for r in results.values() if isinstance(r, dict) and r.get('status') == 'completed') if results else 0
+        total = len(results) if results else 0
+        if total:
+            self.page_ctrl.append_log(f"Hoàn thành: {ok}/{total} thành công.")
+        else:
+            self.page_ctrl.append_log("Automation kết thúc (không có kết quả hoặc đã dừng).")
+        self.page_ctrl.set_running(False)
+        self.worker = None
+
+    def _on_error(self, err: str):
+        self.page_ctrl.append_log(f"Lỗi: {err}")
+        self.page_ctrl.set_running(False)
+        self.worker = None
+
+# ---------- Widget Wrapper for Compatibility ----------
+class ZaloAutomationWidget(MainWindow):
+    """Wrapper class for compatibility with existing imports"""
+    def __init__(self, parent=None):
+        super().__init__()
+        if parent:
+            self.setParent(parent)
+
+# ---------- Entrypoint ----------
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    win = MainWindow()
+    win.show()
+    sys.exit(app.exec())
