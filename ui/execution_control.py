@@ -127,37 +127,71 @@ class ExecutionWorker(QThread):
         self.execution_queue.clear()
 
 class ExecutionStatusWidget(QWidget):
-    """Widget hiển thị trạng thái execution"""
+    """Widget hiển thị trạng thái execution với bảng 6 cột cho conversation"""
     
     def __init__(self):
         super().__init__()
         self.device_progress = {}  # device_id -> progress_bar
         self.device_status = {}   # device_id -> status_label
+        self.conversation_data = []  # Store conversation messages
+        self.countdown_timers = {}  # message_id -> QTimer for countdown
         self.setup_ui()
+        
+        # Timer to read shared status
+        self.status_timer = QTimer()
+        self.status_timer.timeout.connect(self.update_from_shared_status)
+        self.status_timer.start(500)  # Update every 500ms
         
     def setup_ui(self):
         layout = QVBoxLayout()
         
         # Header
-        header = QLabel("📊 Execution Status")
+        header = QLabel("📊 Conversation Status")
         header.setFont(QFont("Arial", 12, QFont.Weight.Bold))
         layout.addWidget(header)
         
-        # Status table
+        # Status table với 6 cột cho conversation
         self.status_table = QTableWidget()
-        self.status_table.setColumnCount(4)
-        self.status_table.setHorizontalHeaderLabels(["Device", "Flow", "Progress", "Status"])
+        self.status_table.setColumnCount(6)
+        self.status_table.setHorizontalHeaderLabels([
+            "STT Role 1", "Nội dung Role 1", "Trạng thái Role 1",
+            "STT Role 2", "Nội dung Role 2", "Trạng thái Role 2"
+        ])
         
-        # Set column widths
+        # Set column widths cho bảng 6 cột
         header = self.status_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)  # STT Role 1
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Nội dung Role 1
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)  # Trạng thái Role 1
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)  # STT Role 2
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)  # Nội dung Role 2
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)  # Trạng thái Role 2
         
-        self.status_table.setColumnWidth(0, 120)
-        self.status_table.setColumnWidth(2, 150)
-        self.status_table.setColumnWidth(3, 100)
+        self.status_table.setColumnWidth(0, 80)   # STT Role 1
+        self.status_table.setColumnWidth(2, 150)  # Trạng thái Role 1
+        self.status_table.setColumnWidth(3, 80)   # STT Role 2
+        self.status_table.setColumnWidth(5, 150)  # Trạng thái Role 2
+        
+        # Style cho table
+        self.status_table.setStyleSheet("""
+            QTableWidget {
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                background-color: #f9f9f9;
+                gridline-color: #ddd;
+            }
+            QTableWidget::item {
+                padding: 8px;
+                border-bottom: 1px solid #eee;
+            }
+            QHeaderView::section {
+                background-color: #4a90e2;
+                color: white;
+                padding: 10px;
+                border: none;
+                font-weight: bold;
+            }
+        """)
         
         layout.addWidget(self.status_table)
         
@@ -192,38 +226,228 @@ class ExecutionStatusWidget(QWidget):
         layout.addWidget(overall_group)
         self.setLayout(layout)
         
-    def add_execution(self, device_id, flow_name):
-        """Add execution to status table"""
-        row = self.status_table.rowCount()
-        self.status_table.insertRow(row)
+    def load_conversation_data(self, conversation_data):
+        """Load conversation data và hiển thị trong bảng 6 cột"""
+        self.conversation_data = conversation_data
+        self.clear_status()
         
-        # Device ID
-        self.status_table.setItem(row, 0, QTableWidgetItem(device_id))
+        if not conversation_data:
+            return
+            
+        # Parse conversation theo role
+        role1_messages = []
+        role2_messages = []
         
-        # Flow name
-        self.status_table.setItem(row, 1, QTableWidgetItem(flow_name))
+        for msg in conversation_data:
+            if msg.get('device_number') == 1:
+                role1_messages.append(msg)
+            elif msg.get('device_number') == 2:
+                role2_messages.append(msg)
+                
+        # Tạo rows cho bảng (số row = max của 2 role)
+        max_rows = max(len(role1_messages), len(role2_messages))
         
-        # Progress bar
-        progress_bar = QProgressBar()
-        progress_bar.setStyleSheet("""
-            QProgressBar {
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                text-align: center;
-            }
-            QProgressBar::chunk {
-                background-color: #2196f3;
-                border-radius: 3px;
-            }
-        """)
-        self.status_table.setCellWidget(row, 2, progress_bar)
-        self.device_progress[device_id] = progress_bar
+        for i in range(max_rows):
+            row = self.status_table.rowCount()
+            self.status_table.insertRow(row)
+            
+            # Role 1 columns (0, 1, 2)
+            if i < len(role1_messages):
+                msg1 = role1_messages[i]
+                # STT Role 1
+                self.status_table.setItem(row, 0, QTableWidgetItem(str(i + 1)))
+                # Nội dung Role 1
+                content1 = msg1.get('content', '')[:50] + '...' if len(msg1.get('content', '')) > 50 else msg1.get('content', '')
+                self.status_table.setItem(row, 1, QTableWidgetItem(content1))
+                # Trạng thái Role 1
+                status1 = QTableWidgetItem("Đã gửi")
+                status1.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.status_table.setItem(row, 2, status1)
+            else:
+                # Empty cells cho Role 1
+                self.status_table.setItem(row, 0, QTableWidgetItem(""))
+                self.status_table.setItem(row, 1, QTableWidgetItem(""))
+                self.status_table.setItem(row, 2, QTableWidgetItem(""))
+                
+            # Role 2 columns (3, 4, 5)
+            if i < len(role2_messages):
+                msg2 = role2_messages[i]
+                # STT Role 2
+                self.status_table.setItem(row, 3, QTableWidgetItem(str(i + 1)))
+                # Nội dung Role 2
+                content2 = msg2.get('content', '')[:50] + '...' if len(msg2.get('content', '')) > 50 else msg2.get('content', '')
+                self.status_table.setItem(row, 4, QTableWidgetItem(content2))
+                # Trạng thái Role 2
+                status2 = QTableWidgetItem("Đã gửi")
+                status2.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.status_table.setItem(row, 5, status2)
+            else:
+                # Empty cells cho Role 2
+                self.status_table.setItem(row, 3, QTableWidgetItem(""))
+                self.status_table.setItem(row, 4, QTableWidgetItem(""))
+                self.status_table.setItem(row, 5, QTableWidgetItem(""))
+                
+        # Bắt đầu demo countdown sequence
+        QTimer.singleShot(1000, self.demo_countdown_sequence)
+                
+    def update_message_status(self, message_id, device_number, status, delay_time=None):
+        """Update trạng thái của message cụ thể"""
+        # Tìm row và column tương ứng với message_id và device_number
+        for row in range(self.status_table.rowCount()):
+            # Xác định column dựa trên device_number
+            status_col = 2 if device_number == 1 else 5
+            
+            if status == "đang gửi":
+                status_text = "🔄 Đang gửi"
+            elif status == "đã gửi":
+                status_text = "✅ Đã gửi"
+            elif status == "đang đợi" and delay_time:
+                status_text = f"⏳ Nhóm {device_number} - Smart delay {delay_time}s cho message_id {message_id}"
+                # Tạo countdown timer
+                self.start_countdown_timer(message_id, device_number, delay_time, row, status_col)
+            else:
+                status_text = status
+                
+            # Update status cell
+            status_item = QTableWidgetItem(status_text)
+            status_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.status_table.setItem(row, status_col, status_item)
+            break
+            
+    def start_countdown_timer(self, message_id, device_number, delay_time, row, col):
+        """Bắt đầu countdown timer cho message"""
+        timer_key = f"{message_id}_{device_number}"
         
-        # Status
-        status_item = QTableWidgetItem("Queued")
-        status_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.status_table.setItem(row, 3, status_item)
-        self.device_status[device_id] = status_item
+        # Stop existing timer if any
+        if timer_key in self.countdown_timers:
+            self.countdown_timers[timer_key].stop()
+            
+        # Create new timer
+        timer = QTimer()
+        remaining_time = delay_time
+        
+        def update_countdown():
+            nonlocal remaining_time
+            remaining_time -= 0.1
+            
+            if remaining_time <= 0:
+                # Timer finished
+                timer.stop()
+                del self.countdown_timers[timer_key]
+                
+                # Update status to "đang gửi"
+                status_item = QTableWidgetItem("🔄 Đang gửi")
+                status_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.status_table.setItem(row, col, status_item)
+            else:
+                # Update countdown display
+                status_text = f"⏳ Nhóm {device_number} - Smart delay {remaining_time:.1f}s cho message_id {message_id}"
+                status_item = QTableWidgetItem(status_text)
+                status_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.status_table.setItem(row, col, status_item)
+                
+        timer.timeout.connect(update_countdown)
+        timer.start(100)  # Update every 100ms
+        self.countdown_timers[timer_key] = timer
+        
+        # Cập nhật trạng thái ngay lập tức
+        update_countdown()
+        
+    def update_countdown_display(self, message_id):
+        """Cập nhật hiển thị countdown cho message"""
+        if message_id not in self.countdown_timers:
+            return
+            
+        timer_data = self.countdown_timers[message_id]
+        remaining = timer_data['remaining_seconds']
+        
+        if remaining <= 0:
+            # Hết thời gian, dừng timer
+            timer_data['timer'].stop()
+            del self.countdown_timers[message_id]
+            
+            # Cập nhật trạng thái thành "Đang gửi"
+            self.update_message_status(message_id, "Đang gửi")
+            return
+        
+        # Cập nhật trạng thái với countdown
+        status_text = f"⏳ Smart delay {remaining:.1f}s cho message_id {message_id}"
+        self.update_message_status(message_id, status_text)
+        
+        # Giảm thời gian còn lại
+        timer_data['remaining_seconds'] -= 1
+    
+    def demo_countdown_sequence(self):
+        """Demo countdown sequence cho testing"""
+        if not self.conversation_data:
+            return
+            
+        # Bắt đầu countdown cho một số messages để demo
+        import random
+        
+        for pair_key, pair_data in self.conversation_data.get('conversations', {}).items():
+            for message in pair_data.get('messages', [])[:3]:  # Demo 3 messages đầu
+                message_id = message['message_id']
+                delay = random.randint(10, 30)  # Random delay 10-30 giây
+                
+                # Cập nhật trạng thái thành đang đợi
+                self.update_message_status(message_id, "Đang đợi")
+                
+                # Bắt đầu countdown sau 2 giây
+                QTimer.singleShot(2000 * message_id, lambda mid=message_id, d=delay: self.start_countdown_timer(mid, d))
+    
+    def start_status_monitoring(self):
+        """Bắt đầu monitor status.json để cập nhật real-time"""
+        self.status_monitor_timer = QTimer()
+        self.status_monitor_timer.timeout.connect(self.update_from_status_file)
+        self.status_monitor_timer.start(1000)  # Check every second
+    
+    def stop_status_monitoring(self):
+        """Dừng monitor status.json"""
+        if hasattr(self, 'status_monitor_timer'):
+            self.status_monitor_timer.stop()
+    
+    def update_from_status_file(self):
+        """Cập nhật trạng thái từ status.json"""
+        import json
+        import os
+        
+        try:
+            file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'status.json')
+            if os.path.exists(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    status_data = json.load(f)
+                
+                # Cập nhật trạng thái devices
+                for device_id, device_status in status_data.get('devices', {}).items():
+                    status = device_status.get('status', 'unknown')
+                    message = device_status.get('message', '')
+                    
+                    # Tìm và cập nhật trong bảng
+                    self.update_device_status_in_table(device_id, status, message)
+                
+                # Cập nhật trạng thái tổng thể
+                overall_status = status_data.get('overall', {}).get('status', 'idle')
+                if overall_status == 'running':
+                    self.start_status_monitoring()
+                elif overall_status in ['completed', 'error']:
+                    self.stop_status_monitoring()
+                    
+        except Exception as e:
+            print(f"Lỗi khi đọc status.json: {e}")
+    
+    def update_device_status_in_table(self, device_id, status, message):
+        """Cập nhật trạng thái device trong bảng"""
+        # Tìm row tương ứng với device_id và cập nhật
+        for row in range(self.status_table.rowCount()):
+            # Kiểm tra nếu có thông tin device phù hợp
+            role1_item = self.status_table.item(row, 2)
+            role2_item = self.status_table.item(row, 5)
+            
+            if role1_item and f"device_{device_id}" in role1_item.text():
+                role1_item.setText(f"{status}: {message}")
+            elif role2_item and f"device_{device_id}" in role2_item.text():
+                role2_item.setText(f"{status}: {message}")
         
     def update_progress(self, device_id, progress):
         """Update device progress"""
@@ -265,8 +489,56 @@ class ExecutionStatusWidget(QWidget):
         self.status_table.setRowCount(0)
         self.device_progress.clear()
         self.device_status.clear()
+        
+        # Stop all countdown timers
+        for timer in self.countdown_timers.values():
+            timer.stop()
+        self.countdown_timers.clear()
+        
         self.overall_progress.setValue(0)
         self.overall_label.setText("Ready")
+    
+    def read_shared_status(self):
+        """Read shared status from file"""
+        try:
+            status_file = "shared_status.json"
+            if os.path.exists(status_file):
+                with open(status_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+        except Exception as e:
+            # Silently ignore errors when reading status file
+            pass
+        return None
+    
+    def update_from_shared_status(self):
+        """Update status from shared status file"""
+        shared_status = self.read_shared_status()
+        if not shared_status:
+            return
+            
+        device_id = shared_status.get('device_id')
+        status_text = shared_status.get('status', 'unknown')
+        progress = shared_status.get('progress', 0)
+        
+        if device_id:
+            # Update progress if device exists in our tracking
+            if device_id in self.device_progress:
+                self.update_progress(device_id, progress)
+                
+                # Update status text
+                status_display = {
+                    'running': 'Running',
+                    'completed': 'Success', 
+                    'error': 'Error'
+                }.get(status_text, status_text.title())
+                
+                status_color = {
+                    'running': 'blue',
+                    'completed': 'green',
+                    'error': 'red'
+                }.get(status_text, None)
+                
+                self.update_status(device_id, status_display, status_color)
 
 class LogsViewerWidget(QWidget):
     """Widget hiển thị logs với filtering"""

@@ -1,0 +1,38 @@
+{
+  "devices": {
+    "192.168.5.82:5555": {
+      "status": "running",
+      "message": "Đang chạy cuộc hội thoại...",
+      "progress": 50,
+      "current_message_id": null,
+      "last_update": 1757929856.8923159,
+      "timestamp": "2025-09-15 16:50:56"
+    },
+    "192.168.5.74:5555": {
+      "status": "running",
+      "message": "Đang chạy cuộc hội thoại...",
+      "progress": 50,
+      "current_message_id": null,
+      "last_update": 1757929857.3204696,
+      "timestamp": "2025-09-15 16:50:57"
+    },
+    "192.168.5.92:5555": {
+      "status": "completed",
+      "message": "Hoàn thành automation",
+      "progress": 100,
+      "current_message_id": null,
+      "last_update": 1757924881.2502148,
+      "timestamp": "2025-09-15 15:28:01"
+    },
+    "192.168.5.93:5555": {
+      "status": "completed",
+      "message": "Hoàn thành automation",
+      "progress": 100,
+      "current_message_id": null,
+      "last_update": 1757924921.0973887,
+      "timestamp": "2025-09-15 15:28:41"
+    }
+  },
+  "overall_status": "running",
+  "last_update": 1757929857.3204696
+}

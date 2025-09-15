@@ -1693,10 +1693,38 @@ def run_zalo_automation(device_pairs, conversations, phone_mapping, progress_cal
                 if progress_callback:
                     progress_callback(f"⏳ Đợi {len(threads)} devices hoàn thành...")
                 
-                for thread in threads:
+                # Đợi tất cả threads hoàn thành thực sự
+                all_threads_completed = False
+                max_wait_time = 300  # 5 phút timeout
+                wait_start = time.time()
+                
+                while not all_threads_completed and (time.time() - wait_start) < max_wait_time:
                     if stop_event and stop_event.is_set():
+                        print(f"🛑 Stop signal received, breaking thread wait loop")
                         break
-                    thread.join(timeout=1.0)  # Check every second for stop signal
+                    
+                    # Kiểm tra trạng thái tất cả threads
+                    alive_threads = [t for t in threads if t.is_alive()]
+                    if not alive_threads:
+                        all_threads_completed = True
+                        print(f"✅ Tất cả {len(threads)} threads đã hoàn thành")
+                        break
+                    
+                    # Log progress mỗi 10 giây
+                    elapsed = time.time() - wait_start
+                    if int(elapsed) % 10 == 0 and elapsed > 0:
+                        print(f"⏳ Còn {len(alive_threads)}/{len(threads)} threads đang chạy ({elapsed:.0f}s)")
+                    
+                    time.sleep(1.0)
+                
+                if not all_threads_completed:
+                    print(f"⚠️ Timeout waiting for threads after {max_wait_time}s")
+                    # Force join remaining threads
+                    for thread in threads:
+                        if thread.is_alive():
+                            thread.join(timeout=5.0)
+                            if thread.is_alive():
+                                print(f"⚠️ Thread {thread.name} vẫn đang chạy sau timeout")
                 
                 # Thu thập kết quả từ queue
                 while not result_queue.empty():
@@ -1751,8 +1779,11 @@ def run_zalo_automation(device_pairs, conversations, phone_mapping, progress_cal
         final_message = f"Hoàn thành: {success_pairs}/{total_pairs} thành công."
         print(f"\n🏁 {final_message}")
         
+        # Chỉ báo hoàn thành khi tất cả threads thực sự đã hoàn thành
         if progress_callback:
             progress_callback(f"🏁 {final_message}")
+            # Đảm bảo báo cáo cuối cùng sau khi tất cả đã hoàn thành
+            time.sleep(0.5)  # Delay nhỏ để đảm bảo UI cập nhật đúng
         
         return results
         
@@ -1775,6 +1806,8 @@ RID_SEARCH_BTN   = "com.zing.zalo:id/action_bar_search_btn"
 RID_ACTION_BAR   = "com.zing.zalo:id/zalo_action_bar"
 RID_MSG_LIST     = "com.zing.zalo:id/recycler_view_msgList"
 RID_TAB_MESSAGE  = "com.zing.zalo:id/maintab_message"
+RID_EDIT_TEXT    = "com.zing.zalo:id/chatinput_text"
+RID_SEND_BTN     = "com.zing.zalo:id/chatinput_send_btn"
 TEXT_SEARCH_PLACEHOLDER = "Tìm kiếm"
 
 def is_login_required(dev, debug=False):
@@ -2173,21 +2206,17 @@ def wait_for_message_turn(group_id, target_message_id, role_in_group, timeout=30
     return False
 
 def calculate_smart_delay(message_length, is_first_message=False):
-    """Tính delay thông minh dựa trên độ dài tin nhắn"""
+    """Tính delay thông minh dựa trên độ dài tin nhắn với random delay patterns"""
     import random
     
     if is_first_message:
         return random.uniform(1, 3)  # Delay ngắn cho tin nhắn đầu
     
-    # Base delay dựa trên độ dài tin nhắn (giả lập thời gian đọc + suy nghĩ)
-    base_delay = min(len(message_length) * 0.1, 8)  # Tối đa 8s cho tin nhắn dài
-    
-    # Thêm random variation (±50%)
-    variation = base_delay * 0.5
-    final_delay = base_delay + random.uniform(-variation, variation)
-    
-    # Đảm bảo delay trong khoảng hợp lý (2-15s)
-    return max(2, min(15, final_delay))
+    # Random delay pattern: 70% tin nhắn nhanh (5-15s), 30% tin nhắn chậm (30-60s)
+    if random.random() < 0.7:  # 70% chance for fast messages
+        return random.uniform(5, 15)
+    else:  # 30% chance for slow messages
+        return random.uniform(30, 60)
 
 def run_conversation(dev, device_role, debug=False, all_devices=None, stop_event=None, status_callback=None):
     """Chạy cuộc hội thoại với message_id synchronization và smart timing"""
@@ -2317,9 +2346,46 @@ def run_conversation(dev, device_role, debug=False, all_devices=None, stop_event
                     'role_in_group': role_in_group
                 })
             
-            # Gửi tin nhắn với human-like typing
-            if send_message(dev, msg["message"], debug=debug):
-                print(f"✅ Nhóm {group_id} - Đã gửi message_id {message_id}: {msg['message']}")
+            # Kiểm tra UI sẵn sàng trước khi gửi tin nhắn
+            if not ensure_chat_ready(dev, timeout=15, debug=debug):
+                print(f"⚠️ Nhóm {group_id} - Chat không sẵn sàng cho message_id {message_id}, thử lại...")
+                time_module.sleep(2)
+                if not ensure_chat_ready(dev, timeout=10, debug=debug):
+                    print(f"❌ Nhóm {group_id} - Chat vẫn không sẵn sàng, bỏ qua message_id {message_id}")
+                    # Vẫn cập nhật message_id để không block các device khác
+                    update_current_message_id(group_id, message_id + 1)
+                    continue
+            
+            # Kiểm tra edit text sẵn sàng
+            if not wait_for_edit_text(dev, timeout=10, debug=debug):
+                print(f"⚠️ Nhóm {group_id} - Edit text không sẵn sàng cho message_id {message_id}")
+                # Vẫn cập nhật message_id để không block các device khác
+                update_current_message_id(group_id, message_id + 1)
+                continue
+            
+            # Gửi tin nhắn với safe operation wrapper
+            def send_message_operation():
+                # Gửi tin nhắn với human-like typing
+                if not send_message(dev, msg["message"], debug=debug):
+                    raise Exception(f"Không thể gửi tin nhắn: {msg['message'][:30]}...")
+                
+                # Xác minh tin nhắn đã gửi thành công
+                if not verify_message_sent(dev, msg["message"], timeout=5, debug=debug):
+                    raise Exception(f"Không thể xác minh tin nhắn đã gửi: {msg['message'][:30]}...")
+                
+                return True
+            
+            # Thực hiện gửi tin nhắn với safe wrapper
+            send_result = safe_ui_operation(
+                dev, 
+                send_message_operation, 
+                f"Gửi tin nhắn message_id {message_id}", 
+                max_retries=3, 
+                debug=debug
+            )
+            
+            if send_result:
+                print(f"✅ Nhóm {group_id} - Đã gửi và xác minh message_id {message_id}: {msg['message']}")
                 
                 # Emit status update cho việc gửi thành công
                 if status_callback:
@@ -2337,8 +2403,8 @@ def run_conversation(dev, device_role, debug=False, all_devices=None, stop_event
                 update_current_message_id(group_id, next_message_id)
                 print(f"🔄 Nhóm {group_id} - Cập nhật current_message_id = {next_message_id}")
                 
-                # Delay ngắn sau khi gửi (1-3 giây)
-                post_send_wait = random.uniform(1, 3)
+                # Delay ngẫu nhiên sau khi gửi để tránh chạy quá nhanh (2-5 giây)
+                post_send_wait = random.uniform(2, 5)
                 print(f"⏸️ Nhóm {group_id} - Nghỉ {post_send_wait:.1f}s sau message_id {message_id}...")
                 
                 # Kiểm tra stop signal trước post send delay
@@ -2348,7 +2414,11 @@ def run_conversation(dev, device_role, debug=False, all_devices=None, stop_event
                 
                 time_module.sleep(post_send_wait)
             else:
-                print(f"❌ Nhóm {group_id} - Không thể gửi message_id {message_id}: {msg['message']}")
+                print(f"❌ Nhóm {group_id} - Thất bại gửi message_id {message_id} sau nhiều lần thử: {msg['message']}")
+                
+                # Cập nhật trạng thái lỗi
+                update_shared_status(dev.device_id, "error", f"Lỗi gửi message_id {message_id}", 0)
+                
                 # Vẫn cập nhật message_id để không block các device khác
                 update_current_message_id(group_id, message_id + 1)
                 break
@@ -2541,6 +2611,690 @@ def show_current_config():
     for ip, phone in current_map.items():
         print(f"  {ip} -> {phone}")
 
+def get_barrier_file_path(group_id):
+    """Lấy đường dẫn file barrier cho nhóm"""
+    return f"barrier_group_{group_id}.json"
+
+def wait_for_group_barrier(group_id, device_count, timeout=60):
+    """Đợi tất cả devices trong nhóm sẵn sàng trước khi mở Zalo - Enhanced version với detailed logging"""
+    import json
+    import os
+    import time as time_module
+    
+    barrier_file = get_barrier_file_path(group_id)
+    start_time = time_module.time()
+    last_progress_log = 0
+    last_detailed_log = 0
+    
+    print(f"🚀 [SYNC-START] Nhóm {group_id} - Bắt đầu đợi {device_count} devices tại barrier")
+    print(f"📁 [SYNC-INFO] Nhóm {group_id} - Barrier file: {barrier_file}")
+    print(f"⏰ [SYNC-INFO] Nhóm {group_id} - Timeout: {timeout}s, Start: {time_module.strftime('%H:%M:%S')}")
+    
+    # Enhanced polling với adaptive interval
+    check_interval = 0.2  # Bắt đầu với interval ngắn
+    max_interval = 2.0
+    retry_count = 0
+    
+    while time_module.time() - start_time < timeout:
+        try:
+            current_time = time_module.time()
+            elapsed = current_time - start_time
+            
+            if os.path.exists(barrier_file):
+                with open(barrier_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    ready_count = data.get('ready_count', 0)
+                    ready_devices = data.get('ready_devices', [])
+                    last_update = data.get('last_update', 0)
+                    
+                    # Kiểm tra freshness của data (trong vòng 30s)
+                    if current_time - last_update > 30:
+                        print(f"⚠️ [SYNC-WARNING] Nhóm {group_id} - Barrier data cũ ({current_time - last_update:.1f}s), có thể cần reset")
+                    
+                    if ready_count >= device_count:
+                        print(f"✅ [SYNC-SUCCESS] Nhóm {group_id} - Tất cả {device_count} devices đã sẵn sàng!")
+                        print(f"📋 [SYNC-SUCCESS] Nhóm {group_id} - Final devices: {ready_devices}")
+                        print(f"⏱️ [SYNC-SUCCESS] Nhóm {group_id} - Thời gian đồng bộ: {elapsed:.2f}s")
+                        print(f"🎯 [SYNC-SUCCESS] Nhóm {group_id} - Đồng bộ hoàn tất, tất cả máy sẽ mở Zalo cùng lúc!")
+                        return True
+                    else:
+                        # Log progress mỗi 3 giây
+                        if current_time - last_progress_log >= 3:
+                            print(f"📊 [SYNC-PROGRESS] Nhóm {group_id} - {ready_count}/{device_count} devices ({elapsed:.1f}s)")
+                            last_progress_log = current_time
+                        
+                        # Log chi tiết mỗi 10 giây
+                        if current_time - last_detailed_log >= 10:
+                            print(f"📋 [SYNC-DETAIL] Nhóm {group_id} - Devices sẵn sàng: {ready_devices}")
+                            print(f"🕐 [SYNC-DETAIL] Nhóm {group_id} - Thời gian chờ: {elapsed:.1f}s/{timeout}s")
+                            print(f"📈 [SYNC-DETAIL] Nhóm {group_id} - Check interval: {check_interval:.2f}s")
+                            last_detailed_log = current_time
+                        
+                        # Reset retry count khi có progress
+                        retry_count = 0
+            else:
+                # Log khi barrier file chưa tồn tại
+                if current_time - last_progress_log >= 5:
+                    print(f"📂 [SYNC-WAITING] Nhóm {group_id} - Chờ barrier file được tạo ({elapsed:.1f}s)...")
+                    last_progress_log = current_time
+            
+            # Adaptive sleep interval
+            time_module.sleep(check_interval)
+            
+            # Tăng interval dần để giảm CPU usage
+            if check_interval < max_interval:
+                check_interval = min(check_interval * 1.1, max_interval)
+                
+        except Exception as e:
+            retry_count += 1
+            elapsed = time_module.time() - start_time
+            print(f"⚠️ [SYNC-ERROR] Nhóm {group_id} - Lỗi đọc barrier file (retry {retry_count}, {elapsed:.1f}s): {e}")
+            
+            # Exponential backoff cho error cases
+            error_delay = min(0.5 * (2 ** min(retry_count, 4)), 5.0)
+            print(f"🔄 [SYNC-ERROR] Nhóm {group_id} - Retry sau {error_delay:.2f}s...")
+            time_module.sleep(error_delay)
+    
+    elapsed = time_module.time() - start_time
+    print(f"⏰ [SYNC-TIMEOUT] Nhóm {group_id} - Timeout đợi barrier sau {elapsed:.1f}s (timeout: {timeout}s)")
+    print(f"📊 [SYNC-TIMEOUT] Nhóm {group_id} - Không đủ {device_count} devices trong thời gian cho phép")
+    print(f"💡 [SYNC-TIMEOUT] Nhóm {group_id} - Máy sẽ tiếp tục chạy độc lập để tránh block toàn bộ hệ thống")
+    return False
+
+def signal_ready_at_barrier(group_id, device_ip):
+    """Báo hiệu device sẵn sàng tại barrier - Enhanced with better synchronization"""
+    import json
+    import os
+    import time as time_module
+    import tempfile
+    
+    barrier_file = get_barrier_file_path(group_id)
+    
+    # Enhanced retry logic với exponential backoff
+    max_retries = 8
+    base_delay = 0.05
+    
+    for attempt in range(max_retries):
+        try:
+            # Sử dụng atomic write pattern
+            temp_file = barrier_file + f'.tmp.{os.getpid()}.{attempt}'
+            
+            # Đọc dữ liệu hiện tại với error handling
+            data = {
+                'ready_devices': [],
+                'ready_count': 0,
+                'group_id': group_id,
+                'created_at': time.time()
+            }
+            
+            if os.path.exists(barrier_file):
+                try:
+                    with open(barrier_file, 'r', encoding='utf-8') as f:
+                        existing_data = json.load(f)
+                        if isinstance(existing_data, dict):
+                            data.update(existing_data)
+                except (json.JSONDecodeError, IOError, UnicodeDecodeError) as e:
+                    print(f"⚠️ Barrier file corrupted, recreating: {e}")
+            
+            # Thêm device vào danh sách ready với validation
+            ready_devices = data.get('ready_devices', [])
+            if not isinstance(ready_devices, list):
+                ready_devices = []
+            
+            device_added = False
+            if device_ip not in ready_devices:
+                ready_devices.append(device_ip)
+                device_added = True
+                
+                # Cập nhật metadata
+                data['ready_devices'] = ready_devices
+                data['ready_count'] = len(ready_devices)
+                data['last_update'] = time.time()
+                data['group_id'] = group_id
+                
+                # Atomic write using temporary file
+                with open(temp_file, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+                
+                # Atomic move (Windows compatible)
+                if os.name == 'nt':  # Windows
+                    if os.path.exists(barrier_file):
+                        backup_file = barrier_file + '.bak'
+                        if os.path.exists(backup_file):
+                            os.remove(backup_file)
+                        os.rename(barrier_file, backup_file)
+                    os.rename(temp_file, barrier_file)
+                    # Cleanup backup
+                    backup_file = barrier_file + '.bak'
+                    if os.path.exists(backup_file):
+                        try:
+                            os.remove(backup_file)
+                        except:
+                            pass
+                else:  # Unix/Linux
+                    os.rename(temp_file, barrier_file)
+                
+                print(f"✅ Nhóm {group_id} - Device {device_ip} đã signal ready ({len(ready_devices)} devices) [Enhanced Sync]")
+                print(f"📊 Devices sẵn sàng: {ready_devices}")
+                print(f"🕐 Timestamp: {time_module.strftime('%H:%M:%S', time_module.localtime())}")
+            else:
+                print(f"ℹ️ Nhóm {group_id} - Device {device_ip} đã có trong barrier ({len(ready_devices)} devices)")
+                print(f"📊 Trạng thái hiện tại: {ready_devices}")
+            
+            # Cleanup temp file nếu còn tồn tại
+            if os.path.exists(temp_file):
+                try:
+                    os.remove(temp_file)
+                except:
+                    pass
+            
+            return True
+                
+        except Exception as e:
+            # Cleanup temp file on error
+            temp_file = barrier_file + f'.tmp.{os.getpid()}.{attempt}'
+            if os.path.exists(temp_file):
+                try:
+                    os.remove(temp_file)
+                except:
+                    pass
+            
+            if attempt < max_retries - 1:
+                # Exponential backoff với jitter
+                delay = base_delay * (2 ** attempt) + (time.time() % 0.01)
+                print(f"⚠️ Lỗi signal barrier (attempt {attempt + 1}/{max_retries}): {e}")
+                print(f"🔄 Retry sau {delay:.3f}s...")
+                time_module.sleep(delay)
+            else:
+                print(f"❌ Lỗi signal barrier sau {max_retries} attempts: {e}")
+                print(f"💡 Device {device_ip} sẽ tiếp tục chạy mà không đợi barrier")
+                return False
+    
+    return False
+
+def cleanup_barrier_file(group_id):
+    """Cleanup barrier file sau khi hoàn thành"""
+    try:
+        barrier_file = get_barrier_file_path(group_id)
+        if os.path.exists(barrier_file):
+            os.remove(barrier_file)
+            print(f"🧹 Nhóm {group_id} - Đã cleanup barrier file")
+    except Exception:
+        pass
+
+# === SHARED STATUS MANAGEMENT ===
+def get_status_file_path():
+    """Lấy đường dẫn file status chung"""
+    return os.path.join(os.path.dirname(__file__), 'status.json')
+
+def update_shared_status(device_ip, status, message="", progress=0, current_message_id=None):
+    """Cập nhật trạng thái shared cho device"""
+    import json
+    import time as time_module
+    
+    status_file = get_status_file_path()
+    
+    # Retry logic để handle concurrent access
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            # Đọc dữ liệu hiện tại
+            data = {}
+            if os.path.exists(status_file):
+                with open(status_file, 'r', encoding='utf-8') as f:
+                    try:
+                        data = json.load(f)
+                    except:
+                        data = {}
+            
+            # Cập nhật trạng thái device
+            if 'devices' not in data:
+                data['devices'] = {}
+            
+            data['devices'][device_ip] = {
+                'status': status,
+                'message': message,
+                'progress': progress,
+                'current_message_id': current_message_id,
+                'last_update': time.time(),
+                'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+            }
+            
+            # Cập nhật overall status
+            device_statuses = [d['status'] for d in data['devices'].values()]
+            if all(s == 'completed' for s in device_statuses):
+                data['overall_status'] = 'completed'
+            elif any(s == 'error' for s in device_statuses):
+                data['overall_status'] = 'error'
+            elif any(s == 'running' for s in device_statuses):
+                data['overall_status'] = 'running'
+            else:
+                data['overall_status'] = 'idle'
+            
+            data['last_update'] = time.time()
+            
+            # Ghi lại file
+            with open(status_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            
+            return True
+            
+        except Exception as e:
+            if attempt < max_retries - 1:
+                time_module.sleep(0.1 * (attempt + 1))
+            else:
+                print(f"⚠️ Lỗi update shared status: {e}")
+                return False
+    
+    return False
+
+def read_shared_status():
+    """Đọc trạng thái shared hiện tại"""
+    import json
+    
+    status_file = get_status_file_path()
+    
+    try:
+        if os.path.exists(status_file):
+            with open(status_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        else:
+            return {'devices': {}, 'overall_status': 'idle', 'last_update': 0}
+    except Exception as e:
+        print(f"⚠️ Lỗi đọc shared status: {e}")
+        return {'devices': {}, 'overall_status': 'error', 'last_update': 0}
+
+def cleanup_shared_status():
+    """Cleanup shared status file"""
+    status_file = get_status_file_path()
+    try:
+        if os.path.exists(status_file):
+            os.remove(status_file)
+            print(f"🧹 Đã cleanup shared status file")
+    except Exception as e:
+        print(f"⚠️ Lỗi cleanup shared status: {e}")
+
+def get_device_status(device_ip):
+    """Lấy trạng thái của device cụ thể"""
+    data = read_shared_status()
+    return data.get('devices', {}).get(device_ip, {
+        'status': 'unknown',
+        'message': '',
+        'progress': 0,
+        'current_message_id': None,
+        'last_update': 0
+    })
+
+# === UI CHECKS AND VALIDATION ===
+def wait_for_edit_text(dev, timeout=10, debug=False):
+    """Đợi edit text xuất hiện và sẵn sàng để nhập"""
+    import time as time_module
+    
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            # Kiểm tra edit text có tồn tại không
+            edit_elements = [
+                dev.d(resourceId=RID_EDIT_TEXT),
+                dev.d(className="android.widget.EditText"),
+                dev.d(text="Aa"),
+                dev.d(description="Aa")
+            ]
+            
+            for edit_elem in edit_elements:
+                if edit_elem.exists:
+                    if debug:
+                        print(f"✅ Tìm thấy edit text: {edit_elem.info}")
+                    
+                    # Kiểm tra element có clickable và enabled không
+                    info = edit_elem.info
+                    if info.get('clickable', False) and info.get('enabled', True):
+                        if debug:
+                            print(f"✅ Edit text sẵn sàng để nhập")
+                        return True
+                    else:
+                        if debug:
+                            print(f"⚠️ Edit text chưa sẵn sàng: clickable={info.get('clickable')}, enabled={info.get('enabled')}")
+            
+            if debug:
+                print(f"⏳ Đợi edit text... ({time.time() - start_time:.1f}s)")
+            time_module.sleep(0.5)
+            
+        except Exception as e:
+            if debug:
+                print(f"⚠️ Lỗi kiểm tra edit text: {e}")
+            time_module.sleep(0.5)
+    
+    if debug:
+        print(f"❌ Timeout đợi edit text sau {timeout}s")
+    return False
+
+def ensure_chat_ready(dev, timeout=15, debug=False):
+    """Đảm bảo chat đã sẵn sàng để gửi tin nhắn"""
+    import time as time_module
+    
+    if debug:
+        print(f"🔍 Kiểm tra chat sẵn sàng...")
+    
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            # Kiểm tra các indicator cho chat ready
+            chat_indicators = [
+                # Edit text để nhập tin nhắn
+                dev.d(resourceId=RID_EDIT_TEXT),
+                dev.d(className="android.widget.EditText"),
+                # Send button
+                dev.d(resourceId=RID_SEND_BTN),
+                # Chat container
+                dev.d(resourceId="com.zing.zalo:id/chat_container"),
+                dev.d(resourceId="com.zing.zalo:id/message_list"),
+                # Action bar với tên người chat
+                dev.d(resourceId=RID_ACTION_BAR)
+            ]
+            
+            ready_count = 0
+            for indicator in chat_indicators:
+                if indicator.exists:
+                    ready_count += 1
+            
+            if debug:
+                print(f"📊 Chat readiness: {ready_count}/{len(chat_indicators)} indicators found")
+            
+            # Cần ít nhất 2 indicators để coi như ready
+            if ready_count >= 2:
+                # Kiểm tra thêm edit text có thể nhập được không
+                if wait_for_edit_text(dev, timeout=2, debug=debug):
+                    if debug:
+                        print(f"✅ Chat đã sẵn sàng")
+                    return True
+            
+            if debug:
+                print(f"⏳ Chat chưa sẵn sàng, đợi thêm... ({time.time() - start_time:.1f}s)")
+            time_module.sleep(1)
+            
+        except Exception as e:
+            if debug:
+                print(f"⚠️ Lỗi kiểm tra chat ready: {e}")
+            time_module.sleep(1)
+    
+    if debug:
+        print(f"❌ Timeout kiểm tra chat ready sau {timeout}s")
+    return False
+
+def wait_for_ui_ready(dev, timeout=10, debug=False):
+    """Wait for UI to be ready for interaction"""
+    import time as time_module
+    
+    try:
+        start_time = time.time()
+        
+        while time.time() - start_time < timeout:
+            try:
+                # Check if main UI elements are present
+                ui_indicators = [
+                    RID_EDIT_TEXT,  # Message input
+                    RID_SEND_BTN,   # Send button
+                ]
+                
+                for indicator in ui_indicators:
+                    try:
+                        elem = dev.d(resourceId=indicator)
+                        if elem.exists and elem.info.get('enabled', True):
+                            if debug:
+                                print(f"✅ UI ready - found: {indicator}")
+                            return True
+                    except Exception:
+                        continue
+                
+                # Wait a bit before next check
+                time_module.sleep(0.5)
+                
+            except Exception as e:
+                if debug:
+                    print(f"⚠️ Error checking UI readiness: {e}")
+                time_module.sleep(0.5)
+        
+        if debug:
+            print(f"❌ UI not ready after {timeout}s timeout")
+        return False
+        
+    except Exception as e:
+        if debug:
+            print(f"❌ Error in wait_for_ui_ready: {e}")
+        return False
+
+def verify_message_sent(dev, message_text, timeout=5, debug=False):
+    """Xác minh tin nhắn đã được gửi thành công"""
+    import time as time_module
+    
+    if debug:
+        print(f"🔍 Xác minh tin nhắn đã gửi: '{message_text[:30]}...'")
+    
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            # Tìm tin nhắn vừa gửi trong chat
+            message_elements = [
+                dev.d(text=message_text),
+                dev.d(textContains=message_text[:20]),  # Tìm theo 20 ký tự đầu
+                dev.d(className="android.widget.TextView", textContains=message_text[:15])
+            ]
+            
+            for msg_elem in message_elements:
+                if msg_elem.exists:
+                    if debug:
+                        print(f"✅ Tin nhắn đã xuất hiện trong chat")
+                    return True
+            
+            # Kiểm tra edit text đã clear chưa (dấu hiệu tin nhắn đã gửi)
+            edit_elem = dev.d(resourceId=RID_EDIT_TEXT)
+            if edit_elem.exists:
+                current_text = edit_elem.get_text()
+                if not current_text or current_text.strip() == "":
+                    if debug:
+                        print(f"✅ Edit text đã clear, tin nhắn có thể đã gửi")
+                    return True
+            
+            time_module.sleep(0.5)
+            
+        except Exception as e:
+            if debug:
+                print(f"⚠️ Lỗi xác minh tin nhắn: {e}")
+            time_module.sleep(0.5)
+    
+    if debug:
+        print(f"❌ Không thể xác minh tin nhắn sau {timeout}s")
+    return False
+
+# === ERROR CAPTURE AND DEBUGGING ===
+def capture_error_state(dev, error_context="unknown", debug=False):
+    """Capture ảnh màn hình và UI dump khi có lỗi để debug"""
+    import time as time_module
+    import os
+    
+    try:
+        # Tạo thư mục error_logs nếu chưa có
+        error_dir = "error_logs"
+        if not os.path.exists(error_dir):
+            os.makedirs(error_dir)
+        
+        # Tạo timestamp cho file
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        device_id = dev.device_id.replace(":", "_")
+        
+        # Capture screenshot
+        screenshot_path = os.path.join(error_dir, f"error_{device_id}_{error_context}_{timestamp}.png")
+        try:
+            dev.screenshot(screenshot_path)
+            if debug:
+                print(f"📸 Đã capture screenshot: {screenshot_path}")
+        except Exception as e:
+            if debug:
+                print(f"⚠️ Lỗi capture screenshot: {e}")
+        
+        # Capture UI dump
+        ui_dump_path = os.path.join(error_dir, f"ui_dump_{device_id}_{error_context}_{timestamp}.xml")
+        try:
+            ui_dump = dev.dump_hierarchy()
+            with open(ui_dump_path, 'w', encoding='utf-8') as f:
+                f.write(ui_dump)
+            if debug:
+                print(f"📄 Đã capture UI dump: {ui_dump_path}")
+        except Exception as e:
+            if debug:
+                print(f"⚠️ Lỗi capture UI dump: {e}")
+        
+        # Log device info
+        info_path = os.path.join(error_dir, f"device_info_{device_id}_{error_context}_{timestamp}.txt")
+        try:
+            with open(info_path, 'w', encoding='utf-8') as f:
+                f.write(f"Error Context: {error_context}\n")
+                f.write(f"Timestamp: {timestamp}\n")
+                f.write(f"Device ID: {dev.device_id}\n")
+                f.write(f"Device Info: {dev.device_info}\n")
+                f.write(f"Window Size: {dev.window_size()}\n")
+                
+                # Thêm thông tin về current activity
+                try:
+                    current_app = dev.app_current()
+                    f.write(f"Current App: {current_app}\n")
+                except:
+                    f.write("Current App: Unable to get\n")
+                
+                # Thêm thông tin về các element hiện tại
+                try:
+                    elements_info = []
+                    # Kiểm tra các element quan trọng
+                    important_elements = [
+                        ("Edit Text", RID_EDIT_TEXT),
+                        ("Send Button", RID_SEND_BTN),
+                        ("Action Bar", RID_ACTION_BAR),
+                        ("Search Box", RID_SEARCH_BOX)
+                    ]
+                    
+                    for name, resource_id in important_elements:
+                        elem = dev.d(resourceId=resource_id)
+                        if elem.exists:
+                            elements_info.append(f"{name}: EXISTS - {elem.info}")
+                        else:
+                            elements_info.append(f"{name}: NOT FOUND")
+                    
+                    f.write("\nImportant Elements:\n")
+                    f.write("\n".join(elements_info))
+                    
+                except Exception as elem_e:
+                    f.write(f"\nError getting elements info: {elem_e}")
+            
+            if debug:
+                print(f"📝 Đã log device info: {info_path}")
+                
+        except Exception as e:
+            if debug:
+                print(f"⚠️ Lỗi log device info: {e}")
+        
+        return {
+            'screenshot': screenshot_path if 'screenshot_path' in locals() else None,
+            'ui_dump': ui_dump_path if 'ui_dump_path' in locals() else None,
+            'device_info': info_path if 'info_path' in locals() else None,
+            'timestamp': timestamp
+        }
+        
+    except Exception as e:
+        if debug:
+            print(f"❌ Lỗi capture error state: {e}")
+        return None
+
+def safe_ui_operation(dev, operation_func, operation_name="UI Operation", max_retries=3, debug=False):
+    """Wrapper để thực hiện UI operation một cách an toàn với error capture"""
+    import time as time_module
+    
+    for attempt in range(max_retries):
+        try:
+            if debug:
+                print(f"🔄 Thử {operation_name} (lần {attempt + 1}/{max_retries})")
+            
+            result = operation_func()
+            
+            if debug:
+                print(f"✅ {operation_name} thành công")
+            return result
+            
+        except Exception as e:
+            if debug:
+                print(f"⚠️ {operation_name} thất bại (lần {attempt + 1}): {e}")
+            
+            # Capture error state cho lần thử cuối
+            if attempt == max_retries - 1:
+                if debug:
+                    print(f"📸 Capture error state cho {operation_name}")
+                capture_error_state(dev, f"{operation_name.lower().replace(' ', '_')}_failed", debug=debug)
+            else:
+                # Đợi một chút trước khi thử lại
+                time_module.sleep(1)
+    
+    if debug:
+        print(f"❌ {operation_name} thất bại sau {max_retries} lần thử")
+    return None
+
+def check_recent_apps_empty(dev):
+    """Kiểm tra xem recent apps screen có app nào không
+    
+    Returns:
+        True: Nếu không có app nào (empty screen)
+        False: Nếu có app hoặc không thể xác định
+    """
+    try:
+        # Kiểm tra các indicator cho empty recent apps screen
+        empty_indicators = [
+            # Text indicators for empty recent apps
+            "No recent apps",
+            "최근 앱 없음",
+            "최근에 사용한 앱이 없습니다",
+            "No recent items",
+            "Empty",
+            "Nothing here",
+            # Resource ID indicators
+            "com.android.systemui:id/no_recent_apps",
+            "com.sec.android.app.launcher:id/empty_view",
+            "android:id/empty"
+        ]
+        
+        # Check for text-based empty indicators
+        for indicator in empty_indicators[:6]:  # Text indicators
+            if dev.d(text=indicator).exists(timeout=1):
+                print(f"[DEBUG] Empty recent apps detected by text: {indicator}")
+                return True
+                
+        # Check for resource ID-based empty indicators
+        for indicator in empty_indicators[6:]:  # Resource ID indicators
+            if dev.d(resourceId=indicator).exists(timeout=1):
+                print(f"[DEBUG] Empty recent apps detected by resource ID: {indicator}")
+                return True
+        
+        # Check if there are any app cards/items in recent apps
+        # Common selectors for app items in recent apps
+        app_item_selectors = [
+            "com.android.systemui:id/task_view",
+            "com.sec.android.app.launcher:id/item_view",
+            "com.android.systemui:id/snapshot",
+            "android:id/app_thumbnail"
+        ]
+        
+        for selector in app_item_selectors:
+            if dev.d(resourceId=selector).exists(timeout=1):
+                print(f"[DEBUG] Found app items in recent apps: {selector}")
+                return False
+                
+        # If no clear indicators found, assume there might be apps
+        # This is safer approach - only return True if we're certain it's empty
+        print(f"[DEBUG] Cannot determine recent apps state clearly, assuming not empty")
+        return False
+        
+    except Exception as e:
+        print(f"[DEBUG] Error checking recent apps empty state: {e}")
+        return False
+
 def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     """Main flow function - UIAutomator2 version với group-based conversation automation"""
     
@@ -2549,20 +3303,171 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     print(f"[DEBUG] Starting flow for device: {device_ip}")
     print(f"[DEBUG] All devices passed to flow: {all_devices}")
     
+    # Cập nhật trạng thái ban đầu
+    update_shared_status(device_ip, 'starting', 'Khởi tạo automation...', 0)
+    
+    # Xác định nhóm và số lượng devices trong nhóm để setup barrier - Enhanced Sync
+    if all_devices and len(all_devices) > 1:
+        ip = device_ip.split(":")[0] if ":" in device_ip else device_ip
+        normalized_devices = [d.split(':')[0] if ':' in d else d for d in all_devices]
+        group_id, role_in_group = determine_group_and_role(ip, normalized_devices)
+        
+        # Tính số devices trong nhóm này (mỗi nhóm tối đa 2 devices)
+        devices_in_group = 2 if len(normalized_devices) >= 2 else 1
+        
+        print(f"🚧 Nhóm {group_id} - Thiết lập Enhanced Barrier cho {devices_in_group} devices")
+        print(f"📋 Nhóm {group_id} - Devices trong nhóm: {normalized_devices[:devices_in_group]}")
+        update_shared_status(device_ip, 'syncing', f'Đồng bộ Enhanced với nhóm {group_id}...', 10)
+        
+        # Enhanced barrier synchronization với multiple retry attempts
+        barrier_success = False
+        barrier_attempts = 3
+        
+        for barrier_attempt in range(barrier_attempts):
+            try:
+                print(f"🔄 Nhóm {group_id} - Barrier attempt {barrier_attempt + 1}/{barrier_attempts}")
+                
+                # Signal ready tại barrier với retry
+                signal_success = signal_ready_at_barrier(group_id, ip)
+                if not signal_success:
+                    print(f"⚠️ Nhóm {group_id} - Signal failed on attempt {barrier_attempt + 1}")
+                    if barrier_attempt < barrier_attempts - 1:
+                        time.sleep(2)  # Wait before retry
+                        continue
+                
+                # Đợi tất cả devices trong nhóm sẵn sàng với adaptive timeout
+                barrier_timeout = 90 + (barrier_attempt * 30)  # Tăng timeout theo attempt
+                print(f"⏱️ Nhóm {group_id} - Đợi barrier với timeout {barrier_timeout}s")
+                
+                if wait_for_group_barrier(group_id, devices_in_group, timeout=barrier_timeout):
+                    print(f"✅ Nhóm {group_id} - Barrier thành công sau {barrier_attempt + 1} attempts")
+                    barrier_success = True
+                    update_shared_status(device_ip, 'synced', f'Đã đồng bộ với nhóm {group_id}', 20)
+                    break
+                else:
+                    print(f"⚠️ Nhóm {group_id} - Barrier timeout on attempt {barrier_attempt + 1}")
+                    if barrier_attempt < barrier_attempts - 1:
+                        print(f"🔄 Nhóm {group_id} - Cleaning up và retry barrier...")
+                        cleanup_barrier_file(group_id)
+                        time.sleep(5)  # Wait before retry
+                    
+            except Exception as e:
+                print(f"❌ Nhóm {group_id} - Barrier error on attempt {barrier_attempt + 1}: {e}")
+                if barrier_attempt < barrier_attempts - 1:
+                    cleanup_barrier_file(group_id)
+                    time.sleep(3)
+        
+        if not barrier_success:
+            print(f"⚠️ Nhóm {group_id} - Không thể đồng bộ sau {barrier_attempts} attempts, tiếp tục độc lập...")
+            print(f"💡 Nhóm {group_id} - Máy sẽ chạy với delay ngẫu nhiên để tránh conflict")
+            update_shared_status(device_ip, 'warning', 'Chạy độc lập (không đồng bộ)', 15)
+            
+            # Thêm delay ngẫu nhiên lớn hơn khi không đồng bộ được
+            import random
+            fallback_delay = random.uniform(3, 8)
+            print(f"🕐 Nhóm {group_id} - Fallback delay: {fallback_delay:.2f}s")
+            time.sleep(fallback_delay)
+        
+        # Thêm delay ngẫu nhiên nhỏ sau barrier để tránh conflict
+        import random
+        post_barrier_delay = random.uniform(0.5, 1.5)
+        print(f"[DEBUG] Post-barrier delay: {post_barrier_delay:.2f}s")
+        
+        # Kiểm tra stop signal trước delay
+        if stop_event and stop_event.is_set():
+            print(f"[DEBUG] Stop signal received during post-barrier delay for {device_ip}")
+            cleanup_barrier_file(group_id)
+            update_shared_status(device_ip, 'stopped', 'Đã dừng theo yêu cầu', 0)
+            return "STOPPED"
+        
+        time.sleep(post_barrier_delay)
+    else:
+        # Single device mode - không cần barrier
+        import random
+        initial_delay = random.uniform(1, 3)
+        print(f"[DEBUG] Single device mode - Initial delay: {initial_delay:.2f}s")
+        
+        # Kiểm tra stop signal trước delay
+        if stop_event and stop_event.is_set():
+            print(f"[DEBUG] Stop signal received during initial delay for {device_ip}")
+            return "STOPPED"
+        
+        time.sleep(initial_delay)
+    
+    # BARRIER SYNC TRƯỚC KHI MỞ APP - Đảm bảo tất cả máy bắt đầu mở app ĐỒNG THỜI
+    if all_devices and len(all_devices) > 1:
+        print(f"[DEBUG] Waiting for all devices to be ready to open Zalo (pre-open barrier sync)...")
+        update_shared_status(device_ip, 'syncing_pre_open', 'Đợi tất cả máy sẵn sàng mở Zalo...', 22)
+        
+        try:
+            # Signal ready to open app
+            signal_ready_at_barrier("pre_app_open", device_ip)
+            
+            # Wait for all devices to be ready
+            barrier_result = wait_for_group_barrier(
+                group_id="pre_app_open",
+                device_count=len(all_devices),
+                timeout=60  # 1 phút timeout
+            )
+            
+            if not barrier_result:
+                print(f"[WARNING] Pre-open barrier timeout, continuing anyway...")
+            else:
+                print(f"[DEBUG] 🚀 ALL DEVICES READY - OPENING ZALO SIMULTANEOUSLY!")
+                
+        except Exception as e:
+            print(f"[WARNING] Error during pre-open barrier sync: {e}, continuing anyway...")
+    
+    # Clear apps trước khi mở Zalo với logic đơn giản
+    print(f"[DEBUG] Clearing apps before opening Zalo on {device_ip}...")
+    update_shared_status(device_ip, 'clearing_apps', 'Đang clear apps trước khi mở Zalo...', 23)
+    
+    try:
+        # Bấm nút recent apps
+        recent_apps_element = dev.d(resourceId="com.android.systemui:id/recent_apps")
+        if recent_apps_element.exists(timeout=5):
+            recent_apps_element.click()
+            print(f"[DEBUG] Recent apps button clicked")
+            time.sleep(3)
+            
+            # Kiểm tra xem có nút clear_all không
+            clear_all_element = dev.d(resourceId="com.sec.android.app.launcher:id/clear_all")
+            if clear_all_element.exists(timeout=5):
+                # Có nút clear_all -> click vào
+                clear_all_element.click()
+                print(f"[DEBUG] Clear all button clicked successfully")
+                time.sleep(2)
+            else:
+                # Không có nút clear_all -> click center_group 2 lần
+                center_group_element = dev.d(resourceId="com.android.systemui:id/center_group")
+                if center_group_element.exists(timeout=3):
+                    center_group_element.click()
+                    print(f"[DEBUG] Center group clicked (1st time)")
+                    time.sleep(1)
+                    center_group_element.click()
+                    print(f"[DEBUG] Center group clicked (2nd time)")
+                    time.sleep(1)
+                else:
+                    print(f"[DEBUG] Center group not found")
+        else:
+            print(f"[DEBUG] Recent apps button not found")
+            
+        print(f"[DEBUG] Apps clearing completed on {device_ip}")
+        
+    except Exception as e:
+        print(f"[DEBUG] Error during clear apps: {e}")
+        
+    # Ensure we're on home screen before opening Zalo
+    try:
+        dev.d.press("home")
+        time.sleep(1)
+        print(f"[DEBUG] Returned to home screen on {device_ip}")
+    except Exception as e:
+        print(f"[DEBUG] Error returning to home: {e}")
+    
     # Mở app Zalo với retry logic và delay
     print(f"[DEBUG] Opening Zalo app on {device_ip}...")
-    
-    # Thêm delay ngẫu nhiên để tránh conflict khi nhiều device cùng mở
-    import random
-    initial_delay = random.uniform(1, 3)
-    print(f"[DEBUG] Initial delay: {initial_delay:.2f}s")
-    
-    # Kiểm tra stop signal trước delay
-    if stop_event and stop_event.is_set():
-        print(f"[DEBUG] Stop signal received during initial delay for {device_ip}")
-        return "STOPPED"
-    
-    time.sleep(initial_delay)
+    update_shared_status(device_ip, 'opening_app', 'Đang mở ứng dụng Zalo...', 25)
     
     # Enhanced retry logic cho việc mở app với better error handling
     max_retries = 5  # Tăng số lần retry
@@ -2643,16 +3548,43 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     
     if not app_opened_successfully:
         print(f"[ERROR] Failed to open Zalo app after {max_retries} attempts on {device_ip}")
+        update_shared_status(device_ip, 'error', 'Không thể mở ứng dụng Zalo', 0)
         return "APP_OPEN_FAILED"
     
     print(f"[DEBUG] Zalo app opening process completed on {device_ip}")
     
+    # Barrier sync sau khi mở app thành công để đảm bảo cả 2 máy đều đã mở Zalo
+    print(f"[DEBUG] Waiting for all devices to open Zalo app (barrier sync)...")
+    update_shared_status(device_ip, 'syncing', 'Đợi tất cả máy mở Zalo...', 30)
+    
+    try:
+        barrier_result = wait_for_group_barrier(
+            device_ip=device_ip,
+            all_devices=all_devices,
+            barrier_name="app_opened",
+            timeout=120,  # 2 phút timeout
+            stop_event=stop_event
+        )
+        
+        if barrier_result == "STOPPED":
+            print(f"[DEBUG] Stop signal received during app open barrier sync for {device_ip}")
+            return "STOPPED"
+        elif barrier_result == "TIMEOUT":
+            print(f"[WARNING] Timeout waiting for other devices to open app, continuing anyway...")
+        else:
+            print(f"[DEBUG] All devices have opened Zalo app successfully")
+    except Exception as e:
+        print(f"[WARNING] Error during app open barrier sync: {e}, continuing anyway...")
+    
     # Kiểm tra đăng nhập
     print(f"[DEBUG] Checking login status for {device_ip}...")
+    update_shared_status(device_ip, 'checking_login', 'Kiểm tra trạng thái đăng nhập...', 35)
+    
     if is_login_required(dev, debug=True):
         ip = dev.device_id.split(":")[0] if ":" in dev.device_id else dev.device_id
         print(f"[DEBUG] Login required for {device_ip}")
         print(f"IP: {ip} - chưa đăng nhập → thoát flow.")
+        update_shared_status(device_ip, 'error', 'Cần đăng nhập Zalo', 0)
         return "LOGIN_REQUIRED"
     
     ip = dev.device_id.split(":")[0] if ":" in dev.device_id else dev.device_id
@@ -2799,6 +3731,8 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         
         # Bắt đầu cuộc hội thoại với group support
         print("💬 Bắt đầu cuộc hội thoại tự động...")
+        update_shared_status(device_ip, 'running', 'Đang chạy cuộc hội thoại...', 50)
+        
         if all_devices:
             run_conversation(dev, role_in_group, debug=True, all_devices=all_devices, stop_event=stop_event, status_callback=status_callback)
         else:
@@ -2807,6 +3741,18 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         print("❌ Không thể vào chat")
     
     print("✅ Hoàn thành flow.")
+    update_shared_status(device_ip, 'completed', 'Hoàn thành automation', 100)
+    
+    # Cleanup barrier file nếu có
+    if all_devices and len(all_devices) > 1:
+        try:
+            ip = device_ip.split(":")[0] if ":" in device_ip else device_ip
+            normalized_devices = [d.split(':')[0] if ':' in d else d for d in all_devices]
+            group_id, _ = determine_group_and_role(ip, normalized_devices)
+            cleanup_barrier_file(group_id)
+        except Exception:
+            pass
+    
     return "SUCCESS"
 # === FLOW END ===
 

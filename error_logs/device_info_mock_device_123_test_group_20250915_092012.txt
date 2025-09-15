@@ -1,0 +1,8 @@
+Error Context: test_group
+Timestamp: 20250915_092012
+Device ID: mock_device_123
+Device Info: {'brand': 'Mock', 'model': 'TestDevice', 'version': {'release': '11'}, 'serialno': 'mock_serial_123'}
+Window Size: (1080, 2340)
+Current App: Unable to get
+
+Error getting elements info: name 'RID_SEARCH_BOX' is not defined

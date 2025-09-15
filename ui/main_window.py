@@ -7,6 +7,7 @@ Cửa sổ chính của ứng dụng Android Automation GUI
 
 import os
 import sys
+import json
 from typing import Dict, Any
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
@@ -314,15 +315,7 @@ class MainWindow(QMainWindow):
     
 
     
-    def switch_page(self, page_name: str):
-        """Switch to specified page"""
-        if page_name in self.pages:
-            widget = self.pages[page_name]
-            self.content_stack.setCurrentWidget(widget)
-            
-            # Update window title
-            page_title = page_name.replace('_', ' ').title()
-            self.setWindowTitle(f"Android Automation GUI - {page_title}")
+    # Duplicate switch_page method removed - using the one above
     
     def update_status(self):
         """Update status information"""
@@ -330,14 +323,56 @@ class MainWindow(QMainWindow):
         device_count = len(self.device_manager.get_connected_devices())
         self.device_status_label.setText(f"Devices: {device_count}")
         
-        # Update sidebar status
-        if device_count > 0:
-            self.sidebar.update_status(f"🟢 {device_count} Connected", "#107c10")
+        # Read shared status from file
+        shared_status = self.read_shared_status()
+        
+        # Update execution status based on shared status
+        if shared_status:
+            status_text = shared_status.get('status', 'unknown')
+            progress = shared_status.get('progress', 0)
+            device_id = shared_status.get('device_id', 'unknown')
+            
+            if status_text == 'running':
+                self.execution_status_label.setText(f"Running: {device_id} ({progress}%)")
+                self.sidebar.update_status(f"🟡 Running {progress}%", "#ff9800")
+            elif status_text == 'completed':
+                self.execution_status_label.setText(f"Completed: {device_id}")
+                if device_count > 0:
+                    self.sidebar.update_status(f"🟢 {device_count} Connected", "#107c10")
+                else:
+                    self.sidebar.update_status("🔴 Disconnected", "#d13438")
+            elif status_text == 'error':
+                self.execution_status_label.setText(f"Error: {device_id}")
+                self.sidebar.update_status(f"🔴 Error", "#d13438")
+            else:
+                self.execution_status_label.setText("Ready")
+                # Update sidebar status based on device count
+                if device_count > 0:
+                    self.sidebar.update_status(f"🟢 {device_count} Connected", "#107c10")
+                else:
+                    self.sidebar.update_status("🔴 Disconnected", "#d13438")
         else:
-            self.sidebar.update_status("🔴 Disconnected", "#d13438")
+            self.execution_status_label.setText("Ready")
+            # Update sidebar status based on device count
+            if device_count > 0:
+                self.sidebar.update_status(f"🟢 {device_count} Connected", "#107c10")
+            else:
+                self.sidebar.update_status("🔴 Disconnected", "#d13438")
         
         # Flow functionality removed
         self.flow_status_label.setText("Flows: 0")
+    
+    def read_shared_status(self):
+        """Read shared status from file"""
+        try:
+            status_file = "shared_status.json"
+            if os.path.exists(status_file):
+                with open(status_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+        except Exception as e:
+            # Silently ignore errors when reading status file
+            pass
+        return None
         
     def on_device_connected(self, device_id):
         """Handle device connection"""

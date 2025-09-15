@@ -295,7 +295,7 @@ class DataManager:
             with open(self.master_config_file, 'w', encoding='utf-8') as f:
                 json.dump(self.master_config, f, indent=2, ensure_ascii=False)
             
-            print(f"✅ Saved master config with {len(self.master_config.get('devices', {}))} devices")
+            # Removed spam log: Saved master config
             return True
             
         except Exception as e:
@@ -441,7 +441,7 @@ class DataManager:
             # Lưu vào file
             self._save_all_data()
             
-            print(f"[DataManager] Synced {len(current_devices)} devices with ADB")
+            # Removed spam log: DataManager synced devices
             return len(current_devices)
             
         except Exception as e:

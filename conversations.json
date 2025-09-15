@@ -1,0 +1,199 @@
+[
+  {
+    "group_id": 1,
+    "messages": [
+      {
+        "content": "role 1: Bạn có nghĩ tới việc mở quán cà phê chưa?",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Có chứ, mình từng mơ ước lâu rồi.",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Thế thì làm luôn đi, hợp tác với mình.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Ý tưởng hay đó, nhưng vốn hơi căng.",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Mình có một ít, bạn góp một ít là đủ.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Cụ thể cần bao nhiêu?",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Khoảng 150 triệu là ổn.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Ừm, số này cũng không quá lớn.",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Địa điểm thì mình đã để ý một chỗ.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Ở đâu vậy?",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Gần trường đại học, đông sinh viên.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Vị trí này tiềm năng thật.",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Giá thuê chỉ 8 triệu/tháng thôi.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Hợp lý quá.",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Phong cách quán bạn muốn thế nào?",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Mình thích kiểu vintage ấm cúng.",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Mình thì nghiêng về phong cách hiện đại.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Vậy kết hợp cả hai đi.",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Ý tưởng không tệ.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Menu thì sao?",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Cà phê, trà sữa, thêm bánh ngọt.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Đơn giản nhưng dễ bán.",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Món signature cần đặc biệt chút.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Có thể thử cà phê cam sả.",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Nghe lạ đó, đáng để thử.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Thế bạn lo phần marketing nhé.",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Yên tâm, mình giỏi khoản này.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Mạng xã hội quan trọng lắm đấy.",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Mình sẽ chạy quảng cáo Facebook.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Có cần thiết kế logo không?",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Tất nhiên, hình ảnh phải chuyên nghiệp.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Mình quen một bạn thiết kế giỏi.",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Quá tuyệt, nhờ bạn ấy luôn.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Khi nào bắt đầu trang trí quán?",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Tuần sau ký hợp đồng thuê xong là làm liền.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Hơi gấp đấy, nhưng mình thích.",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Nhanh thì sớm khai trương mà.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Dự kiến khai trương ngày nào?",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Đầu tháng sau.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Vậy phải chuẩn bị kỹ lắm.",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Không lo, mình lên checklist rồi.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Bạn chu đáo ghê.",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Đây là giấc mơ mà, phải nghiêm túc.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Đúng, mình cũng rất háo hức.",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Hy vọng quán sẽ đông khách.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Chắc chắn sẽ thành công!",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Tụi mình cố gắng hết sức nhé.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Đồng ý, cùng nhau thực hiện ước mơ.",
+        "delay": 2
+      }
+    ]
+  }
+]
