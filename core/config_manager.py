@@ -10,6 +10,7 @@ import json
 import time
 from typing import Dict, Any, Optional
 from PyQt6.QtCore import QObject, pyqtSignal, QSettings
+from utils.data_manager import data_manager
 
 class ConfigManager(QObject):
     """Configuration Manager với GUI integration"""
@@ -23,8 +24,8 @@ class ConfigManager(QObject):
     def __init__(self):
         super().__init__()
         self.config_dir = "config"
+        # Legacy config file for app settings only
         self.config_file = os.path.join(self.config_dir, "app_config.json")
-        self.phone_mapping_file = os.path.join(self.config_dir, "phone_mapping.json")
         
         # Default configuration
         self.default_config = {
@@ -73,14 +74,12 @@ class ConfigManager(QObject):
         }
         
         self.config = self.default_config.copy()
-        self.phone_mapping = {}
         
         # Ensure config directory exists
         os.makedirs(self.config_dir, exist_ok=True)
         
         # Load configuration
         self.load_config()
-        self.load_phone_mapping()
     
     def load_config(self) -> bool:
         """Load configuration từ file"""
@@ -129,37 +128,21 @@ class ConfigManager(QObject):
             return False
     
     def load_phone_mapping(self) -> bool:
-        """Load phone mapping từ file"""
+        """Load phone mapping từ DataManager (deprecated - use DataManager directly)"""
         try:
-            if os.path.exists(self.phone_mapping_file):
-                with open(self.phone_mapping_file, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    self.phone_mapping = data.get('phone_mapping', {})
-                
-                self.log_message.emit(f"📞 Đã load {len(self.phone_mapping)} phone mappings", "INFO")
-                return True
-            else:
-                self.phone_mapping = {}
-                return True
+            devices = data_manager.get_devices_with_phone_numbers()
+            self.log_message.emit(f"📞 Đã load {len(devices)} devices từ master config", "INFO")
+            return True
                 
         except Exception as e:
             self.log_message.emit(f"❌ Lỗi load phone mapping: {e}", "ERROR")
-            self.phone_mapping = {}
             return False
     
     def save_phone_mapping(self) -> bool:
-        """Lưu phone mapping vào file"""
+        """Lưu phone mapping vào DataManager (deprecated - use DataManager directly)"""
         try:
-            data = {
-                'phone_mapping': self.phone_mapping,
-                'timestamp': time.time(),
-                'created_by': 'Android Automation GUI'
-            }
-            
-            with open(self.phone_mapping_file, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-            
-            self.log_message.emit("💾 Đã lưu phone mapping", "SUCCESS")
+            # Phone mapping now managed by DataManager
+            self.log_message.emit("💾 Phone mapping được lưu vào master config", "SUCCESS")
             return True
             
         except Exception as e:
@@ -216,17 +199,20 @@ class ConfigManager(QObject):
             return False
     
     def get_phone_mapping(self, ip: str) -> str:
-        """Lấy phone number cho IP"""
-        return self.phone_mapping.get(ip, "")
+        """Lấy phone number cho IP từ DataManager"""
+        try:
+            devices = data_manager.get_devices_with_phone_numbers()
+            for device in devices:
+                if device.get('ip') == ip:
+                    return device.get('phone', '')
+            return ''
+        except Exception:
+            return ''
     
     def set_phone_mapping(self, ip: str, phone: str, save: bool = True) -> bool:
-        """Set phone mapping cho IP"""
+        """Set phone mapping cho IP qua DataManager"""
         try:
-            self.phone_mapping[ip] = phone
-            
-            if save:
-                self.save_phone_mapping()
-            
+            data_manager.update_device_phone(ip, phone)
             return True
             
         except Exception as e:
@@ -234,24 +220,22 @@ class ConfigManager(QObject):
             return False
     
     def remove_phone_mapping(self, ip: str, save: bool = True) -> bool:
-        """Xóa phone mapping cho IP"""
+        """Xóa phone mapping cho IP qua DataManager"""
         try:
-            if ip in self.phone_mapping:
-                del self.phone_mapping[ip]
-                
-                if save:
-                    self.save_phone_mapping()
-                
-                return True
-            return False
+            data_manager.update_device_phone(ip, '')
+            return True
             
         except Exception as e:
             self.log_message.emit(f"❌ Lỗi xóa phone mapping: {e}", "ERROR")
             return False
     
     def get_all_phone_mappings(self) -> Dict[str, str]:
-        """Lấy tất cả phone mappings"""
-        return self.phone_mapping.copy()
+        """Lấy tất cả phone mappings từ DataManager"""
+        try:
+            devices = data_manager.get_devices_with_phone_numbers()
+            return {device.get('ip', ''): device.get('phone', '') for device in devices if device.get('ip')}
+        except Exception:
+            return {}
     
     def reset_to_default(self, section: str = None) -> bool:
         """Reset config về default values"""
@@ -277,9 +261,14 @@ class ConfigManager(QObject):
     def export_config(self, file_path: str) -> bool:
         """Export config ra file"""
         try:
+            # Get devices from DataManager
+            devices = data_manager.get_devices_with_phone_numbers()
+            phone_mapping = {device.get('ip', ''): device.get('phone', '') for device in devices if device.get('ip')}
+            
             export_data = {
                 "config": self.config,
-                "phone_mapping": self.phone_mapping,
+                "phone_mapping": phone_mapping,
+                "devices": devices,
                 "export_timestamp": time.time(),
                 "version": "1.0.0"
             }
@@ -304,13 +293,20 @@ class ConfigManager(QObject):
             if "config" in import_data:
                 self.config = self._merge_config(self.default_config, import_data["config"])
             
-            # Import phone mapping
-            if "phone_mapping" in import_data:
-                self.phone_mapping = import_data["phone_mapping"]
+            # Import devices to DataManager
+            if "devices" in import_data:
+                for device in import_data["devices"]:
+                    ip = device.get('ip')
+                    phone = device.get('phone', '')
+                    if ip:
+                        data_manager.update_device_phone(ip, phone)
+            elif "phone_mapping" in import_data:
+                # Fallback for old format
+                for ip, phone in import_data["phone_mapping"].items():
+                    data_manager.update_device_phone(ip, phone)
             
             # Save imported data
             self.save_config()
-            self.save_phone_mapping()
             
             self.config_loaded.emit()
             self.log_message.emit(f"📥 Đã import config: {file_path}", "SUCCESS")
@@ -341,11 +337,17 @@ class ConfigManager(QObject):
     
     def get_app_info(self) -> Dict[str, Any]:
         """Lấy thông tin ứng dụng"""
+        try:
+            devices = data_manager.get_devices_with_phone_numbers()
+            devices_count = len(devices)
+        except Exception:
+            devices_count = 0
+            
         return {
             "name": "Android Automation GUI",
             "version": "1.0.0",
             "config_file": self.config_file,
-            "phone_mapping_file": self.phone_mapping_file,
+            "master_config_file": data_manager.master_config_file,
             "config_sections": list(self.config.keys()),
-            "phone_mappings_count": len(self.phone_mapping)
+            "devices_count": devices_count
         }

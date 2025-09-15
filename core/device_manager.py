@@ -14,6 +14,7 @@ import os
 from typing import List, Dict, Optional, Tuple
 from PyQt6.QtCore import QObject, pyqtSignal, QThread
 import uiautomator2 as u2
+from utils.data_manager import data_manager
 
 class Device:
     """Device class tích hợp từ core1.py với GUI support"""
@@ -219,10 +220,9 @@ class DeviceManager(QObject):
         super().__init__()
         self.connected_devices = {}  # device_id -> Device object
         self.workers = {}  # device_id -> DeviceWorker
-        self.phone_mapping = {}  # IP -> phone number
-        self.config_file = "config/phone_mapping.json"
+        self.phone_mapping = {}  # IP -> phone number (cached from DataManager)
         
-        # Load phone mapping
+        # Load phone mapping từ DataManager
         self.load_phone_mapping()
     
     def get_available_devices(self) -> List[str]:
@@ -302,28 +302,18 @@ class DeviceManager(QObject):
         return self.get_devices()
     
     def load_phone_mapping(self):
-        """Load phone mapping từ file"""
+        """Load phone mapping từ DataManager"""
         try:
-            if os.path.exists(self.config_file):
-                with open(self.config_file, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    self.phone_mapping = data.get('phone_mapping', {})
-                    self.log_message.emit(f"📞 Đã load {len(self.phone_mapping)} phone mappings", "INFO")
+            self.phone_mapping = data_manager.get_phone_mapping()
+            self.log_message.emit(f"📞 Đã load {len(self.phone_mapping)} phone mappings từ master config", "INFO")
         except Exception as e:
             self.log_message.emit(f"⚠️ Lỗi load phone mapping: {e}", "WARNING")
     
     def save_phone_mapping(self):
-        """Lưu phone mapping vào file"""
+        """Lưu phone mapping vào DataManager"""
         try:
-            os.makedirs(os.path.dirname(self.config_file), exist_ok=True)
-            data = {
-                'phone_mapping': self.phone_mapping,
-                'timestamp': time.time(),
-                'created_by': 'GUI Application'
-            }
-            with open(self.config_file, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-            self.log_message.emit(f"💾 Đã lưu phone mapping", "SUCCESS")
+            # DataManager tự động lưu khi set phone mapping
+            self.log_message.emit(f"💾 Phone mapping đã được lưu vào master config", "SUCCESS")
             return True
         except Exception as e:
             self.log_message.emit(f"❌ Lỗi lưu phone mapping: {e}", "ERROR")
@@ -332,10 +322,14 @@ class DeviceManager(QObject):
     def set_phone_mapping(self, ip: str, phone: str):
         """Set phone mapping cho IP"""
         self.phone_mapping[ip] = phone
+        # Lưu vào DataManager
+        data_manager.set_phone_mapping(ip, phone)
     
     def get_phone_mapping(self, ip: str) -> str:
         """Lấy phone number cho IP"""
-        return self.phone_mapping.get(ip, "")
+        # Refresh từ DataManager để đảm bảo data mới nhất
+        phone = data_manager.get_phone_by_ip(ip)
+        return phone if phone else ""
     
     def run_flow_on_device(self, device_id: str, flow_function):
         """Chạy flow trên device trong thread riêng"""

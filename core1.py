@@ -13,7 +13,8 @@ ENC = "utf-8"
 SELF_PATH = os.path.abspath(__file__)
 DEVICE = os.environ.get("DEVICE", "192.168.5.74:5555")   # IP:port để test
 DEVICES = os.environ.get("DEVICES", "192.168.5.74:5555, 192.168.5.82:5555")  # Danh sách devices cách nhau bởi dấu phẩy
-PHONE_CONFIG_FILE = "phone_mapping.json"  # File lưu mapping IP -> số điện thoại
+PHONE_CONFIG_FILE = "phone_mapping.json"  # File lưu mapping IP -> số điện thoại (legacy)
+MASTER_CONFIG_FILE = "config/master_config.json"  # File config tổng hợp mới
 
 # ---------------- UIAutomator2 Device Wrapper ----------------
 class Device:
@@ -578,30 +579,83 @@ DEFAULT_PHONE_MAP = {
 PHONE_MAP = {}
 
 def load_phone_map_from_file():
-    """Load phone mapping từ file config"""
+    """Load phone mapping từ file config - ưu tiên master_config.json"""
     try:
+        # Ưu tiên đọc từ master_config.json
+        if os.path.exists(MASTER_CONFIG_FILE):
+            with open(MASTER_CONFIG_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                devices = data.get('devices', {})
+                # Chuyển đổi từ format devices sang phone_mapping
+                phone_mapping = {}
+                for device_id, device_info in devices.items():
+                    phone = device_info.get('phone', '')
+                    if phone:
+                        phone_mapping[device_id] = phone
+                print(f"✅ Loaded phone mapping từ master config: {len(phone_mapping)} devices")
+                return phone_mapping
+        
+        # Fallback về file cũ
         if os.path.exists(PHONE_CONFIG_FILE):
             with open(PHONE_CONFIG_FILE, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                return data.get('phone_mapping', {})
+                phone_mapping = data.get('phone_mapping', {})
+                print(f"⚠️ Loaded phone mapping từ legacy file: {len(phone_mapping)} devices")
+                return phone_mapping
+                
     except Exception as e:
         print(f"⚠️ Lỗi đọc file config: {e}")
     return {}
 
 def save_phone_map_to_file(phone_map):
-    """Lưu phone mapping vào file config"""
+    """Lưu phone mapping vào master_config.json"""
     try:
-        data = {
-            'phone_mapping': phone_map,
-            'timestamp': time.time(),
-            'created_by': 'core1.py CLI'
-        }
-        with open(PHONE_CONFIG_FILE, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-        print(f"✅ Đã lưu phone mapping vào {PHONE_CONFIG_FILE}")
+        # Đảm bảo thư mục config tồn tại
+        os.makedirs('config', exist_ok=True)
+        
+        # Load master config hiện tại hoặc tạo mới
+        master_config = {}
+        if os.path.exists(MASTER_CONFIG_FILE):
+            with open(MASTER_CONFIG_FILE, 'r', encoding='utf-8') as f:
+                master_config = json.load(f)
+        
+        # Đảm bảo có section devices
+        if 'devices' not in master_config:
+            master_config['devices'] = {}
+        
+        # Cập nhật phone mapping vào devices
+        for device_id, phone in phone_map.items():
+            if device_id not in master_config['devices']:
+                master_config['devices'][device_id] = {
+                    'phone': phone,
+                    'zalo_number': '',
+                    'device_info': {
+                        'model': 'Unknown',
+                        'android_version': 'Unknown', 
+                        'resolution': 'Unknown',
+                        'status': 'device'
+                    },
+                    'last_updated': time.strftime("%Y-%m-%d %H:%M:%S")
+                }
+            else:
+                master_config['devices'][device_id]['phone'] = phone
+                master_config['devices'][device_id]['last_updated'] = time.strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Cập nhật metadata
+        if 'metadata' not in master_config:
+            master_config['metadata'] = {}
+        master_config['metadata']['last_updated'] = time.strftime("%Y-%m-%d %H:%M:%S")
+        master_config['metadata']['updated_by'] = 'core1.py CLI'
+        
+        # Lưu master config
+        with open(MASTER_CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(master_config, f, indent=2, ensure_ascii=False)
+        
+        print(f"✅ Đã lưu phone mapping vào {MASTER_CONFIG_FILE}")
         return True
+        
     except Exception as e:
-        print(f"❌ Lỗi lưu file config: {e}")
+        print(f"❌ Lỗi lưu master config: {e}")
         return False
 
 def parse_device_map_string(device_map_str):

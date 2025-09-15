@@ -146,15 +146,17 @@ class PhoneMappingWidget(QWidget):
             
             devices = data_manager.get_devices_with_phone_numbers()
             for i, device in enumerate(devices):
-                self.add_device_row(i + 1, device['device_id'])
+                self.add_device_row(i + 1, device)
                     
         except Exception as e:
             print(f"Error refreshing devices: {e}")
             
-    def add_device_row(self, stt, device_id):
+    def add_device_row(self, stt, device_info):
         """Thêm một hàng thiết bị vào bảng"""
         row = self.table.rowCount()
         self.table.insertRow(row)
+        
+        device_id = device_info['device_id']
         
         # STT
         self.table.setItem(row, 0, QTableWidgetItem(str(stt)))
@@ -162,14 +164,13 @@ class PhoneMappingWidget(QWidget):
         # IP máy
         self.table.setItem(row, 1, QTableWidgetItem(device_id))
         
-        # Phone Number - kiểm tra xem đã có dữ liệu lưu chưa
-        saved_data = self.device_data.get(device_id, {})
-        phone_item = QTableWidgetItem(saved_data.get('phone', ''))
+        # Phone Number - lấy từ device_info
+        phone_item = QTableWidgetItem(device_info.get('phone', ''))
         phone_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsEditable)
         self.table.setItem(row, 2, phone_item)
         
-        # Note
-        note_item = QTableWidgetItem(saved_data.get('note', ''))
+        # Note - lấy từ device_info
+        note_item = QTableWidgetItem(device_info.get('note', ''))
         note_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsEditable)
         self.table.setItem(row, 3, note_item)
         
@@ -197,7 +198,7 @@ class PhoneMappingWidget(QWidget):
                 background-color: #45a049;
             }
         """)
-        save_btn.clicked.connect(lambda: self.save_device_info(device_id, row))
+        save_btn.clicked.connect(lambda checked, did=device_id: self.save_device_info(did, row))
         self.table.setCellWidget(row, 4, save_btn)
         
         # Set row height để đảm bảo nhất quán
