@@ -7,12 +7,13 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt6.QtGui import QFont
-from utils.data_manager import data_manager
 import sys
 import os
 
 # Add the project root to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from utils.data_manager import data_manager
 
 class AutomationWorker(QThread):
     """Worker thread for automation to prevent UI freezing"""
@@ -43,7 +44,20 @@ class AutomationWorker(QThread):
             
             # Create status callback for real-time updates
             def status_callback(signal_type, *args):
-                if not self.should_stop:
+                # Enhanced worker validity check
+                try:
+                    # Kiểm tra worker còn tồn tại và chưa bị stop
+                    if (self.should_stop or 
+                        not hasattr(self, 'message_status_updated') or 
+                        not hasattr(self, 'device_status_updated') or
+                        not self.isRunning()):
+                        return  # Worker không còn valid, bỏ qua signal
+                    
+                    # Kiểm tra signals còn connected
+                    if (not self.message_status_updated.receivers() or 
+                        not self.device_status_updated.receivers()):
+                        return  # Không có receiver, bỏ qua signal
+                    
                     if signal_type == 'message_status_updated':
                         # Format từ core1.py: status_callback('message_status_updated', {data})
                         if len(args) > 0 and isinstance(args[0], dict):
@@ -59,6 +73,19 @@ class AutomationWorker(QThread):
                             device_ip = args[0]
                             status = args[1]
                             self.device_status_updated.emit(device_ip, status)
+                            
+                except (RuntimeError, AttributeError) as e:
+                    # Worker đã bị xóa hoặc không còn valid, bỏ qua signal này
+                    error_msg = str(e).lower()
+                    if ("wrapped c/c++ object" in error_msg and "has been deleted" in error_msg) or \
+                       "attribute" in error_msg:
+                        pass  # Ignore deleted worker errors and attribute errors
+                    else:
+                        # Log unexpected errors but don't crash
+                        print(f"⚠️ Status callback error: {e}")
+                except Exception as e:
+                    # Catch any other unexpected errors
+                    print(f"⚠️ Unexpected status callback error: {e}")
             
             results = run_zalo_automation(
                 self.automation_data['device_pairs'],
@@ -421,9 +448,8 @@ class ZaloAutomationWidget(QWidget):
         self.conversation_input_layout.setContentsMargins(10, 10, 10, 10)
         self.conversation_input_layout.setSpacing(10)
         
-        # Add initial conversation inputs
-        for i in range(3):
-            self.add_conversation_input(i + 1)
+        # Add initial conversation inputs (will be updated when devices are paired)
+        self.add_conversation_input(1)
         
         # Add conversation button
         add_conversation_btn = QPushButton("➕ Thêm Hội Thoại")
@@ -504,6 +530,38 @@ class ZaloAutomationWidget(QWidget):
             group_box.setParent(None)
             group_box.deleteLater()
     
+    def update_conversation_inputs_for_pairs(self):
+        """Update conversation inputs to match number of device pairs"""
+        if not hasattr(self, 'device_pairs') or not self.device_pairs:
+            return
+        
+        target_count = len(self.device_pairs)
+        current_count = len(self.conversation_texts)
+        
+        # Add more conversation inputs if needed
+        while current_count < target_count:
+            self.add_conversation_input(current_count + 1)
+            current_count += 1
+        
+        # Remove excess conversation inputs if needed
+        while current_count > target_count and current_count > 1:
+            # Find the last conversation input to remove
+            last_text_edit = self.conversation_texts[-1]
+            # Find its parent group box
+            for i in range(self.conversation_input_layout.count()):
+                widget = self.conversation_input_layout.itemAt(i).widget()
+                if isinstance(widget, QGroupBox):
+                    # Check if this group box contains our text edit
+                    for child in widget.findChildren(QTextEdit):
+                        if child == last_text_edit:
+                            self.conversation_texts.remove(last_text_edit)
+                            widget.setParent(None)
+                            widget.deleteLater()
+                            current_count -= 1
+                            break
+                    if current_count == target_count:
+                        break
+    
     def get_button_style(self, bg_color, hover_color):
         """Get button style with specified colors"""
         return f"""
@@ -551,7 +609,7 @@ class ZaloAutomationWidget(QWidget):
         """
     
     def load_devices(self):
-        """Load available devices"""
+        """Load available devices - only show devices with phone mapping"""
         try:
             # Clear existing checkboxes
             for checkbox in self.device_checkboxes:
@@ -560,13 +618,23 @@ class ZaloAutomationWidget(QWidget):
             self.device_checkboxes.clear()
             
             # Get devices from data manager
-            devices = data_manager.get_devices_with_phone_numbers()
+            all_devices = data_manager.get_devices_with_phone_numbers()
             phone_mapping = data_manager.get_phone_mapping()
             
-            self.all_devices = devices
+            # Filter devices: only show devices that have phone mapping
+            devices_with_phone = []
+            for device in all_devices:
+                device_id = device.get('device_id', 'Unknown')
+                phone_number = phone_mapping.get(device_id)
+                
+                # Only include devices that have a phone number mapped (not None and not "Chưa có số")
+                if phone_number and phone_number != "Chưa có số":
+                    devices_with_phone.append(device)
             
-            if not devices:
-                no_device_label = QLabel("❌ Không tìm thấy device nào")
+            self.all_devices = devices_with_phone
+            
+            if not devices_with_phone:
+                no_device_label = QLabel("❌ Không có device nào đã map số điện thoại\n💡 Vui lòng map số điện thoại trong tab Nuôi Zalo trước")
                 no_device_label.setStyleSheet("""
                     QLabel {
                         color: #e74c3c;
@@ -580,8 +648,8 @@ class ZaloAutomationWidget(QWidget):
                 self.device_list_layout.addWidget(no_device_label)
                 return
             
-            # Create checkboxes for each device
-            for device in devices:
+            # Create checkboxes for each device with phone mapping
+            for device in devices_with_phone:
                 device_id = device.get('device_id', 'Unknown')
                 phone_number = phone_mapping.get(device_id, "Chưa có số")
                 
@@ -593,7 +661,7 @@ class ZaloAutomationWidget(QWidget):
             spacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
             self.device_list_layout.addItem(spacer)
             
-            self.status_label.setText(f"📱 Đã tải {len(devices)} devices")
+            self.status_label.setText(f"📱 Đã tải {len(devices_with_phone)} devices (đã map số điện thoại)")
             
         except Exception as e:
             QMessageBox.critical(self, "Lỗi", f"Không thể tải devices: {str(e)}")
@@ -625,14 +693,38 @@ class ZaloAutomationWidget(QWidget):
                 QMessageBox.warning(self, "Cảnh báo", "Vui lòng nhập ít nhất 1 đoạn hội thoại!")
                 return
             
+            # Validation: số conversation phải bằng số device pairs
+            if len(self.device_pairs) == 0:
+                QMessageBox.warning(self, "Cảnh báo", "Vui lòng ghép cặp devices trước khi apply conversation!")
+                return
+            
+            if len(conversations) != len(self.device_pairs):
+                QMessageBox.warning(self, "Cảnh báo", 
+                    f"Số lượng hội thoại ({len(conversations)}) phải bằng số cặp devices ({len(self.device_pairs)})!\n"
+                    f"Hiện tại: {len(conversations)} hội thoại vs {len(self.device_pairs)} cặp devices")
+                return
+            
             # Parse conversations
             parsed_conversations = self.parse_conversations(conversations)
             
             # Save conversation data
             self.save_conversation_data(parsed_conversations)
             
+            # Clear existing status tables
+            self.clear_all_status_tables()
+            
+            # Create status tables for each conversation group and populate with conversation data
+            for i, conversation in enumerate(parsed_conversations):
+                group_id = conversation.get('group_id', i + 1)
+                if i < len(self.device_pairs):
+                    device_pair = self.device_pairs[i]
+                    table = self.create_conversation_table(group_id, device_pair)
+                    
+                    # Populate table with conversation messages
+                    self.populate_conversation_table(table, group_id, conversation, device_pair)
+            
             QMessageBox.information(self, "Thành công", 
-                f"Đã apply {len(parsed_conversations)} hội thoại thành công!")
+                f"Đã apply {len(parsed_conversations)} hội thoại thành công!\nBảng status đã được tạo và hiển thị nội dung conversation.")
             
             self.status_label.setText(f"✅ Đã apply {len(parsed_conversations)} hội thoại")
             
@@ -708,30 +800,87 @@ class ZaloAutomationWidget(QWidget):
         # Control buttons for status tab
         status_control_layout = QHBoxLayout()
         
-        clear_btn = QPushButton("🗑️ Xóa Bảng")
-        clear_btn.clicked.connect(self.clear_status_table)
+        clear_btn = QPushButton("🗑️ Xóa Tất Cả Bảng")
+        clear_btn.clicked.connect(self.clear_all_status_tables)
         clear_btn.setStyleSheet(self.get_compact_button_style("#e74c3c", "#c0392b"))
         status_control_layout.addWidget(clear_btn)
         
         status_control_layout.addStretch()
         status_layout.addLayout(status_control_layout)
         
-        # Status table
-        self.status_table = QTableWidget()
-        self.status_table.setColumnCount(5)
-        self.status_table.setHorizontalHeaderLabels(["Device", "Message", "Status", "Countdown", "Time"])
+        # Scroll area for multiple conversation tables
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: 2px solid #34495e;
+                border-radius: 8px;
+                background-color: #2c3e50;
+            }
+        """)
+        
+        # Container widget for all conversation tables
+        self.status_container = QWidget()
+        self.status_container_layout = QVBoxLayout(self.status_container)
+        self.status_container_layout.setSpacing(20)
+        
+        scroll_area.setWidget(self.status_container)
+        status_layout.addWidget(scroll_area)
+        
+        # Dictionary to store tables for each conversation group
+        self.conversation_tables = {}
+        self.conversation_table_data = {}
+        
+        self.tab_widget.addTab(status_widget, "📊 Status")
+    
+    def clear_all_status_tables(self):
+        """Clear all conversation status tables"""
+        for table in self.conversation_tables.values():
+            table.setRowCount(0)
+        self.conversation_table_data.clear()
+    
+    def create_conversation_table(self, group_id, device_pair):
+        """Create status table for a specific conversation group"""
+        # Create group widget
+        group_widget = QWidget()
+        group_layout = QVBoxLayout(group_widget)
+        group_layout.setContentsMargins(10, 10, 10, 10)
+        group_layout.setSpacing(10)
+        
+        # Group title
+        device1_name = device_pair[0]['device_id'] if device_pair[0] else "N/A"
+        device2_name = device_pair[1]['device_id'] if device_pair[1] else "N/A"
+        group_title = QLabel(f"💬 Conversation {group_id}: {device1_name} ↔ {device2_name}")
+        group_title.setStyleSheet("""
+            QLabel {
+                color: #e67e22;
+                font-weight: bold;
+                font-size: 14px;
+                padding: 8px;
+                background-color: #34495e;
+                border-radius: 5px;
+                border: 1px solid #2c3e50;
+            }
+        """)
+        group_layout.addWidget(group_title)
+        
+        # Create table for this conversation
+        table = QTableWidget()
+        table.setColumnCount(5)
+        table.setHorizontalHeaderLabels(["Device", "Message", "Status", "Countdown", "Time"])
         
         # Set table style
-        self.status_table.setStyleSheet("""
+        table.setStyleSheet("""
             QTableWidget {
                 border: 2px solid #34495e;
                 border-radius: 8px;
                 background-color: #2c3e50;
                 gridline-color: #34495e;
                 color: #ecf0f1;
+                max-height: 300px;
             }
             QTableWidget::item {
-                padding: 8px;
+                padding: 6px;
                 border-bottom: 1px solid #34495e;
             }
             QTableWidget::item:selected {
@@ -740,65 +889,142 @@ class ZaloAutomationWidget(QWidget):
             QHeaderView::section {
                 background-color: #34495e;
                 color: #ecf0f1;
-                padding: 10px;
+                padding: 8px;
                 border: 1px solid #2c3e50;
                 font-weight: bold;
             }
         """)
         
         # Set column widths
-        header = self.status_table.horizontalHeader()
+        header = table.horizontalHeader()
         header.setStretchLastSection(True)
-        header.resizeSection(0, 150)  # Device
-        header.resizeSection(1, 300)  # Message
-        header.resizeSection(2, 100)  # Status
-        header.resizeSection(3, 100)  # Countdown
+        header.resizeSection(0, 120)  # Device
+        header.resizeSection(1, 250)  # Message
+        header.resizeSection(2, 80)   # Status
+        header.resizeSection(3, 80)   # Countdown
         
-        status_layout.addWidget(self.status_table)
+        group_layout.addWidget(table)
         
-        self.tab_widget.addTab(status_widget, "📊 Status")
+        # Add to container
+        self.status_container_layout.addWidget(group_widget)
+        
+        # Store table reference
+        self.conversation_tables[group_id] = table
+        self.conversation_table_data[group_id] = {}
+        
+        return table
     
-    def clear_status_table(self):
-        """Clear status table"""
-        self.status_table.setRowCount(0)
-        self.status_table_data.clear()
-    
-    def update_message_status(self, device_id, message, status, countdown):
-        """Update message status in real-time table"""
+    def populate_conversation_table(self, table, group_id, conversation, device_pair):
+        """Populate conversation table with messages from conversation data"""
         try:
             from datetime import datetime
             
-            # Create unique key for this message
-            message_key = f"{device_id}_{message[:50]}"
+            messages = conversation.get('messages', [])
+            table_data = self.conversation_table_data[group_id]
+            
+            # Get device IDs for alternating messages
+            device1_id = device_pair[0]['device_id'] if device_pair[0] else "Device1"
+            device2_id = device_pair[1]['device_id'] if device_pair[1] else "Device2"
             
             current_time = datetime.now().strftime("%H:%M:%S")
             
-            # Check if this message already exists in table
-            if message_key in self.status_table_data:
-                row = self.status_table_data[message_key]['row']
-                # Update existing row
-                self.status_table.setItem(row, 2, QTableWidgetItem(status))
-                self.status_table.setItem(row, 3, QTableWidgetItem(str(countdown)))
-                self.status_table.setItem(row, 4, QTableWidgetItem(current_time))
-            else:
-                # Add new row
-                row_count = self.status_table.rowCount()
-                self.status_table.insertRow(row_count)
+            # Add each message to the table
+            for i, message in enumerate(messages):
+                content = message.get('content', '')
+                delay = message.get('delay', 2)
                 
-                self.status_table.setItem(row_count, 0, QTableWidgetItem(device_id))
-                self.status_table.setItem(row_count, 1, QTableWidgetItem(message[:100]))  # Truncate long messages
-                self.status_table.setItem(row_count, 2, QTableWidgetItem(status))
-                self.status_table.setItem(row_count, 3, QTableWidgetItem(str(countdown)))
-                self.status_table.setItem(row_count, 4, QTableWidgetItem(current_time))
+                # Alternate between devices for conversation flow
+                device_id = device1_id if i % 2 == 0 else device2_id
+                
+                # Add row to table
+                row_count = table.rowCount()
+                table.insertRow(row_count)
+                
+                # Set table items
+                table.setItem(row_count, 0, QTableWidgetItem(device_id))  # Device
+                table.setItem(row_count, 1, QTableWidgetItem(content[:100]))  # Message (truncated)
+                table.setItem(row_count, 2, QTableWidgetItem("Ready"))  # Status
+                table.setItem(row_count, 3, QTableWidgetItem(str(delay)))  # Countdown
+                table.setItem(row_count, 4, QTableWidgetItem(current_time))  # Time
+                
+                # Create unique key for this message
+                message_key = f"{device_id}_{content[:50]}"
                 
                 # Store row reference
-                self.status_table_data[message_key] = {
+                table_data[message_key] = {
+                    'row': row_count,
+                    'countdown': delay
+                }
+                
+                # Color code status as "Ready"
+                status_item = table.item(row_count, 2)
+                status_item.setBackground(Qt.GlobalColor.blue)
+            
+            print(f"Populated conversation table {group_id} with {len(messages)} messages")
+            
+        except Exception as e:
+            print(f"Error populating conversation table: {e}")
+    
+    def update_message_status(self, device_id, message, status, countdown, group_id=None):
+        """Update message status in conversation-specific table"""
+        try:
+            from datetime import datetime
+            
+            # Determine group_id if not provided
+            if group_id is None:
+                # Find which device pair this device belongs to
+                for i, pair in enumerate(self.device_pairs):
+                    if (pair[0] and pair[0]['device_id'] == device_id) or (pair[1] and pair[1]['device_id'] == device_id):
+                        group_id = i + 1  # Group IDs start from 1
+                        break
+                
+                if group_id is None:
+                    print(f"Could not find group for device {device_id}")
+                    return
+            
+            # Create table for this group if it doesn't exist
+            if group_id not in self.conversation_tables:
+                # Find the device pair for this group
+                if group_id <= len(self.device_pairs):
+                    device_pair = self.device_pairs[group_id - 1]
+                    self.create_conversation_table(group_id, device_pair)
+                else:
+                    print(f"Invalid group_id {group_id}")
+                    return
+            
+            table = self.conversation_tables[group_id]
+            table_data = self.conversation_table_data[group_id]
+            
+            # Create unique key for this message
+            message_key = f"{device_id}_{message[:50]}"
+            current_time = datetime.now().strftime("%H:%M:%S")
+            
+            # Check if this message already exists in table
+            if message_key in table_data:
+                row = table_data[message_key]['row']
+                # Update existing row
+                table.setItem(row, 2, QTableWidgetItem(status))
+                table.setItem(row, 3, QTableWidgetItem(str(countdown)))
+                table.setItem(row, 4, QTableWidgetItem(current_time))
+            else:
+                # Add new row
+                row_count = table.rowCount()
+                table.insertRow(row_count)
+                
+                table.setItem(row_count, 0, QTableWidgetItem(device_id))
+                table.setItem(row_count, 1, QTableWidgetItem(message[:100]))  # Truncate long messages
+                table.setItem(row_count, 2, QTableWidgetItem(status))
+                table.setItem(row_count, 3, QTableWidgetItem(str(countdown)))
+                table.setItem(row_count, 4, QTableWidgetItem(current_time))
+                
+                # Store row reference
+                table_data[message_key] = {
                     'row': row_count,
                     'countdown': countdown
                 }
             
             # Color code status
-            status_item = self.status_table.item(self.status_table_data[message_key]['row'], 2)
+            status_item = table.item(table_data[message_key]['row'], 2)
             if status == "Sending":
                 status_item.setBackground(Qt.GlobalColor.yellow)
             elif status == "Sent":
@@ -807,20 +1033,23 @@ class ZaloAutomationWidget(QWidget):
                 status_item.setBackground(Qt.GlobalColor.red)
             
             # Auto scroll to bottom
-            self.status_table.scrollToBottom()
+            table.scrollToBottom()
             
         except Exception as e:
             print(f"Error updating message status: {e}")
     
     def update_countdown(self):
-        """Update countdown timers in status table"""
+        """Update countdown timers in all conversation status tables"""
         try:
-            for message_key, data in self.status_table_data.items():
-                if data['countdown'] > 0:
-                    data['countdown'] -= 1
-                    row = data['row']
-                    if row < self.status_table.rowCount():
-                        self.status_table.setItem(row, 3, QTableWidgetItem(str(data['countdown'])))
+            for group_id, table_data in self.conversation_table_data.items():
+                table = self.conversation_tables.get(group_id)
+                if table:
+                    for message_key, data in table_data.items():
+                        if data['countdown'] > 0:
+                            data['countdown'] -= 1
+                            row = data['row']
+                            if row < table.rowCount():
+                                table.setItem(row, 3, QTableWidgetItem(str(data['countdown'])))
         except Exception as e:
             print(f"Error updating countdown: {e}")
     
@@ -857,6 +1086,9 @@ class ZaloAutomationWidget(QWidget):
                 # Add the last device as a single device pair with None as device2
                 single_pair = (selected_devices[-1], None)
                 self.device_pairs.append(single_pair)
+            
+            # Update conversation inputs to match device pairs
+            self.update_conversation_inputs_for_pairs()
             
             QMessageBox.information(self, "Thành công", 
                 f"Đã ghép {len(self.device_pairs)} cặp devices thành công!")

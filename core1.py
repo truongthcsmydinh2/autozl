@@ -321,6 +321,35 @@ class Device:
         """Tap với adaptive coordinates"""
         x, y = self.get_adaptive_coordinates(base_x, base_y, base_width, base_height)
         return self.tap(x, y)
+    
+    # ---------------- Compatibility Methods ----------------
+    def screenshot(self, out_path="screen.png"):
+        """Alias for screencap method - for compatibility"""
+        return self.screencap(out_path)
+    
+    def dump_hierarchy(self, compressed=True, pretty=False):
+        """Alias for dump_ui method - for compatibility"""
+        return self.dump_ui()
+    
+    def device_info(self):
+        """Get device information - for compatibility"""
+        try:
+            if self.d:
+                info = self.d.info
+                return {
+                    'device_id': self.device_id,
+                    'product_name': info.get('productName', 'Unknown'),
+                    'model': info.get('model', 'Unknown'),
+                    'android_version': info.get('version', 'Unknown'),
+                    'sdk_version': info.get('sdkInt', 0),
+                    'display_width': info.get('displayWidth', 0),
+                    'display_height': info.get('displayHeight', 0),
+                    'screen_info': self.screen_info
+                }
+            return None
+        except Exception as e:
+            print(f"[ERR] Get device info failed: {e}")
+            return None
 
 # ---------------- Device Management Functions ----------------
 def get_all_connected_devices():
@@ -1808,6 +1837,15 @@ RID_MSG_LIST     = "com.zing.zalo:id/recycler_view_msgList"
 RID_TAB_MESSAGE  = "com.zing.zalo:id/maintab_message"
 RID_EDIT_TEXT    = "com.zing.zalo:id/chatinput_text"
 RID_SEND_BTN     = "com.zing.zalo:id/chatinput_send_btn"
+
+# Friend request Resource IDs
+RID_ADD_FRIEND   = "com.zing.zalo:id/btn_send_friend_request"
+RID_CONFIRM_POPUP = "com.zing.zalo:id/button1"
+RID_ACCEPT       = "com.zing.zalo:id/btnAccept"
+RID_FUNCTION     = "com.zing.zalo:id/btn_function"
+RID_SEND_INVITE  = "com.zing.zalo:id/btnSendInvitation"
+RID_SEND_MSG     = "com.zing.zalo:id/btn_send_message"
+
 TEXT_SEARCH_PLACEHOLDER = "Tìm kiếm"
 
 def is_login_required(dev, debug=False):
@@ -2009,78 +2047,131 @@ def click_first_search_result(dev, preferred_text=None, debug=False):
         if debug: print(f"[DEBUG] ❌ Error clicking result: {e}")
         return False
 
-def send_message_human_like(dev, message, debug=False):
-    """Gửi tin nhắn với human-like typing simulation"""
+def send_message_human_like(dev, message, debug=False, max_retries=3):
+    """Gửi tin nhắn với human-like typing simulation và enhanced error handling"""
     import random
     import time as time_module
     
-    try:
-        # Tìm input field để nhập tin nhắn
-        input_selectors = [
-            {"resourceId": "com.zing.zalo:id/message_edit_text"},
-            {"resourceId": "com.zing.zalo:id/edit_text_message"},
-            {"resourceId": "com.zing.zalo:id/input_message"},
-            {"className": "android.widget.EditText"}
-        ]
-        
-        for selector in input_selectors:
-            if dev.d(**selector).exists:
-                # Clear input field
-                dev.d(**selector).clear_text()
-                time_module.sleep(0.2)
-                
-                # Human-like typing simulation
-                if debug: print(f"[DEBUG] 🎯 Bắt đầu gõ: {message}")
-                
-                # Gõ từng ký tự với delay ngẫu nhiên
-                for i, char in enumerate(message):
-                    # Gõ ký tự
-                    current_text = message[:i+1]
-                    dev.d(**selector).set_text(current_text)
+    for attempt in range(max_retries):
+        try:
+            if debug and attempt > 0:
+                print(f"[DEBUG] 🔄 Retry sending message (attempt {attempt + 1}/{max_retries}): {message[:30]}...")
+            
+            # Đảm bảo chat ready trước khi gửi
+            if not ensure_chat_ready(dev, debug=debug):
+                if debug: print(f"[DEBUG] ⚠️ Chat not ready, attempt {attempt + 1}")
+                if attempt < max_retries - 1:
+                    time_module.sleep(2)
+                    continue
+                else:
+                    raise Exception("Chat interface not ready after retries")
+            
+            # Tìm input field để nhập tin nhắn
+            input_selectors = [
+                {"resourceId": "com.zing.zalo:id/message_edit_text"},
+                {"resourceId": "com.zing.zalo:id/edit_text_message"},
+                {"resourceId": "com.zing.zalo:id/input_message"},
+                {"className": "android.widget.EditText"}
+            ]
+            
+            input_found = False
+            for selector in input_selectors:
+                if dev.d(**selector).exists(timeout=3):
+                    input_found = True
+                    # Clear input field với retry
+                    for clear_attempt in range(2):
+                        try:
+                            dev.d(**selector).clear_text()
+                            time_module.sleep(0.2)
+                            break
+                        except Exception as clear_e:
+                            if debug: print(f"[DEBUG] ⚠️ Clear text failed (attempt {clear_attempt + 1}): {clear_e}")
+                            if clear_attempt == 1:
+                                raise clear_e
                     
-                    # Delay ngẫu nhiên giữa các ký tự (50-200ms)
-                    char_delay = random.uniform(0.05, 0.2)
-                    time_module.sleep(char_delay)
+                    # Human-like typing simulation
+                    if debug: print(f"[DEBUG] 🎯 Bắt đầu gõ: {message}")
                     
-                    # Thỉnh thoảng dừng lâu hơn (như người suy nghĩ)
-                    if random.random() < 0.1:  # 10% chance
-                        think_delay = random.uniform(0.3, 1.0)
-                        time_module.sleep(think_delay)
-                
-                # Đợi một chút trước khi gửi (như người đọc lại)
-                read_delay = random.uniform(0.5, 2.0)
-                time_module.sleep(read_delay)
-                
-                # Tìm và click send button
-                send_selectors = [
-                    {"resourceId": "com.zing.zalo:id/new_chat_input_btn_chat_send"},
-                    {"resourceId": "com.zing.zalo:id/send_button"},
-                    {"resourceId": "com.zing.zalo:id/btn_send"},
-                    {"description": "Send"},
-                    {"text": "Gửi"}
-                ]
-                
-                for send_selector in send_selectors:
-                    if dev.d(**send_selector).exists:
-                        dev.d(**send_selector).click()
-                        if debug: print(f"[DEBUG] ✅ Sent message (human-like): {message}")
-                        return True
-                
-                # Fallback: nhấn Enter
-                dev.key(66)  # ENTER
-                if debug: print(f"[DEBUG] ✅ Sent message (Enter): {message}")
-                return True
+                    # Gõ từng ký tự với delay ngẫu nhiên và error handling
+                    for i, char in enumerate(message):
+                        try:
+                            current_text = message[:i+1]
+                            dev.d(**selector).set_text(current_text)
+                            
+                            # Delay ngẫu nhiên giữa các ký tự (50-200ms)
+                            char_delay = random.uniform(0.05, 0.2)
+                            time_module.sleep(char_delay)
+                            
+                            # Thỉnh thoảng dừng lâu hơn (như người suy nghĩ)
+                            if random.random() < 0.1:  # 10% chance
+                                think_delay = random.uniform(0.3, 1.0)
+                                time_module.sleep(think_delay)
+                        except Exception as type_e:
+                            if debug: print(f"[DEBUG] ⚠️ Typing error at char {i}: {type_e}")
+                            # Fallback: set toàn bộ text
+                            dev.d(**selector).set_text(message)
+                            break
+                    
+                    # Đợi một chút trước khi gửi (như người đọc lại)
+                    read_delay = random.uniform(0.5, 2.0)
+                    time_module.sleep(read_delay)
+                    
+                    # Tìm và click send button với retry
+                    send_selectors = [
+                        {"resourceId": "com.zing.zalo:id/new_chat_input_btn_chat_send"},
+                        {"resourceId": "com.zing.zalo:id/send_button"},
+                        {"resourceId": "com.zing.zalo:id/btn_send"},
+                        {"description": "Send"},
+                        {"text": "Gửi"}
+                    ]
+                    
+                    send_success = False
+                    for send_selector in send_selectors:
+                        if dev.d(**send_selector).exists(timeout=2):
+                            try:
+                                dev.d(**send_selector).click()
+                                time_module.sleep(0.5)  # Wait for send to process
+                                send_success = True
+                                if debug: print(f"[DEBUG] ✅ Sent message (human-like): {message}")
+                                return True
+                            except Exception as send_e:
+                                if debug: print(f"[DEBUG] ⚠️ Send button click failed: {send_e}")
+                                continue
+                    
+                    if not send_success:
+                        # Fallback: nhấn Enter
+                        try:
+                            dev.key(66)  # ENTER
+                            time_module.sleep(0.5)
+                            if debug: print(f"[DEBUG] ✅ Sent message (Enter): {message}")
+                            return True
+                        except Exception as enter_e:
+                            if debug: print(f"[DEBUG] ⚠️ Enter key failed: {enter_e}")
+                            raise enter_e
+                    
+                    break  # Exit input selector loop if we found input
+            
+            if not input_found:
+                raise Exception("No input field found")
         
-        # Fallback: nhập text trực tiếp
-        dev.text(message)
-        time_module.sleep(0.3)
-        dev.key(66)  # ENTER
-        if debug: print(f"[DEBUG] ✅ Sent message (fallback): {message}")
-        return True
-        
-    except Exception as e:
-        if debug: print(f"[DEBUG] ❌ Error sending message: {e}")
-        return False
+        except Exception as e:
+            error_msg = str(e)
+            if debug: print(f"[DEBUG] ❌ Error sending message (attempt {attempt + 1}): {error_msg}")
+            
+            # Capture error state on final attempt
+            if attempt == max_retries - 1:
+                try:
+                    capture_error_state(dev, f"send_message_failed_{message[:20].replace(' ', '_')}", debug=debug)
+                except:
+                    pass  # Don't let error capture crash the function
+                return False
+            else:
+                # Wait before retry with exponential backoff
+                backoff_time = min(2 ** attempt, 8)
+                if debug: print(f"[DEBUG] ⏸️ Waiting {backoff_time}s before retry...")
+                time_module.sleep(backoff_time)
+    
+    return False
 
 def send_message(dev, message, debug=False):
     """Wrapper function để maintain compatibility"""
@@ -2141,6 +2232,157 @@ def load_conversation_from_file(group_id):
     {"message_id": 32, "device_number": 2, "content": "Ok"}
     ]
 
+def check_and_add_friend(dev, debug=False):
+    """Kiểm tra và thêm bạn nếu cần thiết với logic phát hiện cải thiện
+    
+    Returns:
+        'ALREADY_FRIENDS': Đã kết bạn rồi (có thể tiếp tục flow conversation)
+        'FRIEND_REQUEST_SENT': Đã gửi lời mời kết bạn (cần tách sang flow phụ)
+        'FRIEND_REQUEST_ACCEPTED': Đã chấp nhận lời mời (cần tách sang flow phụ)
+        'NEED_FRIEND_REQUEST': Chưa kết bạn, cần gửi lời mời (cần tách sang flow phụ)
+        False: Có lỗi xảy ra
+    """
+    import time
+    
+    try:
+        if debug: print("[DEBUG] 🔍 Kiểm tra trạng thái kết bạn với logic cải thiện...")
+        
+        # Đợi UI load hoàn toàn
+        time.sleep(2)
+        
+        # Kiểm tra các indicators chính xác hơn để xác định trạng thái
+        
+        # Case 1: Kiểm tra nút "Kết bạn" (chưa kết bạn)
+        if dev.element_exists(resourceId=RID_ADD_FRIEND, timeout=3):
+            if debug: print("[DEBUG] 👥 Phát hiện nút 'Kết bạn' - chưa kết bạn")
+            
+            # Click nút kết bạn
+            if dev.click_by_resource_id(RID_ADD_FRIEND, timeout=5, debug=debug):
+                if debug: print("[DEBUG] ✅ Đã click nút 'Kết bạn'")
+                
+                # Đợi popup xác nhận xuất hiện
+                time.sleep(1.5)
+                
+                # Kiểm tra và click nút xác nhận trong popup
+                if dev.element_exists(resourceId=RID_CONFIRM_POPUP, timeout=3):
+                    if dev.click_by_resource_id(RID_CONFIRM_POPUP, timeout=3, debug=debug):
+                        if debug: print("[DEBUG] ✅ Đã xác nhận gửi lời mời kết bạn")
+                    else:
+                        if debug: print("[DEBUG] ⚠️ Không thể click nút xác nhận")
+                
+                # Kiểm tra nút gửi lời mời
+                elif dev.element_exists(resourceId=RID_SEND_INVITE, timeout=3):
+                    if dev.click_by_resource_id(RID_SEND_INVITE, timeout=3, debug=debug):
+                        if debug: print("[DEBUG] ✅ Đã gửi lời mời kết bạn")
+                    else:
+                        if debug: print("[DEBUG] ⚠️ Không thể click nút gửi lời mời")
+                
+                # Đợi xử lý hoàn tất
+                time.sleep(2)
+                return 'FRIEND_REQUEST_SENT'
+                
+            else:
+                if debug: print("[DEBUG] ❌ Không thể click nút 'Kết bạn'")
+                return False
+        
+        # Case 2: Kiểm tra nút "Chấp nhận" (bên kia đã gửi lời mời)
+        elif dev.element_exists(resourceId=RID_ACCEPT, timeout=3):
+            if debug: print("[DEBUG] 🤝 Phát hiện nút 'Chấp nhận' - có lời mời kết bạn")
+            
+            # Click nút chấp nhận
+            if dev.click_by_resource_id(RID_ACCEPT, timeout=5, debug=debug):
+                if debug: print("[DEBUG] ✅ Đã chấp nhận lời mời kết bạn")
+                
+                # Đợi xử lý hoàn tất
+                time.sleep(2)
+                
+                # Kiểm tra popup xác nhận nếu có
+                if dev.element_exists(resourceId=RID_CONFIRM_POPUP, timeout=2):
+                    if dev.click_by_resource_id(RID_CONFIRM_POPUP, timeout=3, debug=debug):
+                        if debug: print("[DEBUG] ✅ Đã xác nhận chấp nhận kết bạn")
+                
+                # Đợi thêm để UI cập nhật
+                time.sleep(1.5)
+                return 'FRIEND_REQUEST_ACCEPTED'
+                
+            else:
+                if debug: print("[DEBUG] ❌ Không thể click nút 'Chấp nhận'")
+                return False
+        
+        # Case 3: Kiểm tra nút "Nhắn tin" (đã kết bạn rồi) - CHÍNH XÁC NHẤT
+        elif dev.element_exists(resourceId=RID_SEND_MSG, timeout=3):
+            if debug: print("[DEBUG] 💬 Phát hiện nút 'Nhắn tin' - XÁC NHẬN đã kết bạn")
+            # Đây là indicator chính xác nhất cho việc đã kết bạn
+            return 'ALREADY_FRIENDS'
+        
+        # Case 4: Kiểm tra nút chức năng khác - CẦN KIỂM TRA THÊM
+        elif dev.element_exists(resourceId=RID_FUNCTION, timeout=3):
+            if debug: print("[DEBUG] ⚙️ Phát hiện nút chức năng - kiểm tra thêm...")
+            
+            # Kiểm tra thêm các indicators khác để xác nhận
+            # Kiểm tra xem có chat input không (dấu hiệu đã kết bạn)
+            if dev.element_exists(resourceId=RID_EDIT_TEXT, timeout=2):
+                if debug: print("[DEBUG] ✅ Có chat input - XÁC NHẬN đã kết bạn")
+                return 'ALREADY_FRIENDS'
+            
+            # Kiểm tra message list (dấu hiệu đã kết bạn)
+            if dev.element_exists(resourceId=RID_MSG_LIST, timeout=2):
+                if debug: print("[DEBUG] ✅ Có message list - XÁC NHẬN đã kết bạn")
+                return 'ALREADY_FRIENDS'
+            
+            # Nếu không có indicators rõ ràng, có thể chưa kết bạn
+            if debug: print("[DEBUG] ⚠️ Không có indicators rõ ràng - có thể chưa kết bạn")
+            return 'NEED_FRIEND_REQUEST'
+        
+        else:
+            if debug: print("[DEBUG] ❓ Không tìm thấy nút nào - kiểm tra chi tiết...")
+            
+            # LOGIC KIỂM TRA CHI TIẾT HƠN thay vì mặc định ALREADY_FRIENDS
+            
+            # Kiểm tra chat input (dấu hiệu mạnh nhất của việc đã kết bạn)
+            if dev.element_exists(resourceId=RID_EDIT_TEXT, timeout=3):
+                if debug: print("[DEBUG] ✅ Tìm thấy chat input - XÁC NHẬN đã kết bạn")
+                return 'ALREADY_FRIENDS'
+            
+            # Kiểm tra message list
+            if dev.element_exists(resourceId=RID_MSG_LIST, timeout=3):
+                if debug: print("[DEBUG] ✅ Tìm thấy message list - XÁC NHẬN đã kết bạn")
+                return 'ALREADY_FRIENDS'
+            
+            # Kiểm tra send button
+            if dev.element_exists(resourceId=RID_SEND_BTN, timeout=3):
+                if debug: print("[DEBUG] ✅ Tìm thấy send button - XÁC NHẬN đã kết bạn")
+                return 'ALREADY_FRIENDS'
+            
+            # Kiểm tra các text indicators
+            friend_indicators = ["Nhắn tin", "Gửi tin nhắn", "Soạn tin nhắn"]
+            for indicator in friend_indicators:
+                if dev.element_exists(text=indicator, timeout=1):
+                    if debug: print(f"[DEBUG] ✅ Tìm thấy text '{indicator}' - XÁC NHẬN đã kết bạn")
+                    return 'ALREADY_FRIENDS'
+            
+            # Kiểm tra các text cho trạng thái đã gửi lời mời
+            sent_request_indicators = ["Đã gửi lời mời", "Lời mời đã gửi", "Đã gửi yêu cầu"]
+            for indicator in sent_request_indicators:
+                if dev.element_exists(text=indicator, timeout=1):
+                    if debug: print(f"[DEBUG] 📤 Tìm thấy text '{indicator}' - đã gửi lời mời")
+                    return 'FRIEND_REQUEST_SENT'
+            
+            # Kiểm tra các text cho chưa kết bạn
+            non_friend_indicators = ["Kết bạn", "Gửi lời mời", "Thêm bạn bè"]
+            for indicator in non_friend_indicators:
+                if dev.element_exists(text=indicator, timeout=1):
+                    if debug: print(f"[DEBUG] ⚠️ Tìm thấy text '{indicator}' - chưa kết bạn")
+                    return 'NEED_FRIEND_REQUEST'
+            
+            # Nếu không tìm thấy indicators rõ ràng nào
+            if debug: print("[DEBUG] ❌ KHÔNG THỂ XÁC ĐỊNH trạng thái kết bạn - cần kiểm tra manual")
+            return 'NEED_FRIEND_REQUEST'  # Conservative approach: assume not friends
+        
+    except Exception as e:
+        if debug: print(f"[DEBUG] ❌ Lỗi trong check_and_add_friend: {e}")
+        return False
+
 def determine_group_and_role(device_ip, all_devices):
     """Xác định nhóm và role của device dựa trên IP"""
     # Chuẩn hóa device_ip để chỉ lấy phần IP (bỏ port nếu có)
@@ -2189,20 +2431,29 @@ def update_current_message_id(group_id, message_id):
     except Exception:
         return False
 
-def wait_for_message_turn(group_id, target_message_id, role_in_group, timeout=300):
-    """Đợi đến lượt gửi message_id cụ thể với timeout"""
+def wait_for_message_turn(group_id, target_message_id, role_in_group, timeout=600):
+    """Đợi đến lượt gửi message_id cụ thể với timeout - Enhanced timeout handling"""
     import time as time_module
     start_time = time_module.time()
+    last_log_time = start_time
     
     while time_module.time() - start_time < timeout:
         current_id = read_current_message_id(group_id)
         if current_id == target_message_id:
             return True
         
+        # Log progress mỗi 30 giây để theo dõi
+        current_time = time_module.time()
+        if current_time - last_log_time >= 30:
+            elapsed = current_time - start_time
+            remaining = timeout - elapsed
+            print(f"⏳ Nhóm {group_id} - Đợi message_id {target_message_id} (current: {current_id}, elapsed: {elapsed:.0f}s, remaining: {remaining:.0f}s)")
+            last_log_time = current_time
+        
         # Delay ngắn trước khi check lại
         time_module.sleep(0.5)
     
-    print(f"⚠️ Nhóm {group_id} - Timeout đợi message_id {target_message_id}")
+    print(f"⚠️ Nhóm {group_id} - Timeout đợi message_id {target_message_id} sau {timeout}s (current_id: {read_current_message_id(group_id)})")
     return False
 
 def calculate_smart_delay(message_length, is_first_message=False):
@@ -3205,33 +3456,77 @@ def capture_error_state(dev, error_context="unknown", debug=False):
             print(f"❌ Lỗi capture error state: {e}")
         return None
 
-def safe_ui_operation(dev, operation_func, operation_name="UI Operation", max_retries=3, debug=False):
-    """Wrapper để thực hiện UI operation một cách an toàn với error capture"""
+def safe_ui_operation(dev, operation_func, operation_name="UI Operation", max_retries=5, debug=False):
+    """Wrapper để thực hiện UI operation một cách an toàn với enhanced error handling và exponential backoff"""
     import time as time_module
+    import threading
     
     for attempt in range(max_retries):
         try:
             if debug:
                 print(f"🔄 Thử {operation_name} (lần {attempt + 1}/{max_retries})")
             
-            result = operation_func()
+            # Thêm timeout wrapper cho operation sử dụng threading.Timer (Windows compatible)
+            operation_completed = threading.Event()
+            operation_result = [None]
+            operation_error = [None]
             
-            if debug:
-                print(f"✅ {operation_name} thành công")
-            return result
+            def run_operation():
+                try:
+                    operation_result[0] = operation_func()
+                    operation_completed.set()
+                except Exception as e:
+                    operation_error[0] = e
+                    operation_completed.set()
+            
+            def timeout_handler():
+                if not operation_completed.is_set():
+                    operation_error[0] = TimeoutError(f"Operation timeout sau 30s")
+                    operation_completed.set()
+            
+            # Start operation in thread
+            operation_thread = threading.Thread(target=run_operation)
+            operation_thread.daemon = True
+            operation_thread.start()
+            
+            # Start timeout timer
+            timeout_timer = threading.Timer(30.0, timeout_handler)
+            timeout_timer.start()
+            
+            try:
+                # Wait for operation to complete
+                operation_completed.wait()
+                timeout_timer.cancel()
+                
+                if operation_error[0]:
+                    raise operation_error[0]
+                
+                if debug:
+                    print(f"✅ {operation_name} thành công")
+                return operation_result[0]
+            except TimeoutError as te:
+                timeout_timer.cancel()
+                raise te
             
         except Exception as e:
+            error_msg = str(e)
             if debug:
-                print(f"⚠️ {operation_name} thất bại (lần {attempt + 1}): {e}")
+                print(f"⚠️ {operation_name} thất bại (lần {attempt + 1}): {error_msg}")
             
             # Capture error state cho lần thử cuối
             if attempt == max_retries - 1:
                 if debug:
                     print(f"📸 Capture error state cho {operation_name}")
-                capture_error_state(dev, f"{operation_name.lower().replace(' ', '_')}_failed", debug=debug)
+                try:
+                    capture_error_state(dev, f"{operation_name.lower().replace(' ', '_')}_failed", debug=debug)
+                except:
+                    pass  # Không để capture error làm crash chương trình
             else:
-                # Đợi một chút trước khi thử lại
-                time_module.sleep(1)
+                # Exponential backoff: 1s, 2s, 4s, 8s
+                backoff_time = min(2 ** attempt, 8)
+                if debug:
+                    print(f"⏸️ Đợi {backoff_time}s trước khi thử lại...")
+                time_module.sleep(backoff_time)
     
     if debug:
         print(f"❌ {operation_name} thất bại sau {max_retries} lần thử")
@@ -3394,33 +3689,33 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         
         time.sleep(initial_delay)
     
-    # BARRIER SYNC TRƯỚC KHI MỞ APP - Đảm bảo tất cả máy bắt đầu mở app ĐỒNG THỜI
+    # BARRIER SYNC TRƯỚC KHI CLEAR APPS - Đảm bảo tất cả máy bắt đầu clear apps ĐỒNG THỜI
     if all_devices and len(all_devices) > 1:
-        print(f"[DEBUG] Waiting for all devices to be ready to open Zalo (pre-open barrier sync)...")
-        update_shared_status(device_ip, 'syncing_pre_open', 'Đợi tất cả máy sẵn sàng mở Zalo...', 22)
+        print(f"[DEBUG] Waiting for all devices to be ready to clear apps (pre-clear barrier sync)...")
+        update_shared_status(device_ip, 'syncing_pre_clear', 'Đợi tất cả máy sẵn sàng clear apps...', 22)
         
         try:
-            # Signal ready to open app
-            signal_ready_at_barrier("pre_app_open", device_ip)
+            # Signal ready to clear apps
+            signal_ready_at_barrier("pre_clear_apps", device_ip)
             
             # Wait for all devices to be ready
             barrier_result = wait_for_group_barrier(
-                group_id="pre_app_open",
+                group_id="pre_clear_apps",
                 device_count=len(all_devices),
                 timeout=60  # 1 phút timeout
             )
             
             if not barrier_result:
-                print(f"[WARNING] Pre-open barrier timeout, continuing anyway...")
+                print(f"[WARNING] Pre-clear barrier timeout, continuing anyway...")
             else:
-                print(f"[DEBUG] 🚀 ALL DEVICES READY - OPENING ZALO SIMULTANEOUSLY!")
+                print(f"[DEBUG] 🚀 ALL DEVICES READY - CLEARING APPS SIMULTANEOUSLY!")
                 
         except Exception as e:
-            print(f"[WARNING] Error during pre-open barrier sync: {e}, continuing anyway...")
+            print(f"[WARNING] Error during pre-clear barrier sync: {e}, continuing anyway...")
     
-    # Clear apps trước khi mở Zalo với logic đơn giản
+    # Clear apps trước khi mở Zalo với logic đơn giản - ĐỒNG BỘ
     print(f"[DEBUG] Clearing apps before opening Zalo on {device_ip}...")
-    update_shared_status(device_ip, 'clearing_apps', 'Đang clear apps trước khi mở Zalo...', 23)
+    update_shared_status(device_ip, 'clearing_apps', 'Đang clear apps đồng bộ...', 23)
     
     try:
         # Bấm nút recent apps
@@ -3465,9 +3760,33 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     except Exception as e:
         print(f"[DEBUG] Error returning to home: {e}")
     
-    # Mở app Zalo với retry logic và delay
+    # BARRIER SYNC TRƯỚC KHI MỞ ZALO - Đảm bảo tất cả máy mở Zalo ĐỒNG THỜI
+    if all_devices and len(all_devices) > 1:
+        print(f"[DEBUG] Waiting for all devices to be ready to open Zalo (pre-open barrier sync)...")
+        update_shared_status(device_ip, 'syncing_pre_open', 'Đợi tất cả máy sẵn sàng mở Zalo...', 24)
+        
+        try:
+            # Signal ready to open app
+            signal_ready_at_barrier("pre_app_open", device_ip)
+            
+            # Wait for all devices to be ready
+            barrier_result = wait_for_group_barrier(
+                group_id="pre_app_open",
+                device_count=len(all_devices),
+                timeout=60  # 1 phút timeout
+            )
+            
+            if not barrier_result:
+                print(f"[WARNING] Pre-open barrier timeout, continuing anyway...")
+            else:
+                print(f"[DEBUG] 🚀 ALL DEVICES READY - OPENING ZALO SIMULTANEOUSLY!")
+                
+        except Exception as e:
+            print(f"[WARNING] Error during pre-open barrier sync: {e}, continuing anyway...")
+    
+    # Mở app Zalo với retry logic và delay - ĐỒNG BỘ
     print(f"[DEBUG] Opening Zalo app on {device_ip}...")
-    update_shared_status(device_ip, 'opening_app', 'Đang mở ứng dụng Zalo...', 25)
+    update_shared_status(device_ip, 'opening_app', 'Đang mở ứng dụng Zalo đồng bộ...', 25)
     
     # Enhanced retry logic cho việc mở app với better error handling
     max_retries = 5  # Tăng số lần retry
@@ -3715,7 +4034,94 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     
     print("• Chọn kết quả đầu tiên…")
     if click_first_search_result(dev, preferred_text=target_phone, debug=True):
-        print("✅ Đã vào chat. Đợi 3 giây trước khi bắt đầu cuộc hội thoại...")
+        print("✅ Đã vào chat. Kiểm tra và kết bạn nếu cần...")
+        
+        # Kiểm tra stop signal trước check friend
+        if stop_event and stop_event.is_set():
+            print(f"[DEBUG] Stop signal received before friend check for {device_ip}")
+            return "STOPPED"
+        
+        # Kiểm tra và kết bạn nếu cần
+        friend_status = check_and_add_friend(dev, debug=True)
+        print(f"[DEBUG] Friend status result: {friend_status}")
+        
+        if friend_status == 'FRIEND_REQUEST_SENT':
+            print("✅ Đã gửi lời mời kết bạn - đợi xử lý và tiếp tục conversation")
+            update_shared_status(device_ip, 'friend_request_sent', 'Đã gửi lời mời kết bạn', 80)
+            
+            # Đợi một chút để UI cập nhật
+            time.sleep(3)
+            
+            # Kiểm tra lại trạng thái sau khi gửi lời mời
+            final_check = check_and_add_friend(dev, debug=True)
+            print(f"[DEBUG] Final friend status after sending request: {final_check}")
+            
+            if final_check == 'ALREADY_FRIENDS':
+                print("✅ Xác nhận đã kết bạn - tiếp tục conversation flow")
+            else:
+                print(f"⚠️ Trạng thái sau gửi lời mời: {final_check} - vẫn tiếp tục conversation")
+            # Tiếp tục với conversation flow
+            
+        elif friend_status == 'FRIEND_REQUEST_ACCEPTED':
+            print("✅ Đã chấp nhận lời mời kết bạn - tiếp tục conversation")
+            update_shared_status(device_ip, 'friend_request_accepted', 'Đã chấp nhận lời mời kết bạn', 80)
+            
+            # Đợi một chút để UI cập nhật
+            time.sleep(3)
+            
+            # Kiểm tra lại trạng thái sau khi chấp nhận
+            final_check = check_and_add_friend(dev, debug=True)
+            print(f"[DEBUG] Final friend status after accepting request: {final_check}")
+            
+            if final_check == 'ALREADY_FRIENDS':
+                print("✅ Xác nhận đã kết bạn - tiếp tục conversation flow")
+            else:
+                print(f"⚠️ Trạng thái sau chấp nhận: {final_check} - vẫn tiếp tục conversation")
+            # Tiếp tục với conversation flow
+        elif friend_status == 'NEED_FRIEND_REQUEST':
+            print("⚠️ Chưa kết bạn - thực hiện gửi lời mời kết bạn tự động...")
+            update_shared_status(device_ip, 'sending_friend_request', 'Đang gửi lời mời kết bạn...', 60)
+            
+            # Thực hiện gửi lời mời kết bạn tự động
+            friend_request_result = check_and_add_friend(dev, debug=True)
+            print(f"[DEBUG] Friend request result: {friend_request_result}")
+            
+            if friend_request_result in ['FRIEND_REQUEST_SENT', 'FRIEND_REQUEST_ACCEPTED']:
+                print(f"✅ Đã xử lý kết bạn thành công: {friend_request_result}")
+                update_shared_status(device_ip, 'friend_request_completed', f'Hoàn thành kết bạn: {friend_request_result}', 80)
+                
+                # Đợi một chút để UI cập nhật
+                time.sleep(3)
+                
+                # Kiểm tra lại trạng thái sau khi kết bạn
+                final_check = check_and_add_friend(dev, debug=True)
+                print(f"[DEBUG] Final friend status check: {final_check}")
+                
+                if final_check == 'ALREADY_FRIENDS':
+                    print("✅ Xác nhận đã kết bạn - tiếp tục conversation flow")
+                    # Tiếp tục với conversation flow
+                else:
+                    print(f"⚠️ Trạng thái sau kết bạn: {final_check} - vẫn tiếp tục conversation")
+                    # Vẫn tiếp tục conversation dù trạng thái chưa rõ ràng
+            else:
+                print(f"⚠️ Kết quả kết bạn không như mong đợi: {friend_request_result}")
+                print("⚠️ Vẫn tiếp tục conversation flow")
+                update_shared_status(device_ip, 'friend_request_uncertain', f'Kết bạn không chắc chắn: {friend_request_result}', 70)
+                # Vẫn tiếp tục conversation
+        elif friend_status == 'ALREADY_FRIENDS':
+            print("✅ Đã kết bạn rồi - tiếp tục conversation")
+            # Tiếp tục với conversation flow
+        elif friend_status == False:
+            print("❌ Lỗi xử lý kết bạn")
+            update_shared_status(device_ip, 'error', 'Lỗi xử lý kết bạn', 0)
+            return "FRIEND_ERROR"
+        else:
+            print(f"⚠️ Trạng thái kết bạn không xác định: {friend_status}")
+            print("⚠️ Vẫn tiếp tục conversation flow dù trạng thái không rõ ràng")
+            update_shared_status(device_ip, 'unknown_friend_status', f'Trạng thái không xác định: {friend_status} - tiếp tục conversation', 70)
+            # Tiếp tục với conversation flow thay vì dừng
+        
+        print("✅ Đợi 3 giây trước khi bắt đầu cuộc hội thoại...")
         
         # Kiểm tra stop signal trước delay
         if stop_event and stop_event.is_set():

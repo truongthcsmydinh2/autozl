@@ -3,195 +3,203 @@
     "group_id": 1,
     "messages": [
       {
-        "content": "role 1: Bạn có nghĩ tới việc mở quán cà phê chưa?",
+        "content": "role 1: Này, cậu đã xem đề tài giáo viên giao chưa?",
         "delay": 2
       },
       {
-        "content": "role 2: Có chứ, mình từng mơ ước lâu rồi.",
+        "content": "role 2: Rồi, mình thấy có ba lựa chọn.",
         "delay": 2
       },
       {
-        "content": "role 1: Thế thì làm luôn đi, hợp tác với mình.",
+        "content": "role 1: Cậu muốn chọn cái nào?",
         "delay": 2
       },
       {
-        "content": "role 2: Ý tưởng hay đó, nhưng vốn hơi căng.",
+        "content": "role 2: Mình nghiêng về chủ đề bảo vệ môi trường.",
         "delay": 2
       },
       {
-        "content": "role 1: Mình có một ít, bạn góp một ít là đủ.",
+        "content": "role 1: Cái đó khá hay, dễ triển khai nữa.",
         "delay": 2
       },
       {
-        "content": "role 2: Cụ thể cần bao nhiêu?",
+        "content": "role 2: Đúng, với lại giám khảo sẽ thích.",
         "delay": 2
       },
       {
-        "content": "role 1: Khoảng 150 triệu là ổn.",
+        "content": "role 1: Vậy chốt luôn nhé?",
         "delay": 2
       },
       {
-        "content": "role 2: Ừm, số này cũng không quá lớn.",
+        "content": "role 2: Chốt.",
         "delay": 2
       },
       {
-        "content": "role 1: Địa điểm thì mình đã để ý một chỗ.",
+        "content": "role 1: Bao giờ bắt đầu làm?",
         "delay": 2
       },
       {
-        "content": "role 2: Ở đâu vậy?",
+        "content": "role 2: Cuối tuần này đi.",
         "delay": 2
       },
       {
-        "content": "role 1: Gần trường đại học, đông sinh viên.",
+        "content": "role 1: Ừ, mình sẽ chuẩn bị tài liệu trước.",
         "delay": 2
       },
       {
-        "content": "role 2: Vị trí này tiềm năng thật.",
+        "content": "role 2: Ai sẽ làm leader nhóm?",
         "delay": 2
       },
       {
-        "content": "role 1: Giá thuê chỉ 8 triệu/tháng thôi.",
+        "content": "role 1: Cậu đi, mình support.",
         "delay": 2
       },
       {
-        "content": "role 2: Hợp lý quá.",
+        "content": "role 2: Thôi, cậu làm đi, mình không quen quản lý.",
         "delay": 2
       },
       {
-        "content": "role 1: Phong cách quán bạn muốn thế nào?",
+        "content": "role 1: Được rồi, mình nhận.",
         "delay": 2
       },
       {
-        "content": "role 2: Mình thích kiểu vintage ấm cúng.",
+        "content": "role 2: Có bao nhiêu thành viên nhóm nhỉ?",
         "delay": 2
       },
       {
-        "content": "role 1: Mình thì nghiêng về phong cách hiện đại.",
+        "content": "role 1: Tổng cộng năm người.",
         "delay": 2
       },
       {
-        "content": "role 2: Vậy kết hợp cả hai đi.",
+        "content": "role 2: Huy có tham gia không?",
         "delay": 2
       },
       {
-        "content": "role 1: Ý tưởng không tệ.",
+        "content": "role 1: Có, hôm qua mình hỏi rồi.",
         "delay": 2
       },
       {
-        "content": "role 2: Menu thì sao?",
+        "content": "role 2: Tốt, Huy giỏi phần trình bày lắm.",
         "delay": 2
       },
       {
-        "content": "role 1: Cà phê, trà sữa, thêm bánh ngọt.",
+        "content": "role 1: Chuẩn, còn Lan sẽ lo phần thiết kế slide.",
         "delay": 2
       },
       {
-        "content": "role 2: Đơn giản nhưng dễ bán.",
+        "content": "role 2: Vậy còn Minh?",
         "delay": 2
       },
       {
-        "content": "role 1: Món signature cần đặc biệt chút.",
+        "content": "role 1: Minh làm nghiên cứu số liệu.",
         "delay": 2
       },
       {
-        "content": "role 2: Có thể thử cà phê cam sả.",
+        "content": "role 2: Nhóm chia việc hợp lý phết.",
         "delay": 2
       },
       {
-        "content": "role 1: Nghe lạ đó, đáng để thử.",
+        "content": "role 1: Mình sẽ gửi file phân công vào tối nay.",
         "delay": 2
       },
       {
-        "content": "role 2: Thế bạn lo phần marketing nhé.",
+        "content": "role 2: Nhớ thêm deadline nhé.",
         "delay": 2
       },
       {
-        "content": "role 1: Yên tâm, mình giỏi khoản này.",
+        "content": "role 1: Yên tâm, mình sẽ note rõ ràng.",
         "delay": 2
       },
       {
-        "content": "role 2: Mạng xã hội quan trọng lắm đấy.",
+        "content": "role 2: Bao giờ nộp báo cáo nhỉ?",
         "delay": 2
       },
       {
-        "content": "role 1: Mình sẽ chạy quảng cáo Facebook.",
+        "content": "role 1: Trong ba tuần nữa.",
         "delay": 2
       },
       {
-        "content": "role 2: Có cần thiết kế logo không?",
+        "content": "role 2: Không nhiều thời gian đâu.",
         "delay": 2
       },
       {
-        "content": "role 1: Tất nhiên, hình ảnh phải chuyên nghiệp.",
+        "content": "role 1: Phải bắt tay vào làm ngay thôi.",
         "delay": 2
       },
       {
-        "content": "role 2: Mình quen một bạn thiết kế giỏi.",
+        "content": "role 2: Đúng, không thể trì hoãn.",
         "delay": 2
       },
       {
-        "content": "role 1: Quá tuyệt, nhờ bạn ấy luôn.",
+        "content": "role 1: Thứ bảy nhóm họp nhé.",
         "delay": 2
       },
       {
-        "content": "role 2: Khi nào bắt đầu trang trí quán?",
+        "content": "role 2: Họp online hay trực tiếp?",
         "delay": 2
       },
       {
-        "content": "role 1: Tuần sau ký hợp đồng thuê xong là làm liền.",
+        "content": "role 1: Trực tiếp cho dễ trao đổi.",
         "delay": 2
       },
       {
-        "content": "role 2: Hơi gấp đấy, nhưng mình thích.",
+        "content": "role 2: Ok, địa điểm ở thư viện trường.",
         "delay": 2
       },
       {
-        "content": "role 1: Nhanh thì sớm khai trương mà.",
+        "content": "role 1: 9 giờ sáng nhé.",
         "delay": 2
       },
       {
-        "content": "role 2: Dự kiến khai trương ngày nào?",
+        "content": "role 2: Được, mình sẽ nhắc mọi người.",
         "delay": 2
       },
       {
-        "content": "role 1: Đầu tháng sau.",
+        "content": "role 1: Đừng quên mang laptop.",
         "delay": 2
       },
       {
-        "content": "role 2: Vậy phải chuẩn bị kỹ lắm.",
+        "content": "role 2: Biết rồi mà.",
         "delay": 2
       },
       {
-        "content": "role 1: Không lo, mình lên checklist rồi.",
+        "content": "role 1: Hy vọng mọi người hợp tác tốt.",
         "delay": 2
       },
       {
-        "content": "role 2: Bạn chu đáo ghê.",
+        "content": "role 2: Mình tin là sẽ ổn thôi.",
         "delay": 2
       },
       {
-        "content": "role 1: Đây là giấc mơ mà, phải nghiêm túc.",
+        "content": "role 1: Sau họp mình sẽ tạo group chat riêng.",
         "delay": 2
       },
       {
-        "content": "role 2: Đúng, mình cũng rất háo hức.",
+        "content": "role 2: Ý tưởng hay đấy.",
         "delay": 2
       },
       {
-        "content": "role 1: Hy vọng quán sẽ đông khách.",
+        "content": "role 1: Để tiện cập nhật tiến độ mà.",
         "delay": 2
       },
       {
-        "content": "role 2: Chắc chắn sẽ thành công!",
+        "content": "role 2: Cậu đúng là leader xịn luôn.",
         "delay": 2
       },
       {
-        "content": "role 1: Tụi mình cố gắng hết sức nhé.",
+        "content": "role 1: Haha, cố gắng thôi.",
         "delay": 2
       },
       {
-        "content": "role 2: Đồng ý, cùng nhau thực hiện ước mơ.",
+        "content": "role 2: Thôi, mình về chuẩn bị tài liệu đây.",
+        "delay": 2
+      },
+      {
+        "content": "role 1: Ok, mai gặp ở lớp nhé.",
+        "delay": 2
+      },
+      {
+        "content": "role 2: Mai gặp, nhớ đừng quên USB nha.",
         "delay": 2
       }
     ]

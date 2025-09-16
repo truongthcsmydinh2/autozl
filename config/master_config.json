@@ -109,7 +109,7 @@
       "last_updated": "2025-09-15 09:31:24"
     },
     "192.168.5.86:5555": {
-      "phone": "",
+      "phone": "924648008",
       "zalo_number": "",
       "device_info": {
         "model": "Unknown",
@@ -117,7 +117,8 @@
         "resolution": "Unknown",
         "status": "device"
       },
-      "last_updated": "2025-09-15 09:31:24"
+      "last_updated": "2025-09-15 22:47:21",
+      "note": ""
     },
     "192.168.5.93:5555": {
       "phone": "582160135",
@@ -151,12 +152,564 @@
         "status": "device"
       },
       "last_updated": "2025-09-15 09:31:24"
+    },
+    "192.168.5.86": {
+      "phone": "924648008",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:42:30",
+      "note": ""
+    },
+    "192.168.5.81": {
+      "phone": "924454352",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:42:45",
+      "note": ""
+    },
+    "192.168.4.156": {
+      "phone": "928903551",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:43:15",
+      "note": "hanhcute 33"
+    },
+    "192.168.4.151": {
+      "phone": "0375062686",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:43:47",
+      "note": ""
+    },
+    "1": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "2": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "3": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "4": {
+      "phone": "928903551",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "5": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "6": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "7": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "8": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "9": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "10": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "192.168.5.81:5555": {
+      "phone": "924454352",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:53:49",
+      "note": ""
+    },
+    "192.168.4.156:5555": {
+      "phone": "928903551",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:04",
+      "note": ""
+    },
+    "11": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "12": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "13": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "14": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "15": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "16": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "17": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "18": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "19": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "20": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "21": {
+      "phone": "569924311",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "22": {
+      "phone": "921948994",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "23": {
+      "phone": "567513830",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "24": {
+      "phone": "582043409",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "25": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "26": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "27": {
+      "phone": "924454352",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "28": {
+      "phone": "583563439",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "29": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "30": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "31": {
+      "phone": "921003813",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "32": {
+      "phone": "924648008",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "33": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "34": {
+      "phone": "924981260",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "35": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "36": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "37": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "38": {
+      "phone": "587191813",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "39": {
+      "phone": "582160135",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
+    },
+    "40": {
+      "phone": "",
+      "zalo_number": "",
+      "device_info": {
+        "model": "Unknown",
+        "android_version": "Unknown",
+        "resolution": "Unknown",
+        "status": "device"
+      },
+      "last_updated": "2025-09-15 22:54:06",
+      "note": ""
     }
   },
   "metadata": {
     "version": "1.0.0",
     "created_at": "2025-09-15 09:31:24",
-    "last_updated": "2025-09-15 16:57:08",
+    "last_updated": "2025-09-16 08:28:51",
     "created_by": "Data Migration Tool"
   }
 }

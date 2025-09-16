@@ -51,6 +51,28 @@ class PhoneMappingWidget(QWidget):
         header_layout.addWidget(title)
         header_layout.addStretch()
         
+        # Save All button
+        self.save_all_btn = QPushButton("Save All")
+        self.save_all_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #007bff;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-weight: bold;
+                min-width: 100px;
+            }
+            QPushButton:hover {
+                background-color: #0056b3;
+            }
+            QPushButton:pressed {
+                background-color: #004085;
+            }
+        """)
+        self.save_all_btn.clicked.connect(self.save_all_devices)
+        header_layout.addWidget(self.save_all_btn)
+        
         # Save To button
         self.save_to_btn = QPushButton("Save To")
         self.save_to_btn.setStyleSheet("""
@@ -235,12 +257,9 @@ class PhoneMappingWidget(QWidget):
                 QMessageBox.warning(self, "Warning", "Invalid phone number format. Please enter 9 digits (without 0) or 10 digits (with 0).")
                 return
             
-            # Extract IP from device_id
-            ip = device_id.split(':')[0] if ':' in device_id else device_id
-            
-            # Save using DataManager
-            data_manager.set_phone_mapping(ip, phone)
-            data_manager.set_device_note(ip, note)
+            # Save using DataManager với device_id đầy đủ (bao gồm port)
+            data_manager.set_phone_mapping(device_id, phone)
+            data_manager.set_device_note(device_id, note)
             
             # Update local device_data to persist changes
             if device_id not in self.device_data:
@@ -255,7 +274,65 @@ class PhoneMappingWidget(QWidget):
             
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save device info: {str(e)}")
-        
+    
+    def save_all_devices(self):
+        """Lưu tất cả thông tin thiết bị từ bảng"""
+        try:
+            saved_count = 0
+            error_count = 0
+            
+            for row in range(self.table.rowCount()):
+                try:
+                    # Lấy device_id từ cột đầu tiên
+                    device_item = self.table.item(row, 0)
+                    if not device_item:
+                        continue
+                    
+                    device_id = device_item.text().strip()
+                    if not device_id:
+                        continue
+                    
+                    # Lấy thông tin từ bảng
+                    phone_item = self.table.item(row, 2)
+                    note_item = self.table.item(row, 3)
+                    
+                    phone = phone_item.text().strip() if phone_item else ""
+                    note = note_item.text().strip() if note_item else ""
+                    
+                    # Validate phone number nếu có
+                    if phone and not self.validate_phone_number(phone):
+                        error_count += 1
+                        continue
+                    
+                    # Save using DataManager với device_id đầy đủ
+                    data_manager.set_phone_mapping(device_id, phone)
+                    data_manager.set_device_note(device_id, note)
+                    
+                    # Update local device_data
+                    if device_id not in self.device_data:
+                        self.device_data[device_id] = {}
+                    self.device_data[device_id]['phone'] = phone
+                    self.device_data[device_id]['note'] = note
+                    
+                    saved_count += 1
+                    
+                except Exception as e:
+                    print(f"Error saving device {device_id}: {str(e)}")
+                    error_count += 1
+                    continue
+            
+            # Emit signal after all saves
+            self.device_info_changed.emit(self.device_data)
+            
+            # Show result message
+            if error_count == 0:
+                QMessageBox.information(self, "Success", f"All {saved_count} devices saved successfully!")
+            else:
+                QMessageBox.warning(self, "Partial Success", f"Saved {saved_count} devices successfully.\n{error_count} devices had errors (invalid phone numbers).")
+                
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to save all devices: {str(e)}")
+    
     def save_to_file(self):
         """Xuất dữ liệu ra file"""
         if not self.device_data:
