@@ -404,6 +404,134 @@ class Device:
         except Exception as e:
             print(f"[ERR] Get device info failed: {e}")
             return None
+    
+    def handle_friend_request_flow(self, debug=False):
+        """
+        Xử lý flow kết bạn theo logic đơn giản:
+        1. Click btn_send_friend_request
+        2. Delay 2-3 giây
+        3. Tìm và click btnSendInvitation
+        4. Xử lý trường hợp đặc biệt
+        5. Back về màn hình trước
+        
+        Returns:
+            True: Flow kết bạn hoàn thành thành công
+            False: Có lỗi xảy ra trong flow
+        """
+        import time
+        max_retries = 2
+        
+        for attempt in range(max_retries + 1):
+            try:
+                if debug: print(f"🔄 Bắt đầu flow kết bạn (lần thử {attempt + 1}/{max_retries + 1})...")
+                
+                # Bước 2.1: Click btn_send_friend_request
+                if debug: print("🔍 Tìm nút btn_send_friend_request...")
+                
+                # Sử dụng UI dump analysis thay vì element_exists để detect NAF elements
+                device_serial = getattr(self, 'device_id', None)
+                if device_serial:
+                    # Convert device_id format if needed
+                    if '_' in device_serial and device_serial.count('_') >= 4:
+                        parts = device_serial.split('_')
+                        if len(parts) >= 5:
+                            ip_parts = parts[:4]
+                            port = parts[4] if len(parts) > 4 else '5555'
+                            device_serial = ".".join(ip_parts) + ":" + port
+                    
+                    # Check UI dump for btn_send_friend_request
+                    has_friend_btn = check_btn_send_friend_request_in_dump(device_serial, debug=debug)
+                    
+                    if not has_friend_btn:
+                        if debug: print("❌ Không tìm thấy btn_send_friend_request trong UI dump")
+                        return False
+                else:
+                    # Fallback về phương thức cũ nếu không có device_serial
+                    if not self.element_exists(resourceId="com.zing.zalo:id/btn_send_friend_request", timeout=3):
+                        if debug: print("❌ Không tìm thấy btn_send_friend_request (fallback)")
+                        return False
+                    
+                if debug: print("✅ Tìm thấy btn_send_friend_request, đang click...")
+                if not self.click_by_resource_id("com.zing.zalo:id/btn_send_friend_request", timeout=5, debug=debug):
+                    if debug: print("❌ Không thể click btn_send_friend_request")
+                    if attempt < max_retries:
+                        if debug: print(f"🔄 Thử lại lần {attempt + 2}...")
+                        time.sleep(1)
+                        continue
+                    return False
+                    
+                if debug: print("✅ Đã click btn_send_friend_request")
+                    
+                # Bước 2.2: Delay 2-3 giây chờ load
+                if debug: print("⏳ Chờ 2.5 giây để giao diện load...")
+                time.sleep(2.5)
+                
+                # Bước 2.3: Tìm và click btnSendInvitation với retry
+                if debug: print("🔍 Tìm nút btnSendInvitation...")
+                
+                invitation_found = False
+                for retry in range(2):  # Thử tìm btnSendInvitation tối đa 2 lần
+                    if self.element_exists(resourceId="com.zing.zalo:id/btnSendInvitation", timeout=3):
+                        invitation_found = True
+                        if debug: print("✅ Tìm thấy btnSendInvitation, đang click...")
+                        if self.click_by_resource_id("com.zing.zalo:id/btnSendInvitation", timeout=5, debug=debug):
+                            if debug: print("✅ Gửi lời mời kết bạn thành công")
+                            break
+                        else:
+                            if debug: print("❌ Không thể click btnSendInvitation")
+                            if retry < 1:
+                                if debug: print("🔄 Thử click lại...")
+                                time.sleep(1)
+                    else:
+                        if retry < 1:
+                            if debug: print("⏳ Chờ thêm 1 giây và thử lại...")
+                            time.sleep(1)
+                
+                if not invitation_found:
+                    # Bước 2.4: Xử lý trường hợp đặc biệt
+                    if debug: print("⚠️ Không tìm thấy nút btnSendInvitation")
+                    
+                    # Kiểm tra các trường hợp đặc biệt
+                    if self.element_exists(text="Đã gửi lời mời", timeout=2):
+                        if debug: print("ℹ️ Đã gửi lời mời kết bạn trước đó")
+                    elif self.element_exists(text="Tài khoản bị hạn chế", timeout=2):
+                        if debug: print("⚠️ Tài khoản bị hạn chế gửi lời mời")
+                    elif self.element_exists(text="Không thể kết nối", timeout=2):
+                        if debug: print("⚠️ Mạng chậm hoặc không ổn định")
+                        if attempt < max_retries:
+                            if debug: print(f"🔄 Thử lại do mạng chậm (lần {attempt + 2})...")
+                            time.sleep(2)
+                            continue
+                    else:
+                        if debug: print("⚠️ Trạng thái không xác định, có thể đã gửi trước đó hoặc bị hạn chế")
+                    
+                # Bước 2.5: Back về màn hình trước
+                if debug: print("🔙 Quay lại màn hình trước...")
+                self.key('KEYCODE_BACK')
+                time.sleep(1)  # Chờ UI ổn định
+                
+                if debug: print("✅ Hoàn thành flow kết bạn")
+                return True
+                
+            except Exception as e:
+                if debug: print(f"❌ Lỗi trong flow kết bạn (lần thử {attempt + 1}): {e}")
+                
+                # Đảm bảo luôn back về màn hình trước khi có lỗi
+                try:
+                    self.key('KEYCODE_BACK')
+                    time.sleep(0.5)
+                except:
+                    pass
+                
+                if attempt < max_retries:
+                    if debug: print(f"🔄 Thử lại sau lỗi (lần {attempt + 2})...")
+                    time.sleep(1)
+                    continue
+                else:
+                    if debug: print("❌ Đã thử tối đa, dừng flow kết bạn")
+                    return False
+        
+        return False
 
 # ---------------- Device Management Functions ----------------
 def get_all_connected_devices():
@@ -1559,6 +1687,36 @@ def main():
         # Multi-device mode - sử dụng group-based conversation
         main_multi_device(valid_devices)
 
+def run_device_automation(dev, device_index, delay, done_event):
+    """Wrapper function to run automation on a single device"""
+    try:
+        print(f"[DEBUG] Starting run_device_automation for device {device_index} with delay {delay}s")
+        
+        # Apply delay before starting
+        if delay > 0:
+            time.sleep(delay)
+        
+        # Check if we should stop before starting
+        if done_event and done_event.is_set():
+            print(f"[DEBUG] Stop signal received for device {device_index}")
+            return
+        
+        # Call the main flow function
+        result = flow(dev)
+        
+        print(f"[DEBUG] Flow completed for device {device_index} with result: {result}")
+        
+    except Exception as e:
+        print(f"[ERROR] Exception in run_device_automation for device {device_index}: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    finally:
+        # Signal that this device is done
+        if done_event:
+            done_event.set()
+        print(f"[DEBUG] Device {device_index} automation completed")
+
 def run_zalo_automation(device_pairs, conversations, phone_mapping, progress_callback=None, stop_event=None, status_callback=None):
     """
     Hàm chính để chạy automation từ GUI Zalo
@@ -1604,18 +1762,29 @@ def run_zalo_automation(device_pairs, conversations, phone_mapping, progress_cal
         
         results = {}
         
-        # Xử lý từng cặp thiết bị
-        for pair_index, (device1, device2) in enumerate(device_pairs, 1):
+        # Parallel processing cho tất cả các cặp thiết bị
+        import threading
+        import queue
+        
+        pair_results_queue = queue.Queue()
+        pair_threads = []
+        
+        # Thông báo bắt đầu parallel mode
+        if progress_callback:
+            progress_callback(f"🚀 Bắt đầu chạy {len(device_pairs)} cặp đồng thời (Parallel Mode)")
+        
+        def process_pair(pair_index, device1, device2):
+            """Xử lý một cặp thiết bị trong thread riêng biệt"""
             # Check stop signal before processing each pair
             if stop_event and stop_event.is_set():
                 if progress_callback:
                     progress_callback("⏹️ Automation đã được dừng.")
-                break
+                return
                 
             pair_name = f"pair_{pair_index}"
             
             if progress_callback:
-                progress_callback(f"🔄 Xử lý cặp {pair_index}/{len(device_pairs)}: {device1['ip']} ↔ {device2['ip']}")
+                progress_callback(f"🔄 Khởi tạo cặp {pair_index}/{len(device_pairs)}: {device1['ip']} ↔ {device2['ip']} (Parallel Mode)")
             
             print(f"\n📱 Cặp {pair_index}: {device1['ip']} ↔ {device2['ip']}")
             
@@ -1657,7 +1826,8 @@ def run_zalo_automation(device_pairs, conversations, phone_mapping, progress_cal
             if len(connected_devices) < 2:
                 error_msg = f"Chỉ kết nối được {len(connected_devices)}/2 devices trong cặp {pair_index}"
                 print(f"❌ {error_msg}")
-                results[pair_name] = {"status": "connection_failed", "error": error_msg}
+                pair_result = {"status": "connection_failed", "error": error_msg}
+                pair_results_queue.put((pair_name, pair_result))
                 
                 # Cleanup devices đã kết nối
                 for dev in connected_devices:
@@ -1665,154 +1835,50 @@ def run_zalo_automation(device_pairs, conversations, phone_mapping, progress_cal
                         dev.disconnect()
                     except:
                         pass
-                continue
+                return
             
             # Chạy automation trên cặp devices
             try:
                 if progress_callback:
-                    progress_callback(f"🎯 Bắt đầu automation cặp {pair_index}...")
+                    progress_callback(f"🎯 Cặp {pair_index} bắt đầu automation đồng thời...")
                 
                 print(f"🎯 Bắt đầu automation cặp {pair_index} với {len(connected_devices)} devices")
                 
                 # Chạy automation trên từng device trong cặp với parallel processing
-                import threading
-                import queue
-                
                 pair_results = {}
                 result_queue = queue.Queue()
                 threads = []
-                
-                def run_device_automation(dev, device_index, delay_before_start=0, done_event=None):
-                    """Chạy automation trên một device với delay trước khi bắt đầu"""
-                    device_ip = dev.device_id
-                    
-                    try:
-                        # Emit device status update
-                        if status_callback:
-                            status_callback('device_status', device_ip, 'Đang chuẩn bị', '')
-                        
-                        # Check stop signal before starting
-                        if stop_event and stop_event.is_set():
-                            if status_callback:
-                                status_callback('device_status', device_ip, 'Đã dừng', '')
-                            result_queue.put((device_ip, {"status": "stopped", "result": "Automation stopped"}))
-                            # Signal completion even if stopped
-                            if done_event:
-                                done_event.set()
-                            return
-                            
-                        # Delay trước khi bắt đầu để stagger start times
-                        if delay_before_start > 0:
-                            print(f"⏸️ Device {device_ip} delay {delay_before_start}s trước khi bắt đầu...")
-                            if progress_callback:
-                                progress_callback(f"⏸️ Device {device_ip} delay {delay_before_start}s...")
-                            
-                            if status_callback:
-                                status_callback('device_status', device_ip, f'Đang delay {delay_before_start}s', '')
-                            
-                            # Check stop signal during delay
-                            for i in range(delay_before_start):
-                                if stop_event and stop_event.is_set():
-                                    if status_callback:
-                                        status_callback('device_status', device_ip, 'Đã dừng', '')
-                                    result_queue.put((device_ip, {"status": "stopped", "result": "Automation stopped during delay"}))
-                                    # Signal completion even if stopped
-                                    if done_event:
-                                        done_event.set()
-                                    return
-                                time.sleep(1)
-                        
-                        print(f"📱 Chạy automation trên {device_ip} (device {device_index+1}/{len(connected_devices)})")
-                        if progress_callback:
-                            progress_callback(f"📱 Bắt đầu automation trên {device_ip}...")
-                        
-                        if status_callback:
-                            status_callback('device_status', device_ip, 'Đang chạy automation', '')
-                        
-                        # Check stop signal before running flow
-                        if stop_event and stop_event.is_set():
-                            if status_callback:
-                                status_callback('device_status', device_ip, 'Đã dừng', '')
-                            result_queue.put((device_ip, {"status": "stopped", "result": "Automation stopped before flow"}))
-                            # Signal completion even if stopped
-                            if done_event:
-                                done_event.set()
-                            return
-                            
-                        result = flow(dev, all_devices=device_ips, stop_event=stop_event, status_callback=status_callback)
-                        
-                        # Check stop signal after flow
-                        if stop_event and stop_event.is_set():
-                            if status_callback:
-                                status_callback('device_status', device_ip, 'Đã dừng', '')
-                            result_queue.put((device_ip, {"status": "stopped", "result": "Automation stopped after flow"}))
-                        else:
-                            if status_callback:
-                                status_callback('device_status', device_ip, 'Hoàn thành', str(result))
-                            result_queue.put((device_ip, {"status": "completed", "result": result}))
-                            print(f"✅ Hoàn thành automation trên {device_ip}: {result}")
-                            
-                            if progress_callback:
-                                progress_callback(f"✅ Hoàn thành {device_ip}: {result}")
-                        
-                        # Signal completion in all cases
-                        if done_event:
-                            done_event.set()
-                            print(f"🔔 Device {device_ip} - Signaled completion via done_event")
-                            
-                    except Exception as e:
-                        if status_callback:
-                            status_callback('device_status', device_ip, 'Lỗi', str(e))
-                        result_queue.put((device_ip, {"status": "error", "result": str(e)}))
-                        print(f"❌ Lỗi automation trên {device_ip}: {e}")
-                        
-                        if progress_callback:
-                            progress_callback(f"❌ Lỗi {device_ip}: {str(e)}")
-                        
-                        # Signal completion even on error
-                        if done_event:
-                            done_event.set()
-                            print(f"🔔 Device {device_ip} - Signaled completion via done_event (error case)")
-                
-                # Tạo done events cho mỗi thread
                 done_events = []
                 
                 # Tạo và start threads với staggered delays
-                for i, dev in enumerate(connected_devices):
-                    # Tăng delay giữa các devices từ 5+i*2 lên 8+i*3
-                    delay_before_start = 8 + (i * 3) if i > 0 else 0  # 0s, 11s, 14s...
-                    
+                for device_index, dev in enumerate(connected_devices):
                     done_event = threading.Event()
                     done_events.append(done_event)
                     
+                    delay = device_index * 2  # 2s delay giữa các devices
                     thread = threading.Thread(
                         target=run_device_automation,
-                        args=(dev, i, delay_before_start, done_event),
+                        args=(dev, device_index, delay, done_event),
                         name=f"Device-{dev.device_id}"
                     )
                     threads.append(thread)
                     thread.start()
-                    
-                    # Nhỏ delay giữa việc start các threads để tránh race condition
-                    time.sleep(0.5)
+                    print(f"🚀 Started thread cho device {dev.device_id} với delay {delay}s")
                 
-                # Đợi tất cả threads hoàn thành hoặc stop signal
-                print(f"⏳ Đợi tất cả {len(threads)} devices hoàn thành automation...")
+                print(f"⏳ Cặp {pair_index}: Đợi {len(threads)} devices hoàn thành...")
                 if progress_callback:
-                    progress_callback(f"⏳ Đợi {len(threads)} devices hoàn thành...")
+                    progress_callback(f"⏳ Cặp {pair_index}: Đợi {len(threads)} devices hoàn thành...")
                 
-                # Đợi tất cả threads hoàn thành thực sự bằng done_events với enhanced logging
-                all_threads_completed = False
-                max_wait_time = 300  # 5 phút timeout - force cleanup sau 300s
+                # Enhanced thread waiting với done_events
+                max_wait_time = 300  # 5 phút timeout
                 wait_start = time.time()
                 last_log_time = wait_start
+                all_threads_completed = False
                 
-                print(f"🔔 [THREAD_WAIT] Bắt đầu đợi {len(done_events)} done_events được signaled...")
-                print(f"🔔 [THREAD_WAIT] Timeout: {max_wait_time}s, Force cleanup sau 300s")
-                
-                while not all_threads_completed and (time.time() - wait_start) < max_wait_time:
+                while time.time() - wait_start < max_wait_time:
+                    # Check stop signal
                     if stop_event and stop_event.is_set():
-                        print(f"🛑 [THREAD_WAIT] Stop signal received, breaking thread wait loop")
+                        print(f"⏹️ Stop signal received, breaking wait loop")
                         break
                     
                     # Kiểm tra done_events thay vì thread.is_alive()
@@ -1894,20 +1960,20 @@ def run_zalo_automation(device_pairs, conversations, phone_mapping, progress_cal
                 # Tổng hợp kết quả cặp
                 success_count = sum(1 for r in pair_results.values() if r["status"] == "completed" and r.get("result") not in ["APP_OPEN_FAILED", "LOGIN_REQUIRED"])
                 if success_count == len(connected_devices):
-                    results[pair_name] = {"status": "completed", "devices": pair_results}
+                    pair_result = {"status": "completed", "devices": pair_results}
                     if progress_callback:
-                        progress_callback(f"✅ Hoàn thành cặp {pair_index}: {success_count}/{len(connected_devices)} thành công")
+                        progress_callback(f"✅ Cặp {pair_index} hoàn thành: {success_count}/{len(connected_devices)} thành công")
                 else:
-                    results[pair_name] = {"status": "partial_success", "devices": pair_results}
+                    pair_result = {"status": "partial_success", "devices": pair_results}
                     if progress_callback:
                         progress_callback(f"⚠️ Cặp {pair_index} hoàn thành một phần: {success_count}/{len(connected_devices)} thành công")
                 
             except Exception as e:
                 error_msg = f"Lỗi automation cặp {pair_index}: {str(e)}"
                 print(f"❌ {error_msg}")
-                results[pair_name] = {"status": "error", "error": error_msg}
+                pair_result = {"status": "error", "error": error_msg}
                 if progress_callback:
-                    progress_callback(f"❌ {error_msg}")
+                    progress_callback(f"❌ Cặp {pair_index}: {error_msg}")
             
             # Cleanup devices
             for dev in connected_devices:
@@ -1916,10 +1982,32 @@ def run_zalo_automation(device_pairs, conversations, phone_mapping, progress_cal
                 except:
                     pass
             
-            # Delay giữa các cặp
+            # Đưa kết quả vào queue
+            pair_results_queue.put((pair_name, pair_result))
+        
+        # Tạo threads cho từng cặp thiết bị
+        for pair_index, (device1, device2) in enumerate(device_pairs, 1):
+            thread = threading.Thread(
+                target=process_pair,
+                args=(pair_index, device1, device2),
+                name=f"PairThread-{pair_index}"
+            )
+            pair_threads.append(thread)
+            thread.start()
+            
+            # Staggered start để tránh overload
             if pair_index < len(device_pairs):
-                print(f"⏸️ Nghỉ 2 giây trước cặp tiếp theo...")
-                time.sleep(2)
+                time.sleep(1)  # Delay 1s giữa các cặp
+        
+        # Chờ tất cả threads hoàn thành
+        for thread in pair_threads:
+            thread.join()
+        
+        # Thu thập kết quả từ queue
+        results = {}
+        while not pair_results_queue.empty():
+            pair_name, pair_result = pair_results_queue.get()
+            results[pair_name] = pair_result
         
         # Tổng hợp kết quả cuối cùng
         total_pairs = len(device_pairs)
@@ -2129,11 +2217,61 @@ def enter_query_and_submit(dev, text, debug=False):
         return False
 
 def click_first_search_result(dev, preferred_text=None, debug=False):
-    """Click first search result - UIAutomator2 optimized với resource-id"""
+    """Click first search result và implement điểm tách nhánh theo yêu cầu"""
     try:
         # Method 1: Click by search result button resource-id (most reliable)
         if dev.click_by_resource_id("com.zing.zalo:id/btn_search_result", timeout=3, debug=False):
             if debug: print("[DEBUG] ✅ Clicked search result button")
+            
+            # ĐIỂM TÁCH NHÁNH: Kiểm tra btn_send_friend_request sau khi click btn_search_result
+            time.sleep(1)  # Đợi UI load
+            
+            if debug: print("[DEBUG] 🔍 Kiểm tra btn_send_friend_request để quyết định flow...")
+            
+            # Sử dụng UI dump analysis thay vì element_exists để detect NAF elements
+            device_serial = getattr(dev, 'device_id', None)
+            if device_serial:
+                # Convert device_id format if needed
+                if '_' in device_serial and device_serial.count('_') >= 4:
+                    parts = device_serial.split('_')
+                    if len(parts) >= 5:
+                        ip_parts = parts[:4]
+                        port = parts[4] if len(parts) > 4 else '5555'
+                        device_serial = ".".join(ip_parts) + ":" + port
+                
+                # Check UI dump for btn_send_friend_request
+                has_friend_btn = check_btn_send_friend_request_in_dump(device_serial, debug=debug)
+                
+                if has_friend_btn:
+                    if debug: print("[DEBUG] ✅ Tìm thấy btn_send_friend_request trong UI dump → chuyển sang flow kết bạn")
+                    
+                    # Thực hiện flow kết bạn ngay tại đây
+                    friend_flow_success = dev.handle_friend_request_flow(debug=debug)
+                    
+                    if friend_flow_success:
+                        if debug: print("[DEBUG] ✅ Hoàn thành flow kết bạn → tiếp tục flow chính")
+                    else:
+                        if debug: print("[DEBUG] ❌ Flow kết bạn thất bại")
+                        return False
+                else:
+                    if debug: print("[DEBUG] ℹ️ Không tìm thấy btn_send_friend_request trong UI dump → đã là bạn bè, tiếp tục flow chính")
+            else:
+                if debug: print("[DEBUG] ⚠️ Không lấy được device_serial, fallback về element_exists")
+                # Fallback về phương thức cũ nếu không có device_serial
+                if dev.element_exists(resourceId="com.zing.zalo:id/btn_send_friend_request", timeout=3):
+                    if debug: print("[DEBUG] ✅ Tìm thấy btn_send_friend_request (fallback) → chuyển sang flow kết bạn")
+                    
+                    # Thực hiện flow kết bạn ngay tại đây
+                    friend_flow_success = dev.handle_friend_request_flow(debug=debug)
+                    
+                    if friend_flow_success:
+                        if debug: print("[DEBUG] ✅ Hoàn thành flow kết bạn (fallback) → tiếp tục flow chính")
+                    else:
+                        if debug: print("[DEBUG] ❌ Flow kết bạn thất bại (fallback)")
+                        return False
+                else:
+                    if debug: print("[DEBUG] ℹ️ Không tìm thấy btn_send_friend_request (fallback) → đã là bạn bè, tiếp tục flow chính")
+            
             return True
         
         # Method 2: Click by preferred text
@@ -2351,6 +2489,99 @@ def load_conversation_from_file(group_id):
     {"message_id": 31, "device_number": 1, "content": "Cậu có muốn nói gì thêm không"},
     {"message_id": 32, "device_number": 2, "content": "Ok"}
     ]
+
+def send_friend_request(dev, debug=False):
+    """Thực hiện gửi lời mời kết bạn với UI actions và verification
+    Sử dụng hàm từ ui_friend_status_fix.py để xử lý NAF elements
+    
+    Returns:
+        'FRIEND_REQUEST_SENT': Đã gửi lời mời kết bạn thành công
+        'ALREADY_FRIENDS': Đã kết bạn rồi (phát hiện sau khi thao tác)
+        'FRIEND_REQUEST_ACCEPTED': Đã chấp nhận lời mời kết bạn
+        'SEND_FAILED': Không thể gửi lời mời (nút không tìm thấy hoặc click failed)
+        'UI_ERROR': Lỗi UI hoặc không xác định được trạng thái
+    """
+    import time
+    from ui_friend_status_fix import send_friend_request as send_friend_request_fix
+    
+    if debug: print("[DEBUG] 🚀 Bắt đầu send_friend_request function với NAF handling")
+    
+    try:
+        # Dump UI trước khi thực hiện để có thông tin bounds
+        try:
+            if debug: print("[DEBUG] 📸 Dumping UI để lấy thông tin bounds...")
+            dump_ui_and_log(dev, debug=debug)
+        except Exception as e:
+            if debug: print(f"[DEBUG] ⚠️ Không thể dump UI: {e}")
+        
+        # Sử dụng hàm từ ui_friend_status_fix.py với khả năng xử lý NAF
+        device_serial = dev.device_id
+        
+        # Fix device serial format conversion
+        # Convert from 192_168_5_76_5555 to 192.168.5.76:5555
+        if '_' in device_serial and device_serial.count('_') >= 4:
+            parts = device_serial.split('_')
+            if len(parts) >= 5:
+                # Reconstruct IP:PORT format
+                ip_parts = parts[:4]  # First 4 parts are IP
+                port = parts[4] if len(parts) > 4 else '5555'
+                device_serial = ".".join(ip_parts) + ":" + port
+                if debug: print(f"[DEBUG] 🔧 Converted device_serial: {dev.device_id} -> {device_serial}")
+        
+        result = send_friend_request_fix(device_serial, max_retries=3, debug=debug)
+        
+        # Convert bool result to expected string format
+        if result:
+            result = 'FRIEND_REQUEST_SENT'
+        else:
+            result = 'SEND_FAILED'
+        
+        if debug: print(f"[DEBUG] 📋 Kết quả từ send_friend_request_fix: {result}")
+        
+        # Verify kết quả bằng cách kiểm tra UI state
+        time.sleep(1)
+        
+        if result == 'FRIEND_REQUEST_SENT':
+            # Double check bằng cách kiểm tra UI state
+            if dev.element_exists(resourceId="com.zing.zalo:id/chatinput_text", timeout=2):
+                if debug: print("[DEBUG] ✅ Phát hiện chatinput_text sau khi gửi - đã kết bạn ngay lập tức")
+                return 'ALREADY_FRIENDS'
+            
+            # Kiểm tra nút gửi lời mời đã biến mất chưa
+            if not dev.element_exists(resourceId="com.zing.zalo:id/btn_send_friend_request", timeout=1):
+                if debug: print("[DEBUG] ✅ Xác nhận: nút btn_send_friend_request đã biến mất")
+                return 'FRIEND_REQUEST_SENT'
+            
+            # Kiểm tra có text indicator thành công
+            sent_indicators = ["Đã gửi", "Sent", "Pending", "Chờ xác nhận"]
+            for indicator in sent_indicators:
+                if dev.element_exists(text=indicator, timeout=1):
+                    if debug: print(f"[DEBUG] ✅ Xác nhận: tìm thấy indicator '{indicator}'")
+                    return 'FRIEND_REQUEST_SENT'
+        
+        return result
+        
+    except Exception as e:
+        if debug: print(f"[DEBUG] ❌ Lỗi trong send_friend_request: {e}")
+        
+        # Fallback về logic cũ nếu có lỗi
+        if debug: print("[DEBUG] 🔄 Fallback về logic click cũ...")
+        
+        try:
+            if dev.element_exists(resourceId="com.zing.zalo:id/btn_send_friend_request", timeout=3):
+                if dev.click(resourceId="com.zing.zalo:id/btn_send_friend_request"):
+                    if debug: print("[DEBUG] ✅ Fallback click thành công")
+                    time.sleep(2)
+                    return 'FRIEND_REQUEST_SENT'
+                else:
+                    if debug: print("[DEBUG] ❌ Fallback click thất bại")
+                    return 'SEND_FAILED'
+            else:
+                if debug: print("[DEBUG] ❌ Không tìm thấy nút trong fallback")
+                return 'SEND_FAILED'
+        except Exception as fallback_error:
+            if debug: print(f"[DEBUG] ❌ Lỗi trong fallback: {fallback_error}")
+            return 'UI_ERROR'
 
 def check_and_add_friend(dev, debug=False):
     """Kiểm tra và thêm bạn nếu cần thiết với logic phát hiện theo phân tích document
@@ -3294,12 +3525,19 @@ def cleanup_barrier_file(group_id):
 # === SHARED STATUS MANAGEMENT ===
 def get_status_file_path():
     """Lấy đường dẫn file status chung"""
-    return os.path.join(os.path.dirname(__file__), 'status.json')
+    import os
+    try:
+        # Thử dùng __file__ trước
+        return os.path.join(os.path.dirname(__file__), 'status.json')
+    except NameError:
+        # Fallback nếu __file__ không có
+        return os.path.join(os.getcwd(), 'status.json')
 
 def update_shared_status(device_ip, status, message="", progress=0, current_message_id=None):
     """Cập nhật trạng thái shared cho device"""
     import json
     import time as time_module
+    import os
     
     status_file = get_status_file_path()
     
@@ -3360,6 +3598,7 @@ def update_shared_status(device_ip, status, message="", progress=0, current_mess
 def read_shared_status():
     """Đọc trạng thái shared hiện tại"""
     import json
+    import os
     
     status_file = get_status_file_path()
     
@@ -3375,6 +3614,7 @@ def read_shared_status():
 
 def cleanup_shared_status():
     """Cleanup shared status file"""
+    import os
     status_file = get_status_file_path()
     try:
         if os.path.exists(status_file):
@@ -4095,12 +4335,13 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     update_shared_status(device_ip, 'syncing', 'Đợi tất cả máy mở Zalo...', 30)
     
     try:
+        # Signal ready at barrier first
+        signal_ready_at_barrier("app_opened", device_ip)
+        
         barrier_result = wait_for_group_barrier(
-            device_ip=device_ip,
-            all_devices=all_devices,
-            barrier_name="app_opened",
-            timeout=120,  # 2 phút timeout
-            stop_event=stop_event
+            group_id="app_opened",
+            device_count=len(all_devices) if all_devices else 1,
+            timeout=120  # 2 phút timeout
         )
         
         if barrier_result == "STOPPED":
@@ -4152,7 +4393,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     print(f"[DEBUG] Current PHONE_MAP after reload: {PHONE_MAP}")
     
     # Xác định nhóm và role trong nhóm
-    if all_devices:
+    if all_devices and len(all_devices) > 1:
         # Chuẩn hóa all_devices để chỉ chứa IP không có port cho việc xác định role
         normalized_devices = []
         for device in all_devices:
@@ -4161,10 +4402,13 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         
         group_id, role_in_group = determine_group_and_role(ip, normalized_devices)
         print(f"📱 Device {ip} - Nhóm {group_id}, Role {role_in_group}")
+        print(f"[DEBUG] All devices: {all_devices}")
+        print(f"[DEBUG] Normalized devices: {normalized_devices}")
         
         # Tìm partner trong cùng nhóm
         sorted_devices = sorted(normalized_devices)
         print(f"[DEBUG] Sorted devices: {sorted_devices}")
+        print(f"[DEBUG] Current device IP: {ip}")
         
         try:
             device_index = sorted_devices.index(ip)
@@ -4177,12 +4421,16 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
             print(f"[DEBUG] Fallback: target_phone={target_phone}, partner_ip={partner_ip}")
             return "SUCCESS"
         
-        if role_in_group == 1:
+        # FIXED: Logic xác định partner dựa trên device_index thay vì group logic phức tạp
+        # Ghép cặp: device 0 <-> device 1, device 2 <-> device 3, device 4 <-> device 5
+        if device_index % 2 == 0:
+            # Device chẵn ghép với device lẻ tiếp theo
             partner_index = device_index + 1
         else:
+            # Device lẻ ghép với device chẵn trước đó
             partner_index = device_index - 1
         
-        print(f"[DEBUG] Partner index: {partner_index}")
+        print(f"[DEBUG] Device index: {device_index}, Partner index: {partner_index}")
         
         if 0 <= partner_index < len(sorted_devices):
             partner_ip = sorted_devices[partner_index]
@@ -4196,18 +4444,27 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
             if not target_phone:
                 print(f"[DEBUG] No phone mapping found for partner {partner_ip}")
                 print(f"[DEBUG] Available PHONE_MAP keys: {list(PHONE_MAP.keys())}")
+                # Fallback to first available phone if no mapping found
+                available_phones = [v for v in PHONE_MAP.values() if v]
+                if available_phones:
+                    target_phone = available_phones[0]
+                    print(f"[DEBUG] Using fallback phone: {target_phone}")
         else:
             target_phone = ""
             partner_ip = ""
-            print(f"[DEBUG] Partner index {partner_index} out of range")
+            print(f"[DEBUG] Partner index {partner_index} out of range (total devices: {len(sorted_devices)})")
     else:
-        # Fallback về logic cũ cho 2 máy
-        device_role = 1 if ip == "192.168.5.74" else 2
-        target_ip = "192.168.5.82" if ip == "192.168.5.74" else "192.168.5.74"
-        target_ip_with_port = f"{target_ip}:5555"
-        target_phone = PHONE_MAP.get(target_ip_with_port, "") or PHONE_MAP.get(target_ip, "")
-        print(f"📱 Device role: Máy {device_role} (fallback mode)")
-        print(f"[DEBUG] Fallback target_phone: {target_phone}")
+        # Fallback về logic cũ cho 1 máy hoặc không có all_devices
+        print(f"[DEBUG] Using fallback mode - single device or no all_devices list")
+        device_role = 1
+        # Lấy phone đầu tiên có sẵn trong PHONE_MAP
+        available_phones = [v for v in PHONE_MAP.values() if v]
+        if available_phones:
+            target_phone = available_phones[0]
+            print(f"[DEBUG] Fallback target_phone: {target_phone}")
+        else:
+            target_phone = "569924311"  # Hard fallback
+            print(f"[DEBUG] Hard fallback target_phone: {target_phone}")
     
     # Kiểm tra stop signal trước chuyển tab
     if stop_event and stop_event.is_set():
@@ -4259,80 +4516,10 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
             print(f"[DEBUG] Stop signal received before friend check for {device_ip}")
             return "STOPPED"
         
-        # Kiểm tra và kết bạn nếu cần
-        friend_status = check_and_add_friend(dev, debug=True)
-        print(f"[DEBUG] Friend status result: {friend_status}")
-        
-        if friend_status == 'FRIEND_REQUEST_SENT':
-            print("✅ Đã gửi lời mời kết bạn - đợi xử lý và tiếp tục conversation")
-            update_shared_status(device_ip, 'friend_request_sent', 'Đã gửi lời mời kết bạn', 80)
-            
-            # Đợi một chút để UI cập nhật
-            time.sleep(3)
-            
-            # Kiểm tra lại trạng thái sau khi gửi lời mời
-            final_check = check_and_add_friend(dev, debug=True)
-            print(f"[DEBUG] Final friend status after sending request: {final_check}")
-            
-            if final_check == 'ALREADY_FRIENDS':
-                print("✅ Xác nhận đã kết bạn - tiếp tục conversation flow")
-            else:
-                print(f"⚠️ Trạng thái sau gửi lời mời: {final_check} - vẫn tiếp tục conversation")
-            # Tiếp tục với conversation flow
-            
-        elif friend_status == 'FRIEND_REQUEST_ACCEPTED':
-            print("✅ Đã chấp nhận lời mời kết bạn - tiếp tục conversation")
-            update_shared_status(device_ip, 'friend_request_accepted', 'Đã chấp nhận lời mời kết bạn', 80)
-            
-            # Đợi một chút để UI cập nhật
-            time.sleep(3)
-            
-            # Kiểm tra lại trạng thái sau khi chấp nhận
-            final_check = check_and_add_friend(dev, debug=True)
-            print(f"[DEBUG] Final friend status after accepting request: {final_check}")
-            
-            if final_check == 'ALREADY_FRIENDS':
-                print("✅ Xác nhận đã kết bạn - tiếp tục conversation flow")
-            else:
-                print(f"⚠️ Trạng thái sau chấp nhận: {final_check} - vẫn tiếp tục conversation")
-            # Tiếp tục với conversation flow
-        elif friend_status == 'NEED_FRIEND_REQUEST':
-            print("⚠️ Phát hiện chưa kết bạn - hàm check_and_add_friend sẽ tự động xử lý...")
-            update_shared_status(device_ip, 'need_friend_request_detected', 'Phát hiện cần gửi lời mời kết bạn', 60)
-            
-            # Gọi lại hàm để thực hiện gửi lời mời (hàm đã được cập nhật để tự động gửi)
-            friend_request_result = check_and_add_friend(dev, debug=True)
-            print(f"[DEBUG] Auto friend request result: {friend_request_result}")
-            
-            if friend_request_result == 'FRIEND_REQUEST_SENT':
-                print("✅ Đã gửi lời mời kết bạn thành công - tiếp tục conversation")
-                update_shared_status(device_ip, 'friend_request_sent', 'Đã gửi lời mời kết bạn thành công', 80)
-            elif friend_request_result == 'ALREADY_FRIENDS':
-                print("✅ Đã kết bạn thành công ngay lập tức - tiếp tục conversation")
-                update_shared_status(device_ip, 'already_friends', 'Đã kết bạn thành công', 80)
-            elif friend_request_result == 'FRIEND_REQUEST_ACCEPTED':
-                print("✅ Đã chấp nhận lời mời kết bạn - tiếp tục conversation")
-                update_shared_status(device_ip, 'friend_request_accepted', 'Đã chấp nhận lời mời kết bạn', 80)
-            else:
-                print(f"⚠️ Kết quả xử lý kết bạn: {friend_request_result} - vẫn tiếp tục conversation")
-                update_shared_status(device_ip, 'friend_request_uncertain', f'Kết bạn không chắc chắn: {friend_request_result}', 70)
-            
-            # Đợi một chút để UI ổn định trước khi tiếp tục
-            time.sleep(2)
-            # Tiếp tục với conversation flow trong mọi trường hợp
-        elif friend_status == 'ALREADY_FRIENDS':
-            print("✅ Đã kết bạn rồi - tiếp tục conversation")
-            # Tiếp tục với conversation flow
-        # UNSURE case đã được loại bỏ - hàm check_friend_status_from_dump không bao giờ trả về UNSURE
-        elif friend_status == False:
-            print("❌ Lỗi xử lý kết bạn")
-            update_shared_status(device_ip, 'error', 'Lỗi xử lý kết bạn', 0)
-            return "FRIEND_ERROR"
-        else:
-            print(f"⚠️ Trạng thái kết bạn không xác định: {friend_status}")
-            print("⚠️ Vẫn tiếp tục conversation flow dù trạng thái không rõ ràng")
-            update_shared_status(device_ip, 'unknown_friend_status', f'Trạng thái không xác định: {friend_status} - tiếp tục conversation', 70)
-            # Tiếp tục với conversation flow thay vì dừng
+        # Flow kết bạn đã được xử lý trong click_first_search_result
+        # Chỉ cần đợi UI ổn định và tiếp tục conversation
+        print("✅ Flow kết bạn đã được xử lý (nếu cần) - chuẩn bị conversation")
+        update_shared_status(device_ip, 'ready_for_conversation', 'Sẵn sàng cho cuộc hội thoại', 80)
         
         print("✅ Đợi 3 giây trước khi bắt đầu cuộc hội thoại...")
         
@@ -4462,3 +4649,87 @@ def get_available_devices_for_gui():
     except Exception as e:
         print(f"❌ Lỗi lấy danh sách devices: {e}")
         return []
+
+def check_btn_send_friend_request_in_dump(device_serial, debug=False):
+    """Kiểm tra sự tồn tại của btn_send_friend_request trong UI dump"""
+    import subprocess
+    import re
+    import os
+    
+    try:
+        # Tạo tên file dump duy nhất
+        timestamp = int(time.time() * 1000000)
+        dump_file = f"ui_dump_{device_serial.replace(':', '_').replace('.', '_')}_{timestamp}.xml"
+        
+        # Chạy lệnh adb để dump UI ra file
+        cmd = f"adb -s {device_serial} exec-out uiautomator dump /dev/stdout"
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
+        
+        if result.returncode == 0 and result.stdout:
+            dump_content = result.stdout
+            
+            # Clean dump content - remove trailing text after </hierarchy>
+            if '</hierarchy>' in dump_content:
+                dump_content = dump_content.split('</hierarchy>')[0] + '</hierarchy>'
+            
+            # Lưu dump content ra file để debug
+            try:
+                with open(dump_file, 'w', encoding='utf-8') as f:
+                    f.write(dump_content)
+                if debug: print(f"[DEBUG] UI dump saved to: {dump_file}")
+            except Exception as e:
+                if debug: print(f"[DEBUG] Failed to save dump file: {e}")
+            
+            # Kiểm tra sự tồn tại của btn_send_friend_request bằng string search
+            has_btn = 'com.zing.zalo:id/btn_send_friend_request' in dump_content
+            
+            if debug:
+                if has_btn:
+                    print(f"[DEBUG] ✅ btn_send_friend_request found in UI dump")
+                    
+                    # Extract thông tin chi tiết từ node
+                    pattern = r'<node[^>]*resource-id="com\.zing\.zalo:id/btn_send_friend_request"[^>]*>'
+                    match = re.search(pattern, dump_content)
+                    if match:
+                        node_info = match.group(0)
+                        print(f"[DEBUG] Button node: {node_info}")
+                        
+                        # Extract bounds
+                        bounds_pattern = r'bounds="\[([^\]]+)\]\[([^\]]+)\]"'
+                        bounds_match = re.search(bounds_pattern, node_info)
+                        if bounds_match:
+                            print(f"[DEBUG] Button bounds: [{bounds_match.group(1)}][{bounds_match.group(2)}]")
+                        
+                        # Check NAF status
+                        naf_pattern = r'NAF="([^"]+)"'
+                        naf_match = re.search(naf_pattern, node_info)
+                        if naf_match:
+                            print(f"[DEBUG] Button NAF status: {naf_match.group(1)}")
+                        
+                        # Check clickable status
+                        clickable_pattern = r'clickable="([^"]+)"'
+                        clickable_match = re.search(clickable_pattern, node_info)
+                        if clickable_match:
+                            print(f"[DEBUG] Button clickable: {clickable_match.group(1)}")
+                else:
+                    print(f"[DEBUG] ❌ btn_send_friend_request NOT found in UI dump")
+                    # Debug: show what friend-related elements exist
+                    friend_elements = re.findall(r'resource-id="[^"]*friend[^"]*"', dump_content)
+                    if friend_elements:
+                        print(f"[DEBUG] Found friend-related elements: {friend_elements[:3]}")
+            
+            # Cleanup dump file sau khi xử lý
+            try:
+                if os.path.exists(dump_file):
+                    os.remove(dump_file)
+            except:
+                pass
+            
+            return has_btn
+        else:
+            if debug: print(f"[DEBUG] Failed to get UI dump: {result.stderr}")
+            return False
+        
+    except Exception as e:
+        if debug: print(f"[DEBUG] Error checking btn_send_friend_request: {e}")
+        return False

@@ -393,6 +393,141 @@ class DevicesPage(QWidget):
                 filtered.append(d)
         self._populate(filtered)
 
+class PairDetailsDialog(QDialog):
+    def __init__(self, pairs: List[Tuple[dict,dict]], parent=None):
+        super().__init__(parent)
+        self.pairs = pairs
+        self.setWindowTitle("Chi tiết cặp thiết bị")
+        self.setModal(True)
+        self.resize(800, 600)
+        self._build()
+        
+    def _build(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+        
+        # Header
+        header = QLabel(f"📱 Thông tin chi tiết {len(self.pairs)} cặp thiết bị")
+        header.setStyleSheet(f"color: {TEXT}; font-size: 18px; font-weight: bold; padding: 10px;")
+        layout.addWidget(header)
+        
+        # Scroll area for pairs
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet(SCROLL_STYLE)
+        
+        content = QWidget()
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(10, 10, 10, 10)
+        content_layout.setSpacing(15)
+        
+        # Add each pair details
+        for i, (device_a, device_b) in enumerate(self.pairs, 1):
+            pair_frame = self._create_pair_frame(i, device_a, device_b)
+            content_layout.addWidget(pair_frame)
+            
+        content_layout.addStretch()
+        scroll.setWidget(content)
+        layout.addWidget(scroll)
+        
+        # Close button
+        btn_close = QPushButton("Đóng")
+        btn_close.setStyleSheet(BTN_STYLE(PRIMARY, PRIMARY_HOVER))
+        btn_close.clicked.connect(self.accept)
+        
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(btn_close)
+        layout.addLayout(btn_layout)
+        
+    def _create_pair_frame(self, pair_num: int, device_a: dict, device_b: dict) -> QFrame:
+        frame = QFrame()
+        frame.setStyleSheet(f"""
+        QFrame {{
+            background: {SURFACE};
+            border: 2px solid {BORDER};
+            border-radius: 12px;
+            padding: 15px;
+            margin: 5px;
+        }}
+        """)
+        
+        layout = QVBoxLayout(frame)
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(12)
+        
+        # Pair title
+        title = QLabel(f"🔗 Cặp {pair_num}")
+        title.setStyleSheet(f"color: {PRIMARY}; font-size: 16px; font-weight: bold;")
+        layout.addWidget(title)
+        
+        # Device details in a grid
+        details_layout = QGridLayout()
+        details_layout.setSpacing(10)
+        
+        # Headers
+        details_layout.addWidget(QLabel("Thông tin"), 0, 0)
+        device_a_header = QLabel("📱 Thiết bị A")
+        device_a_header.setStyleSheet(f"color: {SUCCESS}; font-weight: bold;")
+        details_layout.addWidget(device_a_header, 0, 1)
+        
+        device_b_header = QLabel("📱 Thiết bị B")
+        device_b_header.setStyleSheet(f"color: {INFO}; font-weight: bold;")
+        details_layout.addWidget(device_b_header, 0, 2)
+        
+        # Device details
+        row = 1
+        
+        # IP Address
+        details_layout.addWidget(QLabel("🌐 IP Address:"), row, 0)
+        details_layout.addWidget(QLabel(device_a.get('ip', 'N/A')), row, 1)
+        details_layout.addWidget(QLabel(device_b.get('ip', 'N/A')), row, 2)
+        row += 1
+        
+        # Phone number
+        details_layout.addWidget(QLabel("📞 Số điện thoại:"), row, 0)
+        details_layout.addWidget(QLabel(device_a.get('phone', 'Chưa có số')), row, 1)
+        details_layout.addWidget(QLabel(device_b.get('phone', 'Chưa có số')), row, 2)
+        row += 1
+        
+        # Note/Name
+        details_layout.addWidget(QLabel("📝 Tên máy:"), row, 0)
+        note_a = device_a.get('note', '').strip() or 'Không có'
+        note_b = device_b.get('note', '').strip() or 'Không có'
+        details_layout.addWidget(QLabel(note_a), row, 1)
+        details_layout.addWidget(QLabel(note_b), row, 2)
+        row += 1
+        
+        # Connection status (simulated)
+        details_layout.addWidget(QLabel("🔌 Trạng thái:"), row, 0)
+        status_a = QLabel("✅ Kết nối")
+        status_a.setStyleSheet(f"color: {SUCCESS};")
+        status_b = QLabel("✅ Kết nối")
+        status_b.setStyleSheet(f"color: {SUCCESS};")
+        details_layout.addWidget(status_a, row, 1)
+        details_layout.addWidget(status_b, row, 2)
+        row += 1
+        
+        # Pair time (simulated)
+        from datetime import datetime
+        pair_time = datetime.now().strftime("%H:%M:%S")
+        details_layout.addWidget(QLabel("⏰ Thời gian ghép:"), row, 0)
+        time_label = QLabel(pair_time)
+        time_label.setStyleSheet(f"color: {MUTED};")
+        details_layout.addWidget(time_label, row, 1, 1, 2)  # Span 2 columns
+        
+        # Style all labels
+        for i in range(details_layout.count()):
+            widget = details_layout.itemAt(i).widget()
+            if isinstance(widget, QLabel) and widget.text().endswith(':'):
+                widget.setStyleSheet(f"color: {TEXT}; font-weight: 500;")
+            elif isinstance(widget, QLabel):
+                widget.setStyleSheet(f"color: {TEXT};")
+        
+        layout.addLayout(details_layout)
+        return frame
+
 class PairPage(QWidget):
     pairs_changed = pyqtSignal(list)  # emits List[Tuple[dict,dict]]
 
@@ -411,7 +546,9 @@ class PairPage(QWidget):
         self.info.setStyleSheet(f"color:{MUTED}")
         btn_pair = QPushButton("Ghép cặp"); btn_pair.setStyleSheet(BTN_STYLE(PRIMARY, PRIMARY_HOVER)); btn_pair.clicked.connect(self._pair)
         btn_clear = QPushButton("Xóa cặp"); btn_clear.setStyleSheet(BTN_STYLE(MUTED, TEXT_SECONDARY)); btn_clear.clicked.connect(self._clear)
-        top.addWidget(self.info); top.addStretch(1); top.addWidget(btn_pair); top.addWidget(btn_clear)
+        self.btn_details = QPushButton("📋 Xem chi tiết cặp"); self.btn_details.setStyleSheet(BTN_STYLE(INFO, "#1976d2")); self.btn_details.clicked.connect(self._show_details)
+        self.btn_details.setEnabled(False)  # Disabled until pairs exist
+        top.addWidget(self.info); top.addStretch(1); top.addWidget(btn_pair); top.addWidget(btn_clear); top.addWidget(self.btn_details)
 
         # List pairs
         self.list_pairs = QListWidget(); self.list_pairs.setStyleSheet(f"QListWidget{{background:{SURFACE}; border:2px solid {BORDER}; border-radius:12px; color:{TEXT};}} QListWidget::item{{padding:12px; border-bottom:1px solid {DIVIDER};}} QListWidget::item:hover{{background:{BG};}} QListWidget::item:selected{{background:{PRIMARY}; color:white;}}")
@@ -437,23 +574,50 @@ class PairPage(QWidget):
             self.pairs.append((pool[i], pool[i+1]))
         self._render_pairs()
         self.pairs_changed.emit(self.pairs)
+        
+        # Show details dialog after successful pairing
+        if self.pairs:
+            self._show_details()
 
     def _clear(self):
         self.pairs = []
         self._render_pairs()
         self.pairs_changed.emit(self.pairs)
+        self.btn_details.setEnabled(False)
+
+    def _show_details(self):
+        if not self.pairs:
+            QMessageBox.information(self, "Thông báo", "Chưa có cặp nào được ghép.")
+            return
+        dialog = PairDetailsDialog(self.pairs, self)
+        dialog.exec()
 
     def _render_pairs(self):
         self.list_pairs.clear()
+        self.btn_details.setEnabled(len(self.pairs) > 0)
+        
         for i, (a,b) in enumerate(self.pairs, 1):
-            # Format device info with note for pairs display
+            # Enhanced display with more details and icons
             note_a = a.get('note', '').strip() or 'Không có'
             note_b = b.get('note', '').strip() or 'Không có'
             
-            device_a_label = f"{a['ip']} ({a['phone']} - Máy: {note_a})"
-            device_b_label = f"{b['ip']} ({b['phone']} - Máy: {note_b})"
+            # Create rich text item with icons and formatting
+            item_text = f"🔗 Cặp {i}:\n"
+            item_text += f"   📱 A: {a['ip']} | {a['phone']} | {note_a}\n"
+            item_text += f"   📱 B: {b['ip']} | {b['phone']} | {note_b}"
             
-            self.list_pairs.addItem(QListWidgetItem(f"Cặp {i}: {device_a_label}  ↔  {device_b_label}"))
+            item = QListWidgetItem(item_text)
+            # Set custom styling for the item
+            item.setData(Qt.ItemDataRole.UserRole, (a, b))  # Store pair data
+            self.list_pairs.addItem(item)
+        
+        # Update info text
+        if self.pairs:
+            self.info.setText(f"✅ Đã ghép {len(self.pairs)} cặp thiết bị thành công!")
+            self.info.setStyleSheet(f"color:{SUCCESS}; font-weight: 500;")
+        else:
+            self.info.setText("Chọn thiết bị ở tab Devices, sau đó nhấn Ghép cặp.")
+            self.info.setStyleSheet(f"color:{MUTED}")
 
 class ConversationsPage(QWidget):
     conversations_changed = pyqtSignal(list)  # emits List[str]

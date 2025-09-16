@@ -3,17 +3,404 @@ from PyQt6.QtWidgets import (
     QCheckBox, QScrollArea, QTextEdit, QLineEdit, QProgressBar,
     QMessageBox, QGroupBox, QSplitter, QSpacerItem, QSizePolicy,
     QFrame, QTabWidget, QGridLayout, QTableWidget, QTableWidgetItem,
-    QHeaderView, QApplication
+    QHeaderView, QApplication, QDialog
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QClipboard
 import sys
 import os
+import random
+from datetime import datetime
 
 # Add the project root to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.data_manager import data_manager
+from utils.summary_manager import summary_manager
+
+class PairDetailsDialog(QDialog):
+    """Dialog hiển thị thông tin chi tiết các cặp thiết bị"""
+    def __init__(self, pairs, parent=None):
+        super().__init__(parent)
+        self.pairs = pairs
+        self.setWindowTitle("Chi tiết cặp thiết bị")
+        self.setModal(True)
+        self.resize(800, 600)
+        self._build_ui()
+        
+    def _build_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+        
+        # Header
+        header = QLabel(f"📱 Thông tin chi tiết {len(self.pairs)} cặp thiết bị")
+        header.setStyleSheet("""
+            QLabel {
+                color: #3498db;
+                font-size: 18px;
+                font-weight: bold;
+                padding: 10px;
+                background-color: #34495e;
+                border-radius: 8px;
+                border: 2px solid #2c3e50;
+            }
+        """)
+        header.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(header)
+        
+        # Scroll area for pairs
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("""
+            QScrollArea {
+                border: 2px solid #34495e;
+                border-radius: 8px;
+                background-color: #2c3e50;
+            }
+        """)
+        
+        content = QWidget()
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(10, 10, 10, 10)
+        content_layout.setSpacing(15)
+        
+        # Add each pair details
+        for i, pair in enumerate(self.pairs, 1):
+            pair_frame = self._create_pair_frame(i, pair)
+            content_layout.addWidget(pair_frame)
+            
+        content_layout.addStretch()
+        scroll.setWidget(content)
+        layout.addWidget(scroll)
+        
+        # Close button
+        btn_close = QPushButton("Đóng")
+        btn_close.setStyleSheet("""
+            QPushButton {
+                background-color: #3498db;
+                color: #ffffff;
+                border: none;
+                border-radius: 8px;
+                padding: 10px 20px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+            }
+        """)
+        btn_close.clicked.connect(self.accept)
+        
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(btn_close)
+        layout.addLayout(btn_layout)
+        
+    def _create_pair_frame(self, pair_num, pair):
+        """Tạo frame hiển thị thông tin một cặp thiết bị"""
+        frame = QFrame()
+        frame.setStyleSheet("""
+            QFrame {
+                background-color: #34495e;
+                border: 2px solid #2c3e50;
+                border-radius: 12px;
+                padding: 15px;
+                margin: 5px;
+            }
+        """)
+        
+        layout = QVBoxLayout(frame)
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(12)
+    
+        # ================== Pair title ==================
+        title = QLabel(f"🔗 Cặp {pair_num}")
+        title.setStyleSheet("""
+            QLabel {
+                color: #3498db;
+                font-size: 16px;
+                font-weight: bold;
+            }
+        """)
+        layout.addWidget(title)
+        
+        # ================== Grid layout ==================
+        details_layout = QGridLayout()
+        details_layout.setSpacing(10)
+        
+        # Extract device info
+        device_a = pair[0] if pair[0] else {}
+        device_b = pair[1] if pair[1] else {}
+
+        # ================== Header ==================
+        info_label = QLabel("Thông tin")
+        info_label.setStyleSheet("color: #ecf0f1; font-weight: 500;")
+        details_layout.addWidget(info_label, 0, 0)
+
+        # Get device names
+        device_a_name = device_a.get('note', '') or f"Máy {device_a.get('ip', 'A')}"
+        device_b_name = device_b.get('note', '') or (f"Máy {device_b.get('ip', 'B')}" if device_b else "Máy B")
+
+        device_a_header = QLabel(f"📱 Máy {device_a_name}")
+        device_a_header.setStyleSheet("color: #27ae60; font-weight: bold;")
+        details_layout.addWidget(device_a_header, 0, 1)
+
+        device_b_header = QLabel(f"📱 Máy {device_b_name}")
+        device_b_header.setStyleSheet("color: #2196f3; font-weight: bold;")
+        details_layout.addWidget(device_b_header, 0, 2)
+
+        row = 1
+
+        # ================== IP Address ==================
+        ip_label = QLabel("🌐 IP Address:")
+        ip_label.setStyleSheet("color: #ecf0f1; font-weight: 500;")
+        details_layout.addWidget(ip_label, row, 0)
+
+        ip_a = QLabel(device_a.get('ip', device_a.get('device_id', 'N/A')))
+        ip_a.setStyleSheet("color: #ecf0f1;")
+        details_layout.addWidget(ip_a, row, 1)
+
+        ip_b = QLabel(device_b.get('ip', device_b.get('device_id', 'N/A')) if device_b else 'N/A')
+        ip_b.setStyleSheet("color: #ecf0f1;")
+        details_layout.addWidget(ip_b, row, 2)
+        row += 1
+
+        # ================== Phone numbers ==================
+        phone_label = QLabel("📞 Số điện thoại:")
+        phone_label.setStyleSheet("color: #ecf0f1; font-weight: 500;")
+        details_layout.addWidget(phone_label, row, 0)
+
+        # -------- Device A --------
+        phone_a_layout = QHBoxLayout()
+        phone_a_text = device_a.get('phone_number', 'Chưa có số')
+        phone_a_label = QLabel(phone_a_text)
+        phone_a_label.setStyleSheet("color: #ecf0f1;")
+        phone_a_layout.addWidget(phone_a_label)
+
+        if phone_a_text and phone_a_text not in ['Chưa có số', 'N/A']:
+            copy_btn_a = QPushButton("📋")
+            copy_btn_a.setFixedSize(30, 25)
+            copy_btn_a.setStyleSheet("""
+                QPushButton {
+                    background-color: #3498db;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    font-size: 12px;
+                }
+                QPushButton:hover {
+                    background-color: #2980b9;
+                }
+            """)
+            copy_btn_a.setToolTip("Copy số điện thoại")
+            # Dùng text=phone_a_text để tránh late-binding bug
+            copy_btn_a.clicked.connect(lambda _, text=phone_a_text: self._copy_to_clipboard(text))
+            phone_a_layout.addWidget(copy_btn_a)
+
+        phone_a_layout.addStretch()
+        phone_a_widget = QWidget()
+        phone_a_widget.setLayout(phone_a_layout)
+        details_layout.addWidget(phone_a_widget, row, 1)
+
+        # -------- Device B --------
+        phone_b_layout = QHBoxLayout()
+        phone_b_text = device_b.get('phone_number', 'Chưa có số') if device_b else 'N/A'
+        phone_b_label = QLabel(phone_b_text)
+        phone_b_label.setStyleSheet("color: #ecf0f1;")
+        phone_b_layout.addWidget(phone_b_label)
+
+        if device_b and phone_b_text and phone_b_text not in ['Chưa có số', 'N/A']:
+            copy_btn_b = QPushButton("📋")
+            copy_btn_b.setFixedSize(30, 25)
+            copy_btn_b.setStyleSheet("""
+                QPushButton {
+                    background-color: #3498db;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    font-size: 12px;
+                }
+                QPushButton:hover {
+                    background-color: #2980b9;
+                }
+            """)
+            copy_btn_b.setToolTip("Copy số điện thoại")
+            copy_btn_b.clicked.connect(lambda _, text=phone_b_text: self._copy_to_clipboard(text))
+            phone_b_layout.addWidget(copy_btn_b)
+
+        phone_b_layout.addStretch()
+        phone_b_widget = QWidget()
+        phone_b_widget.setLayout(phone_b_layout)
+        details_layout.addWidget(phone_b_widget, row, 2)
+        row += 1
+
+        # ================== Connection status ==================
+        status_label = QLabel("🔌 Trạng thái:")
+        status_label.setStyleSheet("color: #ecf0f1; font-weight: 500;")
+        details_layout.addWidget(status_label, row, 0)
+
+        status_a = QLabel("✅ Kết nối")
+        status_a.setStyleSheet("color: #27ae60;")
+        details_layout.addWidget(status_a, row, 1)
+
+        status_b = QLabel("✅ Kết nối" if device_b else "❌ Không có")
+        status_b.setStyleSheet("color: #27ae60;" if device_b else "color: #e74c3c;")
+        details_layout.addWidget(status_b, row, 2)
+        row += 1
+
+        # ================== Pair time ==================
+        time_label = QLabel("⏰ Thời gian ghép:")
+        time_label.setStyleSheet("color: #ecf0f1; font-weight: 500;")
+        details_layout.addWidget(time_label, row, 0)
+
+        pair_time = datetime.now().strftime("%H:%M:%S")
+        time_value = QLabel(pair_time)
+        time_value.setStyleSheet("color: #95a5a6;")
+        details_layout.addWidget(time_value, row, 1, 1, 2)  # Span 2 columns
+        row += 1
+
+        # ================== Summary section ==================
+        summary_label = QLabel("📝 Summary hội thoại:")
+        summary_label.setStyleSheet("color: #ecf0f1; font-weight: 500;")
+        details_layout.addWidget(summary_label, row, 0)
+        
+        # Get summary for this pair
+        device_a_ip = device_a.get('ip', device_a.get('device_id', ''))
+        device_b_ip = device_b.get('ip', device_b.get('device_id', '')) if device_b else ''
+        
+        # Create summary layout with copy button
+        summary_layout = QHBoxLayout()
+        
+        if device_a_ip and device_b_ip:
+            summary_data = summary_manager.get_summary(device_a_ip, device_b_ip)
+            if summary_data:
+                summary_text = f"Nội dung: {summary_data.get('noidung', 'N/A')}\n"
+                summary_text += f"Hoàn cảnh: {summary_data.get('hoancanh', 'N/A')}\n"
+                summary_text += f"Số câu: {summary_data.get('socau', 'N/A')}"
+                
+                summary_display = QLabel(summary_text)
+                summary_display.setStyleSheet("color: #f39c12; background-color: #2c3e50; padding: 8px; border-radius: 4px; border: 1px solid #34495e;")
+                summary_display.setWordWrap(True)
+                summary_display.setMaximumHeight(80)
+                
+                # Add copy button for summary
+                copy_summary_btn = QPushButton("📋")
+                copy_summary_btn.setFixedSize(30, 25)
+                copy_summary_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #3498db;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        font-size: 12px;
+                    }
+                    QPushButton:hover {
+                        background-color: #2980b9;
+                    }
+                """)
+                copy_summary_btn.setToolTip("Copy summary")
+                copy_summary_btn.clicked.connect(lambda _, text=summary_text: self._copy_summary_to_clipboard(text))
+                
+                summary_layout.addWidget(summary_display)
+                summary_layout.addWidget(copy_summary_btn)
+                summary_layout.addStretch()
+            else:
+                summary_display = QLabel("Chưa có summary cho cặp này")
+                summary_display.setStyleSheet("color: #95a5a6; font-style: italic;")
+                summary_layout.addWidget(summary_display)
+                summary_layout.addStretch()
+        else:
+            summary_display = QLabel("Không thể xác định cặp thiết bị")
+            summary_display.setStyleSheet("color: #e74c3c; font-style: italic;")
+            summary_layout.addWidget(summary_display)
+            summary_layout.addStretch()
+        
+        summary_widget = QWidget()
+        summary_widget.setLayout(summary_layout)
+        details_layout.addWidget(summary_widget, row, 1, 1, 2)  # Span 2 columns
+
+        # ================== Final layout ==================
+        layout.addLayout(details_layout)
+        return frame
+    def _copy_to_clipboard(self, text):
+        """Copy text to clipboard and show notification"""
+        try:
+            clipboard = QApplication.clipboard()
+            clipboard.setText(text)
+            
+            # Show success message
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Information)
+            msg.setWindowTitle("Thành công")
+            msg.setText(f"Đã copy số điện thoại: {text}")
+            msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+            msg.setStyleSheet("""
+                QMessageBox {
+                    background-color: #2c3e50;
+                    color: #ecf0f1;
+                }
+                QMessageBox QPushButton {
+                    background-color: #3498db;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 8px 16px;
+                    min-width: 60px;
+                }
+                QMessageBox QPushButton:hover {
+                    background-color: #2980b9;
+                }
+            """)
+            
+            # Auto close after 1.5 seconds
+            QTimer.singleShot(1500, msg.accept)
+            msg.exec()
+            
+        except Exception as e:
+            print(f"❌ Error copying to clipboard: {e}")
+    
+    def _copy_summary_to_clipboard(self, summary_text):
+        """Copy summary to clipboard with formatted structure"""
+        try:
+            # Format summary for better readability
+            formatted_summary = "=== SUMMARY HỘI THOẠI ===\n\n"
+            formatted_summary += summary_text.replace("\n", "\n")
+            formatted_summary += "\n\n=== END SUMMARY ==="
+            
+            clipboard = QApplication.clipboard()
+            clipboard.setText(formatted_summary)
+            
+            # Show success message
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Icon.Information)
+            msg.setWindowTitle("Thành công")
+            msg.setText("Đã copy summary hội thoại!")
+            msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+            msg.setStyleSheet("""
+                QMessageBox {
+                    background-color: #2c3e50;
+                    color: #ecf0f1;
+                }
+                QMessageBox QPushButton {
+                    background-color: #3498db;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 8px 16px;
+                    min-width: 60px;
+                }
+                QMessageBox QPushButton:hover {
+                    background-color: #2980b9;
+                }
+            """)
+            
+            # Auto close after 1.5 seconds
+            QTimer.singleShot(1500, msg.accept)
+            msg.exec()
+            
+        except Exception as e:
+            print(f"❌ Error copying summary to clipboard: {e}")
 
 class AutomationWorker(QThread):
     """Worker thread for automation to prevent UI freezing"""
@@ -323,6 +710,14 @@ class ZaloAutomationWidget(QWidget):
         self.pair_btn.setStyleSheet(self.get_button_style("#3498db", "#2980b9"))
         control_layout.addWidget(self.pair_btn)
         
+        # View pair details button
+        self.view_pairs_btn = QPushButton("👁️ Xem chi tiết cặp")
+        self.view_pairs_btn.clicked.connect(self.show_pair_details)
+        self.view_pairs_btn.setFixedHeight(45)
+        self.view_pairs_btn.setStyleSheet(self.get_button_style("#27ae60", "#229954"))
+        self.view_pairs_btn.setEnabled(False)  # Disabled until pairs exist
+        control_layout.addWidget(self.view_pairs_btn)
+        
         # Apply conversation button
         self.apply_btn = QPushButton("📝 Apply Conversation")
         self.apply_btn.clicked.connect(self.apply_conversation)
@@ -585,7 +980,6 @@ class ZaloAutomationWidget(QWidget):
             }}
             QPushButton:pressed {{
                 background-color: {hover_color};
-                transform: translateY(2px);
             }}
             QPushButton:disabled {{
                 background-color: #7f8c8d;
@@ -739,30 +1133,74 @@ class ZaloAutomationWidget(QWidget):
             QMessageBox.critical(self, "Lỗi", f"Không thể apply conversation: {str(e)}")
     
     def parse_conversations(self, conversations):
-        """Parse conversation data"""
+        """Parse conversation data - supports both text and JSON format"""
+        import json
+        from utils.summary_manager import summary_manager
+        
         parsed = []
         
         for conv in conversations:
             content = conv['content']
             group_id = conv['group_id']
-            
-            # Split by lines and process each line
-            lines = content.split('\n')
             messages = []
+            summary = None
             
-            for line in lines:
-                line = line.strip()
-                if line:
-                    # Simple parsing - each line is a message
-                    messages.append({
-                        'content': line,
-                        'delay': 2  # Default 2 second delay
-                    })
+            # Try to parse as JSON first
+            try:
+                json_data = json.loads(content)
+                
+                # Check if it's the new JSON format with device_a/device_b
+                if isinstance(json_data, dict) and 'conversation' in json_data:
+                    conversation_list = json_data['conversation']
+                    summary = json_data.get('summary')
+                    
+                    for msg in conversation_list:
+                        if 'role' in msg and 'content' in msg:
+                            # Map device_a/device_b to device roles
+                            device_role = msg['role']
+                            messages.append({
+                                'content': msg['content'],
+                                'delay': msg.get('delay', 2),
+                                'device_role': device_role  # Store original role
+                            })
+                    
+                    # Save summary if available and we have device pair info
+                    if summary and group_id <= len(self.device_pairs):
+                        device_pair = self.device_pairs[group_id - 1]
+                        if device_pair[0] and device_pair[1]:
+                            device1_ip = device_pair[0].get('ip', '')
+                            device2_ip = device_pair[1].get('ip', '')
+                            if device1_ip and device2_ip:
+                                summary_manager.save_summary(device1_ip, device2_ip, summary)
+                                print(f"Đã lưu summary cho cặp {device1_ip} - {device2_ip}")
+                
+                # Handle old JSON format with role 1/2
+                elif isinstance(json_data, list):
+                    for msg in json_data:
+                        if 'content' in msg:
+                            messages.append({
+                                'content': msg['content'],
+                                'delay': msg.get('delay', 2)
+                            })
+                            
+            except json.JSONDecodeError:
+                # Fallback to text parsing
+                lines = content.split('\n')
+                
+                for line in lines:
+                    line = line.strip()
+                    if line:
+                        # Simple parsing - each line is a message
+                        messages.append({
+                            'content': line,
+                            'delay': 2  # Default 2 second delay
+                        })
             
             if messages:
                 parsed.append({
                     'group_id': group_id,
-                    'messages': messages
+                    'messages': messages,
+                    'summary': summary
                 })
         
         return parsed
@@ -939,9 +1377,21 @@ class ZaloAutomationWidget(QWidget):
             for i, message in enumerate(messages):
                 content = message.get('content', '')
                 delay = message.get('delay', 2)
+                device_role = message.get('device_role')
                 
-                # Alternate between devices for conversation flow
-                device_id = device1_id if i % 2 == 0 else device2_id
+                # Determine device ID based on role or alternating pattern
+                if device_role:
+                    # Use device_a/device_b mapping
+                    if device_role == 'device_a':
+                        device_id = device1_id
+                    elif device_role == 'device_b':
+                        device_id = device2_id
+                    else:
+                        # Fallback to alternating
+                        device_id = device1_id if i % 2 == 0 else device2_id
+                else:
+                    # Alternate between devices for conversation flow
+                    device_id = device1_id if i % 2 == 0 else device2_id
                 
                 # Add row to table
                 row_count = table.rowCount()
@@ -1070,40 +1520,66 @@ class ZaloAutomationWidget(QWidget):
                     # Create device dict with both 'ip' and 'device_id' for compatibility
                     device_id = checkbox.device_id
                     ip = device_id.split(':')[0] if ':' in device_id else device_id
+                    
+                    # Get device note from data_manager
+                    device_note = data_manager.get_device_note(ip) or f"Máy {ip}"
+                    
                     selected_devices.append({
                         'device_id': device_id,
                         'ip': ip,  # Add ip field for core1.py compatibility
-                        'phone_number': checkbox.phone_number
+                        'phone_number': checkbox.phone_number,
+                        'note': device_note  # Add note for display
                     })
             
             if len(selected_devices) < 2:
                 QMessageBox.warning(self, "Cảnh báo", "Vui lòng chọn ít nhất 2 devices để ghép cặp!")
                 return
             
+            # Shuffle devices for random pairing
+            pool = selected_devices.copy()
+            random.shuffle(pool)
+            
             # Create device pairs as tuples instead of dicts
             self.device_pairs = []
-            for i in range(0, len(selected_devices), 2):
-                if i + 1 < len(selected_devices):
-                    # Create tuple (device1, device2) instead of dict
-                    pair = (selected_devices[i], selected_devices[i + 1])
-                    self.device_pairs.append(pair)
+            n = len(pool)
             
-            # Handle odd number of devices
-            if len(selected_devices) % 2 == 1:
-                # Add the last device as a single device pair with None as device2
-                single_pair = (selected_devices[-1], None)
-                self.device_pairs.append(single_pair)
+            # Create pairs from shuffled pool
+            for i in range(0, n, 2):
+                if i + 1 < n:
+                    # Create tuple (device1, device2) instead of dict
+                    pair = (pool[i], pool[i + 1])
+                    self.device_pairs.append(pair)
+                else:
+                    # Handle odd number of devices
+                    # Add the last device as a single device pair with None as device2
+                    single_pair = (pool[i], None)
+                    self.device_pairs.append(single_pair)
             
             # Update conversation inputs to match device pairs
             self.update_conversation_inputs_for_pairs()
+            
+            # Enable view pairs button
+            self.view_pairs_btn.setEnabled(True)
             
             QMessageBox.information(self, "Thành công", 
                 f"Đã ghép {len(self.device_pairs)} cặp devices thành công!")
             
             self.status_label.setText(f"🔗 Đã ghép {len(self.device_pairs)} cặp devices")
             
+            # Auto show pair details dialog
+            self.show_pair_details()
+            
         except Exception as e:
             QMessageBox.critical(self, "Lỗi", f"Không thể ghép cặp devices: {str(e)}")
+    
+    def show_pair_details(self):
+        """Show detailed information about device pairs"""
+        if not hasattr(self, 'device_pairs') or not self.device_pairs:
+            QMessageBox.information(self, "Thông báo", "Chưa có cặp thiết bị nào được ghép!")
+            return
+        
+        dialog = PairDetailsDialog(self.device_pairs, self)
+        dialog.exec()
     
     def start_automation(self):
         """Start automation process"""

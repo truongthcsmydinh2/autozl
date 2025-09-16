@@ -306,6 +306,25 @@ class DataManager:
         """Lấy device data hiện tại"""
         return self.device_data.copy()
     
+    def get_device_note(self, ip: str) -> Optional[str]:
+        """Lấy note của device theo IP"""
+        try:
+            # Try with port format first
+            device_key = ip if ':' in ip else f"{ip}:5555"
+            
+            # Check in device_data
+            if device_key in self.device_data:
+                return self.device_data[device_key].get('note', '')
+            
+            # Check in master_config
+            if 'devices' in self.master_config and device_key in self.master_config['devices']:
+                return self.master_config['devices'][device_key].get('note', '')
+            
+            return None
+        except Exception as e:
+            print(f"❌ Error getting device note: {e}")
+            return None
+    
     def set_device_note(self, device_id: str, note: str) -> bool:
         """Cập nhật note cho device"""
         try:

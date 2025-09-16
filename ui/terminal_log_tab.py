@@ -142,7 +142,10 @@ class TerminalLogTab(QWidget):
             }
         """)
         
-
+    def stop_logging(self):
+        """Stop logging worker - called when main window closes"""
+        if self.log_worker:
+            self.log_worker.stop()
             
     def closeEvent(self, event):
         """Handle widget close event"""

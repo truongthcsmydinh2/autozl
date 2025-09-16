@@ -27,8 +27,8 @@
       "parallel_execution": true
     },
     "ui": {
-      "window_width": 1200,
-      "window_height": 800,
+      "window_width": 1920,
+      "window_height": 1009,
       "sidebar_width": 250,
       "font_size": 10,
       "show_toolbar": true,
@@ -113,8 +113,8 @@
           "parallel_execution": true
         },
         "ui": {
-          "window_width": 1200,
-          "window_height": 800,
+          "window_width": 1920,
+          "window_height": 1009,
           "sidebar_width": 250,
           "font_size": 10,
           "show_toolbar": true,
@@ -199,8 +199,8 @@
               "parallel_execution": true
             },
             "ui": {
-              "window_width": 1200,
-              "window_height": 800,
+              "window_width": 1920,
+              "window_height": 1009,
               "sidebar_width": 250,
               "font_size": 10,
               "show_toolbar": true,
@@ -242,8 +242,8 @@
                 "parallel_execution": true
               },
               "ui": {
-                "window_width": 1200,
-                "window_height": 800,
+                "window_width": 1920,
+                "window_height": 1009,
                 "sidebar_width": 250,
                 "font_size": 10,
                 "show_toolbar": true,
@@ -285,8 +285,8 @@
                   "parallel_execution": true
                 },
                 "ui": {
-                  "window_width": 1200,
-                  "window_height": 800,
+                  "window_width": 1920,
+                  "window_height": 1009,
                   "sidebar_width": 250,
                   "font_size": 10,
                   "show_toolbar": true,
@@ -329,7 +329,7 @@
                   },
                   "ui": {
                     "window_width": 1920,
-                    "window_height": 1017,
+                    "window_height": 1009,
                     "sidebar_width": 250,
                     "font_size": 10,
                     "show_toolbar": true,
@@ -371,8 +371,8 @@
                       "parallel_execution": true
                     },
                     "ui": {
-                      "window_width": 1920,
-                      "window_height": 1009,
+                      "window_width": 1200,
+                      "window_height": 800,
                       "sidebar_width": 250,
                       "font_size": 10,
                       "show_toolbar": true,
@@ -500,8 +500,8 @@
                             "parallel_execution": true
                           },
                           "ui": {
-                            "window_width": 1200,
-                            "window_height": 800,
+                            "window_width": 1920,
+                            "window_height": 1009,
                             "sidebar_width": 250,
                             "font_size": 10,
                             "show_toolbar": true,
@@ -672,8 +672,8 @@
                                     "parallel_execution": true
                                   },
                                   "ui": {
-                                    "window_width": 1200,
-                                    "window_height": 800,
+                                    "window_width": 1920,
+                                    "window_height": 1017,
                                     "sidebar_width": 250,
                                     "font_size": 10,
                                     "show_toolbar": true,
@@ -715,8 +715,8 @@
                                       "parallel_execution": true
                                     },
                                     "ui": {
-                                      "window_width": 1200,
-                                      "window_height": 800,
+                                      "window_width": 1920,
+                                      "window_height": 1009,
                                       "sidebar_width": 250,
                                       "font_size": 10,
                                       "show_toolbar": true,
@@ -758,8 +758,8 @@
                                         "parallel_execution": true
                                       },
                                       "ui": {
-                                        "window_width": 1200,
-                                        "window_height": 800,
+                                        "window_width": 1920,
+                                        "window_height": 1009,
                                         "sidebar_width": 250,
                                         "font_size": 10,
                                         "show_toolbar": true,
@@ -930,8 +930,8 @@
                                                 "parallel_execution": true
                                               },
                                               "ui": {
-                                                "window_width": 1920,
-                                                "window_height": 1009,
+                                                "window_width": 1200,
+                                                "window_height": 800,
                                                 "sidebar_width": 250,
                                                 "font_size": 10,
                                                 "show_toolbar": true,
@@ -973,8 +973,8 @@
                                                   "parallel_execution": true
                                                 },
                                                 "ui": {
-                                                  "window_width": 1536,
-                                                  "window_height": 793,
+                                                  "window_width": 1200,
+                                                  "window_height": 800,
                                                   "sidebar_width": 250,
                                                   "font_size": 10,
                                                   "show_toolbar": true,
@@ -1059,8 +1059,8 @@
                                                       "parallel_execution": true
                                                     },
                                                     "ui": {
-                                                      "window_width": 1920,
-                                                      "window_height": 1009,
+                                                      "window_width": 1200,
+                                                      "window_height": 800,
                                                       "sidebar_width": 250,
                                                       "font_size": 10,
                                                       "show_toolbar": true,
@@ -1274,8 +1274,8 @@
                                                                 "parallel_execution": true
                                                               },
                                                               "ui": {
-                                                                "window_width": 1200,
-                                                                "window_height": 801,
+                                                                "window_width": 1920,
+                                                                "window_height": 1009,
                                                                 "sidebar_width": 250,
                                                                 "font_size": 10,
                                                                 "show_toolbar": true,
@@ -1317,8 +1317,8 @@
                                                                   "parallel_execution": true
                                                                 },
                                                                 "ui": {
-                                                                  "window_width": 1920,
-                                                                  "window_height": 1009,
+                                                                  "window_width": 1536,
+                                                                  "window_height": 793,
                                                                   "sidebar_width": 250,
                                                                   "font_size": 10,
                                                                   "show_toolbar": true,
@@ -1360,8 +1360,8 @@
                                                                     "parallel_execution": true
                                                                   },
                                                                   "ui": {
-                                                                    "window_width": 1920,
-                                                                    "window_height": 1009,
+                                                                    "window_width": 1200,
+                                                                    "window_height": 800,
                                                                     "sidebar_width": 250,
                                                                     "font_size": 10,
                                                                     "show_toolbar": true,
@@ -1446,8 +1446,8 @@
                                                                         "parallel_execution": true
                                                                       },
                                                                       "ui": {
-                                                                        "window_width": 1920,
-                                                                        "window_height": 1009,
+                                                                        "window_width": 1200,
+                                                                        "window_height": 800,
                                                                         "sidebar_width": 250,
                                                                         "font_size": 10,
                                                                         "show_toolbar": true,
@@ -1489,8 +1489,8 @@
                                                                           "parallel_execution": true
                                                                         },
                                                                         "ui": {
-                                                                          "window_width": 1920,
-                                                                          "window_height": 1009,
+                                                                          "window_width": 1200,
+                                                                          "window_height": 800,
                                                                           "sidebar_width": 250,
                                                                           "font_size": 10,
                                                                           "show_toolbar": true,
@@ -1532,8 +1532,8 @@
                                                                             "parallel_execution": true
                                                                           },
                                                                           "ui": {
-                                                                            "window_width": 1920,
-                                                                            "window_height": 1009,
+                                                                            "window_width": 1200,
+                                                                            "window_height": 800,
                                                                             "sidebar_width": 250,
                                                                             "font_size": 10,
                                                                             "show_toolbar": true,
@@ -1575,8 +1575,8 @@
                                                                               "parallel_execution": true
                                                                             },
                                                                             "ui": {
-                                                                              "window_width": 1920,
-                                                                              "window_height": 1009,
+                                                                              "window_width": 1200,
+                                                                              "window_height": 800,
                                                                               "sidebar_width": 250,
                                                                               "font_size": 10,
                                                                               "show_toolbar": true,
@@ -1618,8 +1618,8 @@
                                                                                 "parallel_execution": true
                                                                               },
                                                                               "ui": {
-                                                                                "window_width": 1920,
-                                                                                "window_height": 1009,
+                                                                                "window_width": 1200,
+                                                                                "window_height": 801,
                                                                                 "sidebar_width": 250,
                                                                                 "font_size": 10,
                                                                                 "show_toolbar": true,
@@ -1704,8 +1704,8 @@
                                                                                     "parallel_execution": true
                                                                                   },
                                                                                   "ui": {
-                                                                                    "window_width": 1200,
-                                                                                    "window_height": 800,
+                                                                                    "window_width": 1920,
+                                                                                    "window_height": 1009,
                                                                                     "sidebar_width": 250,
                                                                                     "font_size": 10,
                                                                                     "show_toolbar": true,
@@ -1747,8 +1747,8 @@
                                                                                       "parallel_execution": true
                                                                                     },
                                                                                     "ui": {
-                                                                                      "window_width": 1200,
-                                                                                      "window_height": 800,
+                                                                                      "window_width": 1920,
+                                                                                      "window_height": 1009,
                                                                                       "sidebar_width": 250,
                                                                                       "font_size": 10,
                                                                                       "show_toolbar": true,
@@ -1790,8 +1790,8 @@
                                                                                         "parallel_execution": true
                                                                                       },
                                                                                       "ui": {
-                                                                                        "window_width": 1200,
-                                                                                        "window_height": 800,
+                                                                                        "window_width": 1920,
+                                                                                        "window_height": 1009,
                                                                                         "sidebar_width": 250,
                                                                                         "font_size": 10,
                                                                                         "show_toolbar": true,
@@ -1833,8 +1833,8 @@
                                                                                           "parallel_execution": true
                                                                                         },
                                                                                         "ui": {
-                                                                                          "window_width": 1200,
-                                                                                          "window_height": 800,
+                                                                                          "window_width": 1920,
+                                                                                          "window_height": 1009,
                                                                                           "sidebar_width": 250,
                                                                                           "font_size": 10,
                                                                                           "show_toolbar": true,
@@ -1876,8 +1876,8 @@
                                                                                             "parallel_execution": true
                                                                                           },
                                                                                           "ui": {
-                                                                                            "window_width": 1200,
-                                                                                            "window_height": 800,
+                                                                                            "window_width": 1920,
+                                                                                            "window_height": 1009,
                                                                                             "sidebar_width": 250,
                                                                                             "font_size": 10,
                                                                                             "show_toolbar": true,
@@ -1919,8 +1919,8 @@
                                                                                               "parallel_execution": true
                                                                                             },
                                                                                             "ui": {
-                                                                                              "window_width": 1200,
-                                                                                              "window_height": 800,
+                                                                                              "window_width": 1920,
+                                                                                              "window_height": 1009,
                                                                                               "sidebar_width": 250,
                                                                                               "font_size": 10,
                                                                                               "show_toolbar": true,
@@ -1962,8 +1962,8 @@
                                                                                                 "parallel_execution": true
                                                                                               },
                                                                                               "ui": {
-                                                                                                "window_width": 1200,
-                                                                                                "window_height": 800,
+                                                                                                "window_width": 1920,
+                                                                                                "window_height": 1009,
                                                                                                 "sidebar_width": 250,
                                                                                                 "font_size": 10,
                                                                                                 "show_toolbar": true,
@@ -2005,8 +2005,8 @@
                                                                                                   "parallel_execution": true
                                                                                                 },
                                                                                                 "ui": {
-                                                                                                  "window_width": 1200,
-                                                                                                  "window_height": 800,
+                                                                                                  "window_width": 1920,
+                                                                                                  "window_height": 1009,
                                                                                                   "sidebar_width": 250,
                                                                                                   "font_size": 10,
                                                                                                   "show_toolbar": true,
@@ -2091,8 +2091,8 @@
                                                                                                       "parallel_execution": true
                                                                                                     },
                                                                                                     "ui": {
-                                                                                                      "window_width": 1920,
-                                                                                                      "window_height": 1009,
+                                                                                                      "window_width": 1200,
+                                                                                                      "window_height": 800,
                                                                                                       "sidebar_width": 250,
                                                                                                       "font_size": 10,
                                                                                                       "show_toolbar": true,
@@ -2177,8 +2177,8 @@
                                                                                                           "parallel_execution": true
                                                                                                         },
                                                                                                         "ui": {
-                                                                                                          "window_width": 1920,
-                                                                                                          "window_height": 1009,
+                                                                                                          "window_width": 1200,
+                                                                                                          "window_height": 800,
                                                                                                           "sidebar_width": 250,
                                                                                                           "font_size": 10,
                                                                                                           "show_toolbar": true,
@@ -2306,8 +2306,8 @@
                                                                                                                 "parallel_execution": true
                                                                                                               },
                                                                                                               "ui": {
-                                                                                                                "window_width": 1382,
-                                                                                                                "window_height": 856,
+                                                                                                                "window_width": 1200,
+                                                                                                                "window_height": 800,
                                                                                                                 "sidebar_width": 250,
                                                                                                                 "font_size": 10,
                                                                                                                 "show_toolbar": true,
@@ -2435,8 +2435,8 @@
                                                                                                                       "parallel_execution": true
                                                                                                                     },
                                                                                                                     "ui": {
-                                                                                                                      "window_width": 1200,
-                                                                                                                      "window_height": 800,
+                                                                                                                      "window_width": 1920,
+                                                                                                                      "window_height": 1009,
                                                                                                                       "sidebar_width": 250,
                                                                                                                       "font_size": 10,
                                                                                                                       "show_toolbar": true,
@@ -2449,233 +2449,609 @@
                                                                                                                       "max_log_size": 10485760,
                                                                                                                       "backup_count": 5,
                                                                                                                       "log_format": "%(asctime)s - %(levelname)s - %(message)s"
-                                                                                                                    }
+                                                                                                                    },
+                                                                                                                    "config": {
+                                                                                                                      "app": {
+                                                                                                                        "theme": "dark",
+                                                                                                                        "language": "vi",
+                                                                                                                        "auto_save": true,
+                                                                                                                        "auto_reload": true,
+                                                                                                                        "log_level": "INFO",
+                                                                                                                        "max_log_lines": 1000,
+                                                                                                                        "screenshot_dir": "screenshots",
+                                                                                                                        "backup_flows": true
+                                                                                                                      },
+                                                                                                                      "device": {
+                                                                                                                        "connection_timeout": 10,
+                                                                                                                        "default_wait_timeout": 5,
+                                                                                                                        "screenshot_quality": 80,
+                                                                                                                        "auto_connect": false,
+                                                                                                                        "retry_attempts": 3,
+                                                                                                                        "retry_delay": 2
+                                                                                                                      },
+                                                                                                                      "flow": {
+                                                                                                                        "auto_reload": true,
+                                                                                                                        "syntax_check": true,
+                                                                                                                        "backup_before_save": true,
+                                                                                                                        "default_template": "basic",
+                                                                                                                        "execution_timeout": 300,
+                                                                                                                        "parallel_execution": true
+                                                                                                                      },
+                                                                                                                      "ui": {
+                                                                                                                        "window_width": 1200,
+                                                                                                                        "window_height": 800,
+                                                                                                                        "sidebar_width": 250,
+                                                                                                                        "font_size": 10,
+                                                                                                                        "show_toolbar": true,
+                                                                                                                        "show_statusbar": true,
+                                                                                                                        "remember_window_state": true
+                                                                                                                      },
+                                                                                                                      "logging": {
+                                                                                                                        "enable_file_logging": true,
+                                                                                                                        "log_file": "logs/app.log",
+                                                                                                                        "max_log_size": 10485760,
+                                                                                                                        "backup_count": 5,
+                                                                                                                        "log_format": "%(asctime)s - %(levelname)s - %(message)s"
+                                                                                                                      },
+                                                                                                                      "config": {
+                                                                                                                        "app": {
+                                                                                                                          "theme": "dark",
+                                                                                                                          "language": "vi",
+                                                                                                                          "auto_save": true,
+                                                                                                                          "auto_reload": true,
+                                                                                                                          "log_level": "INFO",
+                                                                                                                          "max_log_lines": 1000,
+                                                                                                                          "screenshot_dir": "screenshots",
+                                                                                                                          "backup_flows": true
+                                                                                                                        },
+                                                                                                                        "device": {
+                                                                                                                          "connection_timeout": 10,
+                                                                                                                          "default_wait_timeout": 5,
+                                                                                                                          "screenshot_quality": 80,
+                                                                                                                          "auto_connect": false,
+                                                                                                                          "retry_attempts": 3,
+                                                                                                                          "retry_delay": 2
+                                                                                                                        },
+                                                                                                                        "flow": {
+                                                                                                                          "auto_reload": true,
+                                                                                                                          "syntax_check": true,
+                                                                                                                          "backup_before_save": true,
+                                                                                                                          "default_template": "basic",
+                                                                                                                          "execution_timeout": 300,
+                                                                                                                          "parallel_execution": true
+                                                                                                                        },
+                                                                                                                        "ui": {
+                                                                                                                          "window_width": 1920,
+                                                                                                                          "window_height": 1009,
+                                                                                                                          "sidebar_width": 250,
+                                                                                                                          "font_size": 10,
+                                                                                                                          "show_toolbar": true,
+                                                                                                                          "show_statusbar": true,
+                                                                                                                          "remember_window_state": true
+                                                                                                                        },
+                                                                                                                        "logging": {
+                                                                                                                          "enable_file_logging": true,
+                                                                                                                          "log_file": "logs/app.log",
+                                                                                                                          "max_log_size": 10485760,
+                                                                                                                          "backup_count": 5,
+                                                                                                                          "log_format": "%(asctime)s - %(levelname)s - %(message)s"
+                                                                                                                        },
+                                                                                                                        "config": {
+                                                                                                                          "app": {
+                                                                                                                            "theme": "dark",
+                                                                                                                            "language": "vi",
+                                                                                                                            "auto_save": true,
+                                                                                                                            "auto_reload": true,
+                                                                                                                            "log_level": "INFO",
+                                                                                                                            "max_log_lines": 1000,
+                                                                                                                            "screenshot_dir": "screenshots",
+                                                                                                                            "backup_flows": true
+                                                                                                                          },
+                                                                                                                          "device": {
+                                                                                                                            "connection_timeout": 10,
+                                                                                                                            "default_wait_timeout": 5,
+                                                                                                                            "screenshot_quality": 80,
+                                                                                                                            "auto_connect": false,
+                                                                                                                            "retry_attempts": 3,
+                                                                                                                            "retry_delay": 2
+                                                                                                                          },
+                                                                                                                          "flow": {
+                                                                                                                            "auto_reload": true,
+                                                                                                                            "syntax_check": true,
+                                                                                                                            "backup_before_save": true,
+                                                                                                                            "default_template": "basic",
+                                                                                                                            "execution_timeout": 300,
+                                                                                                                            "parallel_execution": true
+                                                                                                                          },
+                                                                                                                          "ui": {
+                                                                                                                            "window_width": 1200,
+                                                                                                                            "window_height": 800,
+                                                                                                                            "sidebar_width": 250,
+                                                                                                                            "font_size": 10,
+                                                                                                                            "show_toolbar": true,
+                                                                                                                            "show_statusbar": true,
+                                                                                                                            "remember_window_state": true
+                                                                                                                          },
+                                                                                                                          "logging": {
+                                                                                                                            "enable_file_logging": true,
+                                                                                                                            "log_file": "logs/app.log",
+                                                                                                                            "max_log_size": 10485760,
+                                                                                                                            "backup_count": 5,
+                                                                                                                            "log_format": "%(asctime)s - %(levelname)s - %(message)s"
+                                                                                                                          },
+                                                                                                                          "config": {
+                                                                                                                            "app": {
+                                                                                                                              "theme": "dark",
+                                                                                                                              "language": "vi",
+                                                                                                                              "auto_save": true,
+                                                                                                                              "auto_reload": true,
+                                                                                                                              "log_level": "INFO",
+                                                                                                                              "max_log_lines": 1000,
+                                                                                                                              "screenshot_dir": "screenshots",
+                                                                                                                              "backup_flows": true
+                                                                                                                            },
+                                                                                                                            "device": {
+                                                                                                                              "connection_timeout": 10,
+                                                                                                                              "default_wait_timeout": 5,
+                                                                                                                              "screenshot_quality": 80,
+                                                                                                                              "auto_connect": false,
+                                                                                                                              "retry_attempts": 3,
+                                                                                                                              "retry_delay": 2
+                                                                                                                            },
+                                                                                                                            "flow": {
+                                                                                                                              "auto_reload": true,
+                                                                                                                              "syntax_check": true,
+                                                                                                                              "backup_before_save": true,
+                                                                                                                              "default_template": "basic",
+                                                                                                                              "execution_timeout": 300,
+                                                                                                                              "parallel_execution": true
+                                                                                                                            },
+                                                                                                                            "ui": {
+                                                                                                                              "window_width": 1200,
+                                                                                                                              "window_height": 800,
+                                                                                                                              "sidebar_width": 250,
+                                                                                                                              "font_size": 10,
+                                                                                                                              "show_toolbar": true,
+                                                                                                                              "show_statusbar": true,
+                                                                                                                              "remember_window_state": true
+                                                                                                                            },
+                                                                                                                            "logging": {
+                                                                                                                              "enable_file_logging": true,
+                                                                                                                              "log_file": "logs/app.log",
+                                                                                                                              "max_log_size": 10485760,
+                                                                                                                              "backup_count": 5,
+                                                                                                                              "log_format": "%(asctime)s - %(levelname)s - %(message)s"
+                                                                                                                            },
+                                                                                                                            "config": {
+                                                                                                                              "app": {
+                                                                                                                                "theme": "dark",
+                                                                                                                                "language": "vi",
+                                                                                                                                "auto_save": true,
+                                                                                                                                "auto_reload": true,
+                                                                                                                                "log_level": "INFO",
+                                                                                                                                "max_log_lines": 1000,
+                                                                                                                                "screenshot_dir": "screenshots",
+                                                                                                                                "backup_flows": true
+                                                                                                                              },
+                                                                                                                              "device": {
+                                                                                                                                "connection_timeout": 10,
+                                                                                                                                "default_wait_timeout": 5,
+                                                                                                                                "screenshot_quality": 80,
+                                                                                                                                "auto_connect": false,
+                                                                                                                                "retry_attempts": 3,
+                                                                                                                                "retry_delay": 2
+                                                                                                                              },
+                                                                                                                              "flow": {
+                                                                                                                                "auto_reload": true,
+                                                                                                                                "syntax_check": true,
+                                                                                                                                "backup_before_save": true,
+                                                                                                                                "default_template": "basic",
+                                                                                                                                "execution_timeout": 300,
+                                                                                                                                "parallel_execution": true
+                                                                                                                              },
+                                                                                                                              "ui": {
+                                                                                                                                "window_width": 1382,
+                                                                                                                                "window_height": 856,
+                                                                                                                                "sidebar_width": 250,
+                                                                                                                                "font_size": 10,
+                                                                                                                                "show_toolbar": true,
+                                                                                                                                "show_statusbar": true,
+                                                                                                                                "remember_window_state": true
+                                                                                                                              },
+                                                                                                                              "logging": {
+                                                                                                                                "enable_file_logging": true,
+                                                                                                                                "log_file": "logs/app.log",
+                                                                                                                                "max_log_size": 10485760,
+                                                                                                                                "backup_count": 5,
+                                                                                                                                "log_format": "%(asctime)s - %(levelname)s - %(message)s"
+                                                                                                                              },
+                                                                                                                              "config": {
+                                                                                                                                "app": {
+                                                                                                                                  "theme": "dark",
+                                                                                                                                  "language": "vi",
+                                                                                                                                  "auto_save": true,
+                                                                                                                                  "auto_reload": true,
+                                                                                                                                  "log_level": "INFO",
+                                                                                                                                  "max_log_lines": 1000,
+                                                                                                                                  "screenshot_dir": "screenshots",
+                                                                                                                                  "backup_flows": true
+                                                                                                                                },
+                                                                                                                                "device": {
+                                                                                                                                  "connection_timeout": 10,
+                                                                                                                                  "default_wait_timeout": 5,
+                                                                                                                                  "screenshot_quality": 80,
+                                                                                                                                  "auto_connect": false,
+                                                                                                                                  "retry_attempts": 3,
+                                                                                                                                  "retry_delay": 2
+                                                                                                                                },
+                                                                                                                                "flow": {
+                                                                                                                                  "auto_reload": true,
+                                                                                                                                  "syntax_check": true,
+                                                                                                                                  "backup_before_save": true,
+                                                                                                                                  "default_template": "basic",
+                                                                                                                                  "execution_timeout": 300,
+                                                                                                                                  "parallel_execution": true
+                                                                                                                                },
+                                                                                                                                "ui": {
+                                                                                                                                  "window_width": 1200,
+                                                                                                                                  "window_height": 800,
+                                                                                                                                  "sidebar_width": 250,
+                                                                                                                                  "font_size": 10,
+                                                                                                                                  "show_toolbar": true,
+                                                                                                                                  "show_statusbar": true,
+                                                                                                                                  "remember_window_state": true
+                                                                                                                                },
+                                                                                                                                "logging": {
+                                                                                                                                  "enable_file_logging": true,
+                                                                                                                                  "log_file": "logs/app.log",
+                                                                                                                                  "max_log_size": 10485760,
+                                                                                                                                  "backup_count": 5,
+                                                                                                                                  "log_format": "%(asctime)s - %(levelname)s - %(message)s"
+                                                                                                                                },
+                                                                                                                                "config": {
+                                                                                                                                  "app": {
+                                                                                                                                    "theme": "dark",
+                                                                                                                                    "language": "vi",
+                                                                                                                                    "auto_save": true,
+                                                                                                                                    "auto_reload": true,
+                                                                                                                                    "log_level": "INFO",
+                                                                                                                                    "max_log_lines": 1000,
+                                                                                                                                    "screenshot_dir": "screenshots",
+                                                                                                                                    "backup_flows": true
+                                                                                                                                  },
+                                                                                                                                  "device": {
+                                                                                                                                    "connection_timeout": 10,
+                                                                                                                                    "default_wait_timeout": 5,
+                                                                                                                                    "screenshot_quality": 80,
+                                                                                                                                    "auto_connect": false,
+                                                                                                                                    "retry_attempts": 3,
+                                                                                                                                    "retry_delay": 2
+                                                                                                                                  },
+                                                                                                                                  "flow": {
+                                                                                                                                    "auto_reload": true,
+                                                                                                                                    "syntax_check": true,
+                                                                                                                                    "backup_before_save": true,
+                                                                                                                                    "default_template": "basic",
+                                                                                                                                    "execution_timeout": 300,
+                                                                                                                                    "parallel_execution": true
+                                                                                                                                  },
+                                                                                                                                  "ui": {
+                                                                                                                                    "window_width": 1200,
+                                                                                                                                    "window_height": 800,
+                                                                                                                                    "sidebar_width": 250,
+                                                                                                                                    "font_size": 10,
+                                                                                                                                    "show_toolbar": true,
+                                                                                                                                    "show_statusbar": true,
+                                                                                                                                    "remember_window_state": true
+                                                                                                                                  },
+                                                                                                                                  "logging": {
+                                                                                                                                    "enable_file_logging": true,
+                                                                                                                                    "log_file": "logs/app.log",
+                                                                                                                                    "max_log_size": 10485760,
+                                                                                                                                    "backup_count": 5,
+                                                                                                                                    "log_format": "%(asctime)s - %(levelname)s - %(message)s"
+                                                                                                                                  },
+                                                                                                                                  "config": {
+                                                                                                                                    "app": {
+                                                                                                                                      "theme": "dark",
+                                                                                                                                      "language": "vi",
+                                                                                                                                      "auto_save": true,
+                                                                                                                                      "auto_reload": true,
+                                                                                                                                      "log_level": "INFO",
+                                                                                                                                      "max_log_lines": 1000,
+                                                                                                                                      "screenshot_dir": "screenshots",
+                                                                                                                                      "backup_flows": true
+                                                                                                                                    },
+                                                                                                                                    "device": {
+                                                                                                                                      "connection_timeout": 10,
+                                                                                                                                      "default_wait_timeout": 5,
+                                                                                                                                      "screenshot_quality": 80,
+                                                                                                                                      "auto_connect": false,
+                                                                                                                                      "retry_attempts": 3,
+                                                                                                                                      "retry_delay": 2
+                                                                                                                                    },
+                                                                                                                                    "flow": {
+                                                                                                                                      "auto_reload": true,
+                                                                                                                                      "syntax_check": true,
+                                                                                                                                      "backup_before_save": true,
+                                                                                                                                      "default_template": "basic",
+                                                                                                                                      "execution_timeout": 300,
+                                                                                                                                      "parallel_execution": true
+                                                                                                                                    },
+                                                                                                                                    "ui": {
+                                                                                                                                      "window_width": 1200,
+                                                                                                                                      "window_height": 800,
+                                                                                                                                      "sidebar_width": 250,
+                                                                                                                                      "font_size": 10,
+                                                                                                                                      "show_toolbar": true,
+                                                                                                                                      "show_statusbar": true,
+                                                                                                                                      "remember_window_state": true
+                                                                                                                                    },
+                                                                                                                                    "logging": {
+                                                                                                                                      "enable_file_logging": true,
+                                                                                                                                      "log_file": "logs/app.log",
+                                                                                                                                      "max_log_size": 10485760,
+                                                                                                                                      "backup_count": 5,
+                                                                                                                                      "log_format": "%(asctime)s - %(levelname)s - %(message)s"
+                                                                                                                                    }
+                                                                                                                                  },
+                                                                                                                                  "timestamp": 1757595196.5086608,
+                                                                                                                                  "version": "1.0.0",
+                                                                                                                                  "created_by": "Android Automation GUI"
+                                                                                                                                },
+                                                                                                                                "timestamp": 1757596762.3257174,
+                                                                                                                                "version": "1.0.0",
+                                                                                                                                "created_by": "Android Automation GUI"
+                                                                                                                              },
+                                                                                                                              "timestamp": 1757596910.9719226,
+                                                                                                                              "version": "1.0.0",
+                                                                                                                              "created_by": "Android Automation GUI"
+                                                                                                                            },
+                                                                                                                            "timestamp": 1757597045.6613889,
+                                                                                                                            "version": "1.0.0",
+                                                                                                                            "created_by": "Android Automation GUI"
+                                                                                                                          },
+                                                                                                                          "timestamp": 1757597501.4419742,
+                                                                                                                          "version": "1.0.0",
+                                                                                                                          "created_by": "Android Automation GUI"
+                                                                                                                        },
+                                                                                                                        "timestamp": 1757597520.54871,
+                                                                                                                        "version": "1.0.0",
+                                                                                                                        "created_by": "Android Automation GUI"
+                                                                                                                      },
+                                                                                                                      "timestamp": 1757598785.8213975,
+                                                                                                                      "version": "1.0.0",
+                                                                                                                      "created_by": "Android Automation GUI"
+                                                                                                                    },
+                                                                                                                    "timestamp": 1757598793.99839,
+                                                                                                                    "version": "1.0.0",
+                                                                                                                    "created_by": "Android Automation GUI"
                                                                                                                   },
-                                                                                                                  "timestamp": 1757595196.5086608,
+                                                                                                                  "timestamp": 1757598894.9174762,
                                                                                                                   "version": "1.0.0",
                                                                                                                   "created_by": "Android Automation GUI"
                                                                                                                 },
-                                                                                                                "timestamp": 1757596762.3257174,
+                                                                                                                "timestamp": 1757600211.9932077,
                                                                                                                 "version": "1.0.0",
                                                                                                                 "created_by": "Android Automation GUI"
                                                                                                               },
-                                                                                                              "timestamp": 1757596910.9719226,
+                                                                                                              "timestamp": 1757601431.9823515,
                                                                                                               "version": "1.0.0",
                                                                                                               "created_by": "Android Automation GUI"
                                                                                                             },
-                                                                                                            "timestamp": 1757597045.6613889,
+                                                                                                            "timestamp": 1757605302.4872177,
                                                                                                             "version": "1.0.0",
                                                                                                             "created_by": "Android Automation GUI"
                                                                                                           },
-                                                                                                          "timestamp": 1757597501.4419742,
+                                                                                                          "timestamp": 1757605750.2185898,
                                                                                                           "version": "1.0.0",
                                                                                                           "created_by": "Android Automation GUI"
                                                                                                         },
-                                                                                                        "timestamp": 1757597520.54871,
+                                                                                                        "timestamp": 1757607139.1441708,
                                                                                                         "version": "1.0.0",
                                                                                                         "created_by": "Android Automation GUI"
                                                                                                       },
-                                                                                                      "timestamp": 1757598785.8213975,
+                                                                                                      "timestamp": 1757608271.1885693,
                                                                                                       "version": "1.0.0",
                                                                                                       "created_by": "Android Automation GUI"
                                                                                                     },
-                                                                                                    "timestamp": 1757598793.99839,
+                                                                                                    "timestamp": 1757639807.8159552,
                                                                                                     "version": "1.0.0",
                                                                                                     "created_by": "Android Automation GUI"
                                                                                                   },
-                                                                                                  "timestamp": 1757598894.9174762,
+                                                                                                  "timestamp": 1757640285.8710685,
                                                                                                   "version": "1.0.0",
                                                                                                   "created_by": "Android Automation GUI"
                                                                                                 },
-                                                                                                "timestamp": 1757600211.9932077,
+                                                                                                "timestamp": 1757641804.2659316,
                                                                                                 "version": "1.0.0",
                                                                                                 "created_by": "Android Automation GUI"
                                                                                               },
-                                                                                              "timestamp": 1757601431.9823515,
+                                                                                              "timestamp": 1757645127.0393724,
                                                                                               "version": "1.0.0",
                                                                                               "created_by": "Android Automation GUI"
                                                                                             },
-                                                                                            "timestamp": 1757605302.4872177,
+                                                                                            "timestamp": 1757645643.9495845,
                                                                                             "version": "1.0.0",
                                                                                             "created_by": "Android Automation GUI"
                                                                                           },
-                                                                                          "timestamp": 1757605750.2185898,
+                                                                                          "timestamp": 1757648067.8475623,
                                                                                           "version": "1.0.0",
                                                                                           "created_by": "Android Automation GUI"
                                                                                         },
-                                                                                        "timestamp": 1757607139.1441708,
+                                                                                        "timestamp": 1757651574.2976213,
                                                                                         "version": "1.0.0",
                                                                                         "created_by": "Android Automation GUI"
                                                                                       },
-                                                                                      "timestamp": 1757608271.1885693,
+                                                                                      "timestamp": 1757653198.0086367,
                                                                                       "version": "1.0.0",
                                                                                       "created_by": "Android Automation GUI"
                                                                                     },
-                                                                                    "timestamp": 1757639807.8159552,
+                                                                                    "timestamp": 1757661795.1389806,
                                                                                     "version": "1.0.0",
                                                                                     "created_by": "Android Automation GUI"
                                                                                   },
-                                                                                  "timestamp": 1757640285.8710685,
+                                                                                  "timestamp": 1757661860.7699244,
                                                                                   "version": "1.0.0",
                                                                                   "created_by": "Android Automation GUI"
                                                                                 },
-                                                                                "timestamp": 1757641804.2659316,
+                                                                                "timestamp": 1757662748.9435563,
                                                                                 "version": "1.0.0",
                                                                                 "created_by": "Android Automation GUI"
                                                                               },
-                                                                              "timestamp": 1757645127.0393724,
+                                                                              "timestamp": 1757662808.217099,
                                                                               "version": "1.0.0",
                                                                               "created_by": "Android Automation GUI"
                                                                             },
-                                                                            "timestamp": 1757645643.9495845,
+                                                                            "timestamp": 1757662853.9142501,
                                                                             "version": "1.0.0",
                                                                             "created_by": "Android Automation GUI"
                                                                           },
-                                                                          "timestamp": 1757648067.8475623,
+                                                                          "timestamp": 1757665338.6253166,
                                                                           "version": "1.0.0",
                                                                           "created_by": "Android Automation GUI"
                                                                         },
-                                                                        "timestamp": 1757651574.2976213,
+                                                                        "timestamp": 1757665391.3431642,
                                                                         "version": "1.0.0",
                                                                         "created_by": "Android Automation GUI"
                                                                       },
-                                                                      "timestamp": 1757653198.0086367,
+                                                                      "timestamp": 1757665409.8530416,
                                                                       "version": "1.0.0",
                                                                       "created_by": "Android Automation GUI"
                                                                     },
-                                                                    "timestamp": 1757661795.1389806,
+                                                                    "timestamp": 1757665610.2040796,
                                                                     "version": "1.0.0",
                                                                     "created_by": "Android Automation GUI"
                                                                   },
-                                                                  "timestamp": 1757661860.7699244,
+                                                                  "timestamp": 1757666898.4655356,
                                                                   "version": "1.0.0",
                                                                   "created_by": "Android Automation GUI"
                                                                 },
-                                                                "timestamp": 1757662748.9435563,
+                                                                "timestamp": 1757667201.8769748,
                                                                 "version": "1.0.0",
                                                                 "created_by": "Android Automation GUI"
                                                               },
-                                                              "timestamp": 1757662808.217099,
+                                                              "timestamp": 1757669759.519979,
                                                               "version": "1.0.0",
                                                               "created_by": "Android Automation GUI"
                                                             },
-                                                            "timestamp": 1757662853.9142501,
+                                                            "timestamp": 1757669929.748986,
                                                             "version": "1.0.0",
                                                             "created_by": "Android Automation GUI"
                                                           },
-                                                          "timestamp": 1757665338.6253166,
+                                                          "timestamp": 1757670597.5463867,
                                                           "version": "1.0.0",
                                                           "created_by": "Android Automation GUI"
                                                         },
-                                                        "timestamp": 1757665391.3431642,
+                                                        "timestamp": 1757860548.0173254,
                                                         "version": "1.0.0",
                                                         "created_by": "Android Automation GUI"
                                                       },
-                                                      "timestamp": 1757665409.8530416,
+                                                      "timestamp": 1757863442.2738943,
                                                       "version": "1.0.0",
                                                       "created_by": "Android Automation GUI"
                                                     },
-                                                    "timestamp": 1757665610.2040796,
+                                                    "timestamp": 1757863454.511906,
                                                     "version": "1.0.0",
                                                     "created_by": "Android Automation GUI"
                                                   },
-                                                  "timestamp": 1757666898.4655356,
+                                                  "timestamp": 1757863615.3031206,
                                                   "version": "1.0.0",
                                                   "created_by": "Android Automation GUI"
                                                 },
-                                                "timestamp": 1757667201.8769748,
+                                                "timestamp": 1757863863.8842528,
                                                 "version": "1.0.0",
                                                 "created_by": "Android Automation GUI"
                                               },
-                                              "timestamp": 1757669759.519979,
+                                              "timestamp": 1757865068.985536,
                                               "version": "1.0.0",
                                               "created_by": "Android Automation GUI"
                                             },
-                                            "timestamp": 1757669929.748986,
+                                            "timestamp": 1757865106.829118,
                                             "version": "1.0.0",
                                             "created_by": "Android Automation GUI"
                                           },
-                                          "timestamp": 1757670597.5463867,
+                                          "timestamp": 1757865196.468605,
                                           "version": "1.0.0",
                                           "created_by": "Android Automation GUI"
                                         },
-                                        "timestamp": 1757860548.0173254,
+                                        "timestamp": 1757906323.6165123,
                                         "version": "1.0.0",
                                         "created_by": "Android Automation GUI"
                                       },
-                                      "timestamp": 1757863442.2738943,
+                                      "timestamp": 1757925721.1452866,
                                       "version": "1.0.0",
                                       "created_by": "Android Automation GUI"
                                     },
-                                    "timestamp": 1757863454.511906,
+                                    "timestamp": 1757926873.6521006,
                                     "version": "1.0.0",
                                     "created_by": "Android Automation GUI"
                                   },
-                                  "timestamp": 1757863615.3031206,
+                                  "timestamp": 1757931623.6638987,
                                   "version": "1.0.0",
                                   "created_by": "Android Automation GUI"
                                 },
-                                "timestamp": 1757863863.8842528,
+                                "timestamp": 1757950590.2735782,
                                 "version": "1.0.0",
                                 "created_by": "Android Automation GUI"
                               },
-                              "timestamp": 1757865068.985536,
+                              "timestamp": 1757951251.1144054,
                               "version": "1.0.0",
                               "created_by": "Android Automation GUI"
                             },
-                            "timestamp": 1757865106.829118,
+                            "timestamp": 1757951262.6722286,
                             "version": "1.0.0",
                             "created_by": "Android Automation GUI"
                           },
-                          "timestamp": 1757865196.468605,
+                          "timestamp": 1757951583.8550816,
                           "version": "1.0.0",
                           "created_by": "Android Automation GUI"
                         },
-                        "timestamp": 1757906323.6165123,
+                        "timestamp": 1757987339.7941778,
                         "version": "1.0.0",
                         "created_by": "Android Automation GUI"
                       },
-                      "timestamp": 1757925721.1452866,
+                      "timestamp": 1757988087.8889618,
                       "version": "1.0.0",
                       "created_by": "Android Automation GUI"
                     },
-                    "timestamp": 1757926873.6521006,
+                    "timestamp": 1757989652.530843,
                     "version": "1.0.0",
                     "created_by": "Android Automation GUI"
                   },
-                  "timestamp": 1757931623.6638987,
+                  "timestamp": 1757991116.714768,
                   "version": "1.0.0",
                   "created_by": "Android Automation GUI"
                 },
-                "timestamp": 1757950590.2735782,
+                "timestamp": 1757992386.9439247,
                 "version": "1.0.0",
                 "created_by": "Android Automation GUI"
               },
-              "timestamp": 1757951251.1144054,
+              "timestamp": 1757992531.7626314,
               "version": "1.0.0",
               "created_by": "Android Automation GUI"
             },
-            "timestamp": 1757951262.6722286,
+            "timestamp": 1757997766.3824015,
             "version": "1.0.0",
             "created_by": "Android Automation GUI"
           },
-          "timestamp": 1757951583.8550816,
+          "timestamp": 1758004723.6941378,
           "version": "1.0.0",
           "created_by": "Android Automation GUI"
         },
-        "timestamp": 1757987339.7941778,
+        "timestamp": 1758004783.9484794,
         "version": "1.0.0",
         "created_by": "Android Automation GUI"
       },
-      "timestamp": 1757988087.8889618,
+      "timestamp": 1758005163.2661595,
       "version": "1.0.0",
       "created_by": "Android Automation GUI"
     },
-    "timestamp": 1757989652.530843,
+    "timestamp": 1758009199.3337605,
     "version": "1.0.0",
     "created_by": "Android Automation GUI"
   },
-  "timestamp": 1757991116.714768,
+  "timestamp": 1758010900.0508761,
   "version": "1.0.0",
   "created_by": "Android Automation GUI"
 }

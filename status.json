@@ -1,22 +1,86 @@
 {
   "devices": {
-    "192.168.5.76:5555": {
-      "status": "running",
-      "message": "Đang chạy cuộc hội thoại...",
-      "progress": 50,
+    "192.168.5.92:5555": {
+      "status": "checking_login",
+      "message": "Kiểm tra trạng thái đăng nhập...",
+      "progress": 35,
       "current_message_id": null,
-      "last_update": 1757991694.789845,
-      "timestamp": "2025-09-16 10:01:34"
+      "last_update": 1758013002.3882494,
+      "timestamp": "2025-09-16 15:56:42"
+    },
+    "192.168.5.85:5555": {
+      "status": "checking_login",
+      "message": "Kiểm tra trạng thái đăng nhập...",
+      "progress": 35,
+      "current_message_id": null,
+      "last_update": 1758013001.6520379,
+      "timestamp": "2025-09-16 15:56:41"
+    },
+    "192.168.4.156:5555": {
+      "status": "checking_login",
+      "message": "Kiểm tra trạng thái đăng nhập...",
+      "progress": 35,
+      "current_message_id": null,
+      "last_update": 1758013002.949926,
+      "timestamp": "2025-09-16 15:56:42"
     },
     "192.168.5.77:5555": {
       "status": "running",
       "message": "Đang chạy cuộc hội thoại...",
       "progress": 50,
       "current_message_id": null,
-      "last_update": 1757991706.9926903,
-      "timestamp": "2025-09-16 10:01:46"
+      "last_update": 1758013012.391032,
+      "timestamp": "2025-09-16 15:56:52"
+    },
+    "192.168.5.78:5555": {
+      "status": "checking_login",
+      "message": "Kiểm tra trạng thái đăng nhập...",
+      "progress": 35,
+      "current_message_id": null,
+      "last_update": 1758013003.9686866,
+      "timestamp": "2025-09-16 15:56:43"
+    },
+    "192.168.5.81:5555": {
+      "status": "running",
+      "message": "Đang chạy cuộc hội thoại...",
+      "progress": 50,
+      "current_message_id": null,
+      "last_update": 1758013012.845738,
+      "timestamp": "2025-09-16 15:56:52"
+    },
+    "192.168.5.86:5555": {
+      "status": "checking_login",
+      "message": "Kiểm tra trạng thái đăng nhập...",
+      "progress": 35,
+      "current_message_id": null,
+      "last_update": 1758013003.4773538,
+      "timestamp": "2025-09-16 15:56:43"
+    },
+    "192.168.5.82:5555": {
+      "status": "ready_for_conversation",
+      "message": "Sẵn sàng cho cuộc hội thoại",
+      "progress": 80,
+      "current_message_id": null,
+      "last_update": 1758013013.8661675,
+      "timestamp": "2025-09-16 15:56:53"
+    },
+    "192.168.5.93:5555": {
+      "status": "ready_for_conversation",
+      "message": "Sẵn sàng cho cuộc hội thoại",
+      "progress": 80,
+      "current_message_id": null,
+      "last_update": 1758013014.32602,
+      "timestamp": "2025-09-16 15:56:54"
+    },
+    "192.168.5.76:5555": {
+      "status": "running",
+      "message": "Đang chạy cuộc hội thoại...",
+      "progress": 50,
+      "current_message_id": null,
+      "last_update": 1758013010.4203131,
+      "timestamp": "2025-09-16 15:56:50"
     }
   },
   "overall_status": "running",
-  "last_update": 1757991706.9937193
+  "last_update": 1758013014.32602
 }

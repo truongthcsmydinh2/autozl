@@ -1,0 +1,42 @@
+{
+  "conversation": [
+    {"role": "device_a", "content": "ê"},
+    {"role": "device_b", "content": "gì đó"},
+    {"role": "device_a", "content": "tối nay đi coi phim ko"},
+    {"role": "device_b", "content": "phim gì vậy"},
+    {"role": "device_a", "content": "phim hành động mới ra đó"},
+    {"role": "device_b", "content": "ừm"},
+    {"role": "device_b", "content": "nghe cũng hay"},
+    {"role": "device_b", "content": "mà hơi mệt á"},
+    {"role": "device_a", "content": "đi đi"},
+    {"role": "device_a", "content": "ra rạp coi mới đã"},
+    {"role": "device_b", "content": "giá vé nhiêu"},
+    {"role": "device_a", "content": "75k 1 vé"},
+    {"role": "device_b", "content": "cũng ổn"},
+    {"role": "device_a", "content": "giờ chiếu 7h15"},
+    {"role": "device_b", "content": "ừm để xem"},
+    {"role": "device_a", "content": "có muốn ngồi ghế giữa ko"},
+    {"role": "device_b", "content": "ghế giữa đẹp mà"},
+    {"role": "device_a", "content": "để tui đặt trước"},
+    {"role": "device_b", "content": "có ai đi chung nữa ko"},
+    {"role": "device_a", "content": "hông"},
+    {"role": "device_a", "content": "chỉ 2 tụi mình"},
+    {"role": "device_b", "content": "ừ"},
+    {"role": "device_b", "content": "nghĩ cũng vui"},
+    {"role": "device_a", "content": "đi xe hay đi bộ"},
+    {"role": "device_b", "content": "đi xe cho nhanh"},
+    {"role": "device_a", "content": "ok vậy tui chở"},
+    {"role": "device_b", "content": "thế thì được"},
+    {"role": "device_a", "content": "nha"},
+    {"role": "device_b", "content": "ừ đi"},
+    {"role": "device_a", "content": "hứa rồi đó"},
+    {"role": "device_b", "content": "ờ hứa rồi"},
+    {"role": "device_a", "content": "hehe chuẩn bị tinh thần"},
+    {"role": "device_b", "content": "được rồi"}
+  ],
+  "summary": {
+    "noidung": "Máy A rủ Máy B đi xem phim hành động buổi tối. Máy B ban đầu hơi mệt nhưng sau đồng ý. Họ bàn về giá vé, giờ chiếu, chỗ ngồi và cách đi. Không có ai khác đi cùng, Máy A đặt vé ghế đẹp trước.",
+    "hoancanh": "Cuộc trò chuyện diễn ra buổi chiều, cả hai thoải mái nhắn tin rủ nhau đi xem phim buổi tối.",
+    "socau": 34
+  }
+}

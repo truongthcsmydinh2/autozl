@@ -1113,11 +1113,9 @@ if __name__ == '__main__':
             }
             QPushButton:hover {
                 background-color: #c0392b;
-                transform: translateY(-2px);
             }
             QPushButton:pressed {
                 background-color: #a93226;
-                transform: translateY(0px);
             }
             QPushButton:disabled {
                 background-color: #7f8c8d;

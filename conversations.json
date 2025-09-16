@@ -3,205 +3,1350 @@
     "group_id": 1,
     "messages": [
       {
-        "content": "role 1: Này, mình đang tính đổi điện thoại.",
-        "delay": 2
+        "content": "hummm",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 2: Thật á? Máy cũ hỏng rồi à?",
-        "delay": 2
+        "content": "gì mà thở dài",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 1: Không hẳn, chỉ là pin yếu quá.",
-        "delay": 2
+        "content": "chán",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 2: Vậy định mua máy nào?",
-        "delay": 2
+        "content": "chuyện gì",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 1: Đang phân vân giữa iPhone và Samsung.",
-        "delay": 2
+        "content": "đi làm bị sếp la",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 2: iPhone thì ổn định, dùng lâu dài.",
-        "delay": 2
+        "content": "ơ",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 1: Nhưng Samsung nhiều tính năng hơn.",
-        "delay": 2
+        "content": "vì sao",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 2: Chuẩn, đặc biệt là camera.",
-        "delay": 2
+        "content": "làm sai báo cáo",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 1: Mình thích chụp ảnh, nên hơi nghiêng Samsung.",
-        "delay": 2
+        "content": "haizz",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 2: Thế ngân sách bao nhiêu?",
-        "delay": 2
+        "content": "tớ so nhầm số liệu",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 1: Khoảng 15 triệu đổ lại.",
-        "delay": 2
+        "content": "toang",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 2: Vậy iPhone hơi khó.",
-        "delay": 2
+        "content": "ừ",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 1: Đúng, chắc chỉ mua bản cũ.",
-        "delay": 2
+        "content": "bị mắng cả buổi",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 2: Máy cũ thì phải check kỹ.",
-        "delay": 2
+        "content": "rồi giờ sao",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 1: Mình có bạn làm cửa hàng uy tín.",
-        "delay": 2
+        "content": "đang sửa lại",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 2: Vậy tốt rồi.",
-        "delay": 2
+        "content": "có cần giúp không",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 1: Bạn có gợi ý mẫu nào không?",
-        "delay": 2
+        "content": "chắc cần",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 2: Galaxy S23 hoặc A55.",
-        "delay": 2
+        "content": "ok gửi file đi",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 1: S23 hơi vượt ngân sách.",
-        "delay": 2
+        "content": "gửi rồi",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 2: Thì A55 hợp hơn, giá mềm.",
-        "delay": 2
+        "content": "nhìn sơ thấy lỗi nhỏ thôi",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 1: Nhưng mình vẫn thích S23 hơn.",
-        "delay": 2
+        "content": "thật không",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 2: Cố thêm vài triệu đi.",
-        "delay": 2
+        "content": "ừ",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 1: Để xem đã, cuối tháng mới nhận lương.",
-        "delay": 2
+        "content": "sửa nhanh được",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 2: Mua trả góp cũng được mà.",
-        "delay": 2
+        "content": "haizz may quá",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 1: Mình ghét nợ nần lắm.",
-        "delay": 2
+        "content": "đừng lo",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 2: Haha, hiểu mà.",
-        "delay": 2
+        "content": "cảm ơn nha",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 1: Bao giờ đi xem máy?",
-        "delay": 2
+        "content": "không có gì",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 2: Cuối tuần này nhé.",
-        "delay": 2
+        "content": "mai chắc bị hỏi lại",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 1: Thứ bảy hay chủ nhật?",
-        "delay": 2
+        "content": "tự tin lên",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 2: Thứ bảy, buổi chiều.",
-        "delay": 2
+        "content": "ờ",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 1: Ok, hẹn 2h nhé.",
-        "delay": 2
+        "content": "tớ yếu khoản excel",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 2: Địa điểm ở đâu?",
-        "delay": 2
+        "content": "học thêm dần",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 1: Trung tâm thương mại gần nhà bạn.",
-        "delay": 2
+        "content": "ừ",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 2: Được, tiện cho mình.",
-        "delay": 2
+        "content": "mỗi ngày một chút",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 1: Nhớ đi sớm chút để không đông.",
-        "delay": 2
+        "content": "ok",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 2: Biết rồi, mình sẽ đi sớm.",
-        "delay": 2
+        "content": "tối nay chắc làm khuya",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 1: Mua thêm ốp lưng luôn không?",
-        "delay": 2
+        "content": "cố lên",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 2: Có chứ, đỡ trầy máy mới.",
-        "delay": 2
+        "content": "mai cà phê nha",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 1: Mình muốn ốp trong suốt.",
-        "delay": 2
+        "content": "ok",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 2: Mình thích loại chống sốc.",
-        "delay": 2
+        "content": "tớ bao",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 1: Mua mỗi người một kiểu.",
-        "delay": 2
+        "content": "haha",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 2: Haha, chuẩn luôn.",
-        "delay": 2
+        "content": "hứa đó",
+        "delay": 2,
+        "device_role": "device_a"
       },
       {
-        "content": "role 1: Xong mua máy thì đi ăn nhé.",
-        "delay": 2
+        "content": "hứa",
+        "delay": 2,
+        "device_role": "device_b"
       },
       {
-        "content": "role 2: Đồng ý, coi như ăn mừng.",
-        "delay": 2
-      },
-      {
-        "content": "role 1: Hy vọng có khuyến mãi ngon.",
-        "delay": 2
-      },
-      {
-        "content": "role 2: Để mình săn voucher trước.",
-        "delay": 2
-      },
-      {
-        "content": "role 1: Bạn đúng là cao thủ mua sắm.",
-        "delay": 2
-      },
-      {
-        "content": "role 2: Phải tiết kiệm chứ.",
-        "delay": 2
-      },
-      {
-        "content": "role 1: Thôi, chốt kế hoạch nha.",
-        "delay": 2
-      },
-      {
-        "content": "role 2: Chốt, cuối tuần đi săn máy thôi!",
-        "delay": 2
+        "content": "ok mai gặp",
+        "delay": 2,
+        "device_role": "device_a"
       }
-    ]
+    ],
+    "summary": {
+      "noidung": "Máy A bị sếp mắng vì báo cáo sai số liệu. Máy B động viên và còn giúp sửa lại file. Cuối cùng họ hẹn nhau đi uống cà phê để giải tỏa áp lực.",
+      "hoancanh": "Cuộc trò chuyện buổi tối sau giờ làm việc, một người than phiền, một người an ủi.",
+      "so_cau": 60
+    }
+  },
+  {
+    "group_id": 2,
+    "messages": [
+      {
+        "content": "ê đang làm gì",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "đang nấu ăn",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "nấu món gì",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "canh chua cá",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ơ ngon",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ừ",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "cho tớ sang ăn với",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "qua đi",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "thật hả",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "thật",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "haha",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "có cơm chưa",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "có rồi",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "tớ qua liền",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "mang thêm trái cây nha",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ok",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "có dưa hấu nè",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "quá chuẩn",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "tớ đến chắc 20p",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ok",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "canh sôi rồi",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ăn nóng mới ngon",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "đúng",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "món gì nữa không",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "có thêm trứng chiên",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "hấp dẫn",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ăn cho no",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "haha",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ăn xong mình coi phim",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "có phim gì",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "phim hài mới ra",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ok hay đó",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "tối nay chill",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ừ",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "mai phải đi học sớm không",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "không",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "mai được nghỉ",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "tuyệt",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "vậy coi phim tới khuya",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "haha",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ok đang đi qua",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "nhanh lên",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "okkk",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "tớ dọn bàn đây",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ok tới liền",
+        "delay": 2,
+        "device_role": "device_a"
+      }
+    ],
+    "summary": {
+      "noidung": "Máy B đang nấu canh chua cá, Máy A xin qua ăn chung. Hai người hẹn nhau, Máy A mang trái cây, sau khi ăn thì định xem phim hài. Không vướng bận học tập nên họ có thể chơi tới khuya.",
+      "hoancanh": "Một cuộc trò chuyện đời thường khi bạn bè rủ nhau ăn uống và giải trí.",
+      "so_cau": 61
+    }
+  },
+  {
+    "group_id": 3,
+    "messages": [
+      {
+        "content": "alo",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "alo nè",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "có đi xem bóng đá không",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "hôm nào",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "tối mai",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "đội nào đá",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "Việt Nam với Thái Lan",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ơ căng dữ",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ừ",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "sân Mỹ Đình",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "có vé chưa",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "chưa",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "đang săn",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "khó không",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "rất khó",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "thế thì coi quán nhậu cũng được",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ờ cũng hay",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "có màn hình to",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "mà đông lắm",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "càng vui",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ừ",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "có khi đi sớm",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "đúng",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "giữ chỗ",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "mai tầm mấy giờ",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "7h đi",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ok",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "đi xe máy ha",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ừ cho nhanh",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ok",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "mặc áo cờ đỏ sao vàng nha",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "haha chắc rồi",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "có kèn không",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "có trống",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "máu vậy",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "phải cổ vũ chứ",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "đúng",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "mai nhớ mang cờ",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ok",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "mai chắc vui lắm",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ừ",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "mong Việt Nam thắng",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "hi vọng",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "có bàn sớm càng hay",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ừ",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "mai nhớ gọi tớ trước khi đi",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ok",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "mai gặp",
+        "delay": 2,
+        "device_role": "device_a"
+      }
+    ],
+    "summary": {
+      "noidung": "Máy A rủ Máy B đi xem bóng đá Việt Nam gặp Thái Lan. Không có vé nên hai người quyết định đi quán nhậu coi chung màn hình lớn. Họ hẹn đi lúc 7h, mặc áo cờ đỏ sao vàng và mang cờ trống để cổ vũ.",
+      "hoancanh": "Cuộc trò chuyện sôi nổi trước một trận bóng quan trọng.",
+      "so_cau": 63
+    }
+  },
+  {
+    "group_id": 4,
+    "messages": [
+      {
+        "content": "ê",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "gì đó",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ăn cơm chưa",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "chưa nè",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "sao trễ vậy",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "bận làm báo cáo",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ờ",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "xong chưa",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "gần xong",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "áp lực ghê",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ừ",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "mấy ngày nay ngủ ít",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ngủ đủ đi",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "không lại bệnh",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "biết mà",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "mà deadline dí",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "haizz",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "tớ cũng mệt",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "sao vậy",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "làm bài tập nhóm",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "mà cả nhóm không chịu hợp tác",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "trời",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "toàn đẩy cho cậu làm",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ừ",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ức chế lắm",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "chia việc lại đi",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "tớ chia rồi",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "họ vẫn không làm",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "cạn lời",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ừ",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "chán luôn",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "mai nộp chưa",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "2 ngày nữa",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "cố lên",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ờ",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "tớ tính tự làm hết cho xong",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "cũng được",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "dù thiệt",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ừ",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "tính sau",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "tối ăn gì chưa",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ăn mì gói rồi",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "trời",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ăn vậy hoài",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "hết tiền",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "mai đi ăn chung nha",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ok",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "tớ bao",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "thật không",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "thật",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "haha",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "mai trưa nha",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ok trưa",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "quán nào",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "quán cơm gà",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ơ ngon",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ừ",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ăn cho khoẻ",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ok",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "mai gặp",
+        "delay": 2,
+        "device_role": "device_b"
+      }
+    ],
+    "summary": {
+      "noidung": "Máy A than phiền chuyện nhóm không hợp tác, Máy B thì bận báo cáo. Cả hai đều mệt mỏi vì áp lực. Cuối cùng họ hẹn mai đi ăn cơm gà để xả stress.",
+      "hoancanh": "Hai người bạn nhắn tin buổi tối, vừa than việc học vừa hẹn gặp để đi ăn.",
+      "so_cau": 65
+    }
+  },
+  {
+    "group_id": 5,
+    "messages": [
+      {
+        "content": "này",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "sao đó",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "đang ở đâu vậy",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ở nhà thôi",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ừ",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "học bài chưa",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "chưa luôn",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "lười quá",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "haizz",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "mai có kiểm tra mà",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "biết chứ",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "mà không vô đầu",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "thử đọc lại phần ghi chú đi",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ừ chắc phải vậy",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "tớ đang làm đề cũ nè",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ra sao",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "khó phết",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "toàn mẹo",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "huhu",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "nghe căng ghê",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "nhưng làm nhiều cũng quen",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ờ",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "cho tớ mấy câu đi",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ok chờ tí",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ví dụ câu này",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "tại sao nước bốc hơi nhanh hơn khi trời gió",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ơ",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "chắc vì gió thổi mang hơi nước đi",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "chuẩn luôn",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "hí hí",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "làm tiếp nhé",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "rồi",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ánh sáng trắng gồm mấy màu cơ bản",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "7 màu",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "đúng",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "cũng dễ mà",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ừ nhưng có câu mẹo mới khó",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ví dụ",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ví dụ tại sao khi chạy nhanh thì khó dừng lại ngay",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ờm",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "do quán tính",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "chuẩn",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "giỏi phết rồi đấy",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "hehe",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "mà mai kiểm tra chắc tạch",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "không đâu",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ôn thêm tối nay nữa là ổn",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ừ hi vọng",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "có cần tớ gửi tài liệu không",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "gửi đi",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ok để lát chụp",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "thanks nha",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "không có gì",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "nói chuyện vậy cũng đỡ lo",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ừ",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "đừng stress quá",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "ờ",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "đi pha cà phê đã",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ok pha đi",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "rồi học tiếp",
+        "delay": 2,
+        "device_role": "device_a"
+      },
+      {
+        "content": "chuẩn",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "xíu nữa nhắn lại",
+        "delay": 2,
+        "device_role": "device_b"
+      },
+      {
+        "content": "ok chờ",
+        "delay": 2,
+        "device_role": "device_a"
+      }
+    ],
+    "summary": {
+      "noidung": "Máy A và Máy B trò chuyện về việc học ôn kiểm tra. Máy A làm đề cũ và gợi ý một số câu hỏi cho Máy B trả lời. Máy B vừa học vừa than lười, nhưng được động viên và giúp đỡ. Cả hai hẹn tiếp tục học sau khi nghỉ ngơi một chút.",
+      "hoancanh": "Cuộc trò chuyện buổi tối giữa hai học sinh chuẩn bị kiểm tra, vừa nhắn tin vừa hỗ trợ nhau ôn tập.",
+      "so_cau": 67
+    }
   }
 ]
