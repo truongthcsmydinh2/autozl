@@ -34,9 +34,9 @@ class QtLogRedirector(QObject):
             self.original_stdout = sys.stdout
             self.original_stderr = sys.stderr
             
-            # Create redirectors
-            self.stdout_redirector = StreamRedirector(self.log_queue, "stdout")
-            self.stderr_redirector = StreamRedirector(self.log_queue, "stderr")
+            # Create redirectors with original streams
+            self.stdout_redirector = StreamRedirector(self.log_queue, "stdout", self.original_stdout)
+            self.stderr_redirector = StreamRedirector(self.log_queue, "stderr", self.original_stderr)
             
             # Replace system streams
             sys.stdout = self.stdout_redirector
@@ -106,20 +106,31 @@ class QtLogRedirector(QObject):
 
 
 class StreamRedirector(io.TextIOBase):
-    """Custom stream redirector that captures output and puts it in a queue"""
+    """Custom stream redirector that captures output and puts it in a queue while preserving original output"""
     
-    def __init__(self, log_queue: queue.Queue, stream_type: str):
+    def __init__(self, log_queue: queue.Queue, stream_type: str, original_stream):
         super().__init__()
         self.log_queue = log_queue
         self.stream_type = stream_type
+        self.original_stream = original_stream
         self.buffer = ""
         self.lock = threading.Lock()
         
     def write(self, text: str) -> int:
-        """Write text to the redirector"""
+        """Write text to both original stream and redirector queue"""
         if not text:
             return 0
             
+        # First, write to original stream to preserve terminal output
+        try:
+            if self.original_stream and hasattr(self.original_stream, 'write'):
+                self.original_stream.write(text)
+                self.original_stream.flush()
+        except Exception:
+            # Silently ignore errors to prevent infinite recursion
+            pass
+            
+        # Then, capture for Qt application
         try:
             with self.lock:
                 self.buffer += text
@@ -141,7 +152,15 @@ class StreamRedirector(io.TextIOBase):
         return len(text)
         
     def flush(self):
-        """Flush any remaining buffer content"""
+        """Flush any remaining buffer content and original stream"""
+        # Flush original stream first
+        try:
+            if self.original_stream and hasattr(self.original_stream, 'flush'):
+                self.original_stream.flush()
+        except Exception:
+            pass
+            
+        # Then flush our buffer
         try:
             with self.lock:
                 if self.buffer.strip():

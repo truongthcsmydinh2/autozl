@@ -5,18 +5,18 @@
       "message": "Đang chạy cuộc hội thoại...",
       "progress": 50,
       "current_message_id": null,
-      "last_update": 1757988716.0410194,
-      "timestamp": "2025-09-16 09:11:56"
+      "last_update": 1757991694.789845,
+      "timestamp": "2025-09-16 10:01:34"
     },
     "192.168.5.77:5555": {
       "status": "running",
       "message": "Đang chạy cuộc hội thoại...",
       "progress": 50,
       "current_message_id": null,
-      "last_update": 1757988727.9747798,
-      "timestamp": "2025-09-16 09:12:07"
+      "last_update": 1757991706.9926903,
+      "timestamp": "2025-09-16 10:01:46"
     }
   },
   "overall_status": "running",
-  "last_update": 1757988727.9747798
+  "last_update": 1757991706.9937193
 }

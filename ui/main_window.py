@@ -149,6 +149,9 @@ class MainWindow(QMainWindow):
         self.setup_status_bar()
         self.setup_connections()
         
+        # Start log redirection to capture all console output
+        self.log_redirector.start_redirection()
+        
         # Apply theme after UI setup
         self.theme_manager.apply_theme("dark")
         
@@ -328,9 +331,7 @@ class MainWindow(QMainWindow):
         # Connect log redirector to terminal log tab
         self.log_redirector.log_received.connect(self.terminal_log_tab.append_log)
         
-        # Connect device manager to terminal log tab for device list updates
-        self.device_manager.device_connected.connect(self.terminal_log_tab.update_device_list)
-        self.device_manager.device_disconnected.connect(self.terminal_log_tab.update_device_list)
+        # Device manager connections removed - terminal log tab no longer needs device list updates
         
         # Flow editor, execution and settings pages removed
     

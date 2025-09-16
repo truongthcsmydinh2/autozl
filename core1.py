@@ -6,8 +6,62 @@
 #   (hoặc) set DEVICE=192.168.5.151:5555 & python core_uiautomator2.py
 # Sửa vùng "=== FLOW START/END ===" bên dưới rồi Ctrl+S -> tool tự chạy lại flow trên máy test.
 
-import os, sys, time, subprocess, threading, re, traceback, argparse, json
+import os, sys, time, subprocess, threading, re, traceback, argparse, json, datetime
 import uiautomator2 as u2
+
+# === UI DUMP FUNCTION FOR DEBUGGING ===
+def dump_ui_and_log(dev, debug=False):
+    """Dump UI hierarchy for debugging friend status issues
+    
+    Args:
+        dev: Device object (already connected)
+        debug: Enable debug logging
+    """
+    try:
+        # Lấy device_ip từ dev object
+        device_ip = dev.device_id if hasattr(dev, 'device_id') else str(dev.d._host)
+        
+        if debug:
+            print(f"[DEBUG] Dumping UI hierarchy for device {device_ip}")
+        
+        # Dump UI hiện tại sử dụng dev object đã kết nối
+        xml_data = dev.d.dump_hierarchy()
+
+        # Xuất trực tiếp ra log
+        print(f"[DEBUG] ======= UI Dump for {device_ip} =======")
+        lines = xml_data.splitlines()
+        print("\n".join(lines[:50]))  # chỉ in 50 dòng đầu để tránh tràn log
+        print("[DEBUG] ======= END UI Dump =======")
+
+        # Lưu ra file để phân tích với thư mục debug_dumps
+        timestamp = int(time.time())
+        
+        # Tạo thư mục debug_dumps nếu chưa có
+        os.makedirs("debug_dumps", exist_ok=True)
+        
+        filename = f"debug_dumps/ui_dump_{device_ip.replace('.', '_').replace(':', '_')}_{timestamp}.xml"
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(xml_data)
+        print(f"[DEBUG] UI dump saved to {filename}")
+
+        # Tùy chọn chụp ảnh màn hình
+        try:
+            screenshot_file = f"debug_dumps/screenshot_{device_ip.replace('.', '_').replace(':', '_')}_{timestamp}.png"
+            dev.d.screenshot(screenshot_file)
+            print(f"[DEBUG] Screenshot saved to {screenshot_file}")
+        except Exception as screenshot_error:
+            print(f"[DEBUG] Screenshot failed: {screenshot_error}")
+            
+        return True
+
+    except Exception as e:
+        device_ip = "unknown"
+        try:
+            device_ip = dev.device_id if hasattr(dev, 'device_id') else str(dev.d._host)
+        except:
+            pass
+        print(f"[ERROR] Failed to dump UI for {device_ip}: {e}")
+        return False
 
 ENC = "utf-8"
 SELF_PATH = os.path.abspath(__file__)
@@ -2309,9 +2363,17 @@ def check_and_add_friend(dev, debug=False):
         False: Có lỗi xảy ra
     """
     import time
+    from ui_friend_status_fix import check_friend_status_from_dump
     
     try:
         if debug: print("[DEBUG] 🔍 Kiểm tra trạng thái kết bạn theo logic phân tích document...")
+        
+        # Gọi hàm dump UI ngay trước khi bắt đầu check theo hướng dẫn document
+        try:
+            print("[DEBUG] Dumping UI before friend status check")
+            dump_ui_and_log(dev, debug=True)
+        except Exception as e:
+            print(f"[DEBUG] Failed to dump UI: {e}")
         
         # Đợi UI load hoàn toàn
         time.sleep(2)
@@ -2485,9 +2547,27 @@ def check_and_add_friend(dev, debug=False):
                         if debug: print(f"[DEBUG] ❌ Lỗi khi gửi lời mời: {e}")
                         return 'NEED_FRIEND_REQUEST'  # Trả về trạng thái ban đầu
             
-            # Nếu không tìm thấy indicators rõ ràng nào
-            if debug: print("[DEBUG] ❌ KHÔNG THỂ XÁC ĐỊNH trạng thái kết bạn - trả về UNSURE")
-            return 'UNSURE'  # Theo document: trả về UNSURE thay vì assume
+            # Nếu không tìm thấy indicators rõ ràng nào, sử dụng UI dump analysis
+            if debug: print("[DEBUG] ❓ Không tìm thấy indicators rõ ràng - sử dụng UI dump analysis")
+            
+            # Lấy device serial từ dev object - sử dụng device_id
+            device_serial = getattr(dev, 'device_id', None)
+            if not device_serial:
+                if debug: print("[DEBUG] ⚠️ Không có device_id - fallback UNKNOWN")
+                return 'UNKNOWN'
+            
+            # Sử dụng hàm phân tích UI dump
+            dump_result = check_friend_status_from_dump(device_serial)
+            if debug: print(f"[DEBUG] 🔍 UI dump analysis result: {dump_result}")
+            
+            # Chuyển đổi kết quả từ dump analysis sang format hiện tại
+            if dump_result == "ALREADY_FRIEND":
+                return 'ALREADY_FRIENDS'
+            elif dump_result == "NEED_FRIEND_REQUEST":
+                return 'NEED_FRIEND_REQUEST'
+            else:  # UNKNOWN - không thể xác định được
+                if debug: print("[DEBUG] ⚠️ UI dump analysis trả về UNKNOWN - cần debug thêm")
+                return 'UNKNOWN'
         
     except Exception as e:
         if debug: print(f"[DEBUG] ❌ Lỗi trong check_and_add_friend: {e}")
@@ -4243,11 +4323,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         elif friend_status == 'ALREADY_FRIENDS':
             print("✅ Đã kết bạn rồi - tiếp tục conversation")
             # Tiếp tục với conversation flow
-        elif friend_status == 'UNSURE':
-            print("⚠️ Không thể xác định trạng thái kết bạn - tiếp tục conversation")
-            print("⚠️ Có thể do UI thay đổi hoặc trạng thái đặc biệt")
-            update_shared_status(device_ip, 'unsure_friend_status', 'Không thể xác định trạng thái kết bạn - tiếp tục conversation', 70)
-            # Tiếp tục với conversation flow để không block automation
+        # UNSURE case đã được loại bỏ - hàm check_friend_status_from_dump không bao giờ trả về UNSURE
         elif friend_status == False:
             print("❌ Lỗi xử lý kết bạn")
             update_shared_status(device_ip, 'error', 'Lỗi xử lý kết bạn', 0)
