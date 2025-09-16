@@ -51,7 +51,8 @@
         "resolution": "Unknown",
         "status": "device"
       },
-      "last_updated": "2025-09-15 09:31:24"
+      "last_updated": "2025-09-16 08:51:39",
+      "note": "8"
     },
     "192.168.5.77:5555": {
       "phone": "567513830",
@@ -62,7 +63,8 @@
         "resolution": "Unknown",
         "status": "device"
       },
-      "last_updated": "2025-09-15 09:31:24"
+      "last_updated": "2025-09-16 08:52:58",
+      "note": "2"
     },
     "192.168.5.88:5555": {
       "phone": "924981260",
@@ -73,7 +75,8 @@
         "resolution": "Unknown",
         "status": "device"
       },
-      "last_updated": "2025-09-15 09:31:24"
+      "last_updated": "2025-09-16 08:52:15",
+      "note": "10"
     },
     "192.168.5.76:5555": {
       "phone": "921948994",
@@ -84,7 +87,8 @@
         "resolution": "Unknown",
         "status": "device"
       },
-      "last_updated": "2025-09-15 09:31:24"
+      "last_updated": "2025-09-16 08:52:43",
+      "note": "5"
     },
     "192.168.5.74:5555": {
       "phone": "569924311",
@@ -95,7 +99,8 @@
         "resolution": "Unknown",
         "status": "device"
       },
-      "last_updated": "2025-09-15 09:31:24"
+      "last_updated": "2025-09-16 08:52:31",
+      "note": "4"
     },
     "192.168.5.85:5555": {
       "phone": "921003813",
@@ -106,7 +111,8 @@
         "resolution": "Unknown",
         "status": "device"
       },
-      "last_updated": "2025-09-15 09:31:24"
+      "last_updated": "2025-09-16 08:52:03",
+      "note": "11"
     },
     "192.168.5.86:5555": {
       "phone": "924648008",
@@ -117,8 +123,8 @@
         "resolution": "Unknown",
         "status": "device"
       },
-      "last_updated": "2025-09-15 22:47:21",
-      "note": ""
+      "last_updated": "2025-09-16 08:52:49",
+      "note": "7"
     },
     "192.168.5.93:5555": {
       "phone": "582160135",
@@ -129,7 +135,8 @@
         "resolution": "Unknown",
         "status": "device"
       },
-      "last_updated": "2025-09-15 09:31:24"
+      "last_updated": "2025-09-16 08:51:50",
+      "note": "20"
     },
     "192.168.5.78:5555": {
       "phone": "582043409",
@@ -140,7 +147,8 @@
         "resolution": "Unknown",
         "status": "device"
       },
-      "last_updated": "2025-09-15 09:31:24"
+      "last_updated": "2025-09-16 08:51:58",
+      "note": "12"
     },
     "192.168.5.92:5555": {
       "phone": "587191813",
@@ -151,7 +159,8 @@
         "resolution": "Unknown",
         "status": "device"
       },
-      "last_updated": "2025-09-15 09:31:24"
+      "last_updated": "2025-09-16 08:52:24",
+      "note": "17"
     },
     "192.168.5.86": {
       "phone": "924648008",
@@ -330,8 +339,8 @@
         "resolution": "Unknown",
         "status": "device"
       },
-      "last_updated": "2025-09-15 22:53:49",
-      "note": ""
+      "last_updated": "2025-09-16 08:52:55",
+      "note": "3"
     },
     "192.168.4.156:5555": {
       "phone": "928903551",
@@ -342,8 +351,8 @@
         "resolution": "Unknown",
         "status": "device"
       },
-      "last_updated": "2025-09-15 22:54:04",
-      "note": ""
+      "last_updated": "2025-09-16 08:52:18",
+      "note": "33"
     },
     "11": {
       "phone": "",
@@ -709,7 +718,7 @@
   "metadata": {
     "version": "1.0.0",
     "created_at": "2025-09-15 09:31:24",
-    "last_updated": "2025-09-16 08:28:51",
+    "last_updated": "2025-09-16 09:12:19",
     "created_by": "Data Migration Tool"
   }
 }

@@ -28,6 +28,8 @@ import importlib
 from ui.device_management import DeviceManagementWidget
 from ui.phone_mapping_widget import PhoneMappingWidget
 from ui.theme_manager import ThemeManager
+from ui.terminal_log_tab import TerminalLogTab
+from ui.qt_log_redirector import QtLogRedirector
 
 # Import ZaloAutomationWidget using importlib to handle module name starting with number
 zalo_module = importlib.import_module('ui.1zalo_automation')
@@ -66,7 +68,8 @@ class SidebarWidget(QWidget):
         nav_items = [
             ("devices", "📱 Devices", "Quản lý thiết bị"),
             ("phone_mapping", "📞 Phone Manage", "Quản lý thông tin thiết bị"),
-            ("zalo_automation", "🤖 Nuôi Zalo", "Automation Zalo")
+            ("zalo_automation", "🤖 Nuôi Zalo", "Automation Zalo"),
+            ("terminal_log", "📋 Terminal Log", "Xem log real-time")
         ]
         
         for page_id, text, tooltip in nav_items:
@@ -137,6 +140,9 @@ class MainWindow(QMainWindow):
         self.device_manager = DeviceManager()
         self.theme_manager = ThemeManager()
         
+        # Initialize log redirector
+        self.log_redirector = QtLogRedirector()
+        
         # Setup UI
         self.setup_ui()
         self.setup_menu_bar()
@@ -148,6 +154,9 @@ class MainWindow(QMainWindow):
         
         # Load window state
         self.load_window_state()
+        
+        # Set window to maximized by default
+        self.showMaximized()
         
         # Start status update timer
         self.status_timer = QTimer()
@@ -187,6 +196,10 @@ class MainWindow(QMainWindow):
         self.add_page("devices", DeviceManagementWidget(self.device_manager))
         self.add_page("phone_mapping", PhoneMappingWidget(self.device_manager, self.config_manager))
         self.add_page("zalo_automation", ZaloAutomationWidget())
+        
+        # Create Terminal Log tab
+        self.terminal_log_tab = TerminalLogTab()
+        self.add_page("terminal_log", self.terminal_log_tab)
         
         splitter.addWidget(self.content_stack)
         
@@ -234,7 +247,8 @@ class MainWindow(QMainWindow):
             page_titles = {
                 "devices": "Device Management - Android Automation", 
                 "phone_mapping": "Phone Mapping - Android Automation",
-                "zalo_automation": "Zalo Automation - Android Automation"
+                "zalo_automation": "Zalo Automation - Android Automation",
+                "terminal_log": "Terminal Log - Android Automation"
             }
             
             title = page_titles.get(page_name, "Android Automation GUI v1.0")
@@ -310,6 +324,13 @@ class MainWindow(QMainWindow):
         # Connect UI component signals
         if "devices" in self.pages and hasattr(self.pages["devices"], 'device_connected'):
             self.pages["devices"].device_connected.connect(self.on_device_connected)
+        
+        # Connect log redirector to terminal log tab
+        self.log_redirector.log_received.connect(self.terminal_log_tab.append_log)
+        
+        # Connect device manager to terminal log tab for device list updates
+        self.device_manager.device_connected.connect(self.terminal_log_tab.update_device_list)
+        self.device_manager.device_disconnected.connect(self.terminal_log_tab.update_device_list)
         
         # Flow editor, execution and settings pages removed
     
@@ -425,6 +446,13 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         """Handle window close event"""
         self.save_window_state()
+        
+        # Stop log redirector
+        self.log_redirector.stop_redirection()
+        
+        # Stop terminal log tab
+        if hasattr(self, 'terminal_log_tab'):
+            self.terminal_log_tab.stop_logging()
         
         # Stop any running processes
         self.device_manager.disconnect_all_devices()

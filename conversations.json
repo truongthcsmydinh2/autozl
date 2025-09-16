@@ -3,203 +3,203 @@
     "group_id": 1,
     "messages": [
       {
-        "content": "role 1: Này, cậu đã xem đề tài giáo viên giao chưa?",
+        "content": "role 1: Này, mình đang tính đổi điện thoại.",
         "delay": 2
       },
       {
-        "content": "role 2: Rồi, mình thấy có ba lựa chọn.",
+        "content": "role 2: Thật á? Máy cũ hỏng rồi à?",
         "delay": 2
       },
       {
-        "content": "role 1: Cậu muốn chọn cái nào?",
+        "content": "role 1: Không hẳn, chỉ là pin yếu quá.",
         "delay": 2
       },
       {
-        "content": "role 2: Mình nghiêng về chủ đề bảo vệ môi trường.",
+        "content": "role 2: Vậy định mua máy nào?",
         "delay": 2
       },
       {
-        "content": "role 1: Cái đó khá hay, dễ triển khai nữa.",
+        "content": "role 1: Đang phân vân giữa iPhone và Samsung.",
         "delay": 2
       },
       {
-        "content": "role 2: Đúng, với lại giám khảo sẽ thích.",
+        "content": "role 2: iPhone thì ổn định, dùng lâu dài.",
         "delay": 2
       },
       {
-        "content": "role 1: Vậy chốt luôn nhé?",
+        "content": "role 1: Nhưng Samsung nhiều tính năng hơn.",
         "delay": 2
       },
       {
-        "content": "role 2: Chốt.",
+        "content": "role 2: Chuẩn, đặc biệt là camera.",
         "delay": 2
       },
       {
-        "content": "role 1: Bao giờ bắt đầu làm?",
+        "content": "role 1: Mình thích chụp ảnh, nên hơi nghiêng Samsung.",
         "delay": 2
       },
       {
-        "content": "role 2: Cuối tuần này đi.",
+        "content": "role 2: Thế ngân sách bao nhiêu?",
         "delay": 2
       },
       {
-        "content": "role 1: Ừ, mình sẽ chuẩn bị tài liệu trước.",
+        "content": "role 1: Khoảng 15 triệu đổ lại.",
         "delay": 2
       },
       {
-        "content": "role 2: Ai sẽ làm leader nhóm?",
+        "content": "role 2: Vậy iPhone hơi khó.",
         "delay": 2
       },
       {
-        "content": "role 1: Cậu đi, mình support.",
+        "content": "role 1: Đúng, chắc chỉ mua bản cũ.",
         "delay": 2
       },
       {
-        "content": "role 2: Thôi, cậu làm đi, mình không quen quản lý.",
+        "content": "role 2: Máy cũ thì phải check kỹ.",
         "delay": 2
       },
       {
-        "content": "role 1: Được rồi, mình nhận.",
+        "content": "role 1: Mình có bạn làm cửa hàng uy tín.",
         "delay": 2
       },
       {
-        "content": "role 2: Có bao nhiêu thành viên nhóm nhỉ?",
+        "content": "role 2: Vậy tốt rồi.",
         "delay": 2
       },
       {
-        "content": "role 1: Tổng cộng năm người.",
+        "content": "role 1: Bạn có gợi ý mẫu nào không?",
         "delay": 2
       },
       {
-        "content": "role 2: Huy có tham gia không?",
+        "content": "role 2: Galaxy S23 hoặc A55.",
         "delay": 2
       },
       {
-        "content": "role 1: Có, hôm qua mình hỏi rồi.",
+        "content": "role 1: S23 hơi vượt ngân sách.",
         "delay": 2
       },
       {
-        "content": "role 2: Tốt, Huy giỏi phần trình bày lắm.",
+        "content": "role 2: Thì A55 hợp hơn, giá mềm.",
         "delay": 2
       },
       {
-        "content": "role 1: Chuẩn, còn Lan sẽ lo phần thiết kế slide.",
+        "content": "role 1: Nhưng mình vẫn thích S23 hơn.",
         "delay": 2
       },
       {
-        "content": "role 2: Vậy còn Minh?",
+        "content": "role 2: Cố thêm vài triệu đi.",
         "delay": 2
       },
       {
-        "content": "role 1: Minh làm nghiên cứu số liệu.",
+        "content": "role 1: Để xem đã, cuối tháng mới nhận lương.",
         "delay": 2
       },
       {
-        "content": "role 2: Nhóm chia việc hợp lý phết.",
+        "content": "role 2: Mua trả góp cũng được mà.",
         "delay": 2
       },
       {
-        "content": "role 1: Mình sẽ gửi file phân công vào tối nay.",
+        "content": "role 1: Mình ghét nợ nần lắm.",
         "delay": 2
       },
       {
-        "content": "role 2: Nhớ thêm deadline nhé.",
+        "content": "role 2: Haha, hiểu mà.",
         "delay": 2
       },
       {
-        "content": "role 1: Yên tâm, mình sẽ note rõ ràng.",
+        "content": "role 1: Bao giờ đi xem máy?",
         "delay": 2
       },
       {
-        "content": "role 2: Bao giờ nộp báo cáo nhỉ?",
+        "content": "role 2: Cuối tuần này nhé.",
         "delay": 2
       },
       {
-        "content": "role 1: Trong ba tuần nữa.",
+        "content": "role 1: Thứ bảy hay chủ nhật?",
         "delay": 2
       },
       {
-        "content": "role 2: Không nhiều thời gian đâu.",
+        "content": "role 2: Thứ bảy, buổi chiều.",
         "delay": 2
       },
       {
-        "content": "role 1: Phải bắt tay vào làm ngay thôi.",
+        "content": "role 1: Ok, hẹn 2h nhé.",
         "delay": 2
       },
       {
-        "content": "role 2: Đúng, không thể trì hoãn.",
+        "content": "role 2: Địa điểm ở đâu?",
         "delay": 2
       },
       {
-        "content": "role 1: Thứ bảy nhóm họp nhé.",
+        "content": "role 1: Trung tâm thương mại gần nhà bạn.",
         "delay": 2
       },
       {
-        "content": "role 2: Họp online hay trực tiếp?",
+        "content": "role 2: Được, tiện cho mình.",
         "delay": 2
       },
       {
-        "content": "role 1: Trực tiếp cho dễ trao đổi.",
+        "content": "role 1: Nhớ đi sớm chút để không đông.",
         "delay": 2
       },
       {
-        "content": "role 2: Ok, địa điểm ở thư viện trường.",
+        "content": "role 2: Biết rồi, mình sẽ đi sớm.",
         "delay": 2
       },
       {
-        "content": "role 1: 9 giờ sáng nhé.",
+        "content": "role 1: Mua thêm ốp lưng luôn không?",
         "delay": 2
       },
       {
-        "content": "role 2: Được, mình sẽ nhắc mọi người.",
+        "content": "role 2: Có chứ, đỡ trầy máy mới.",
         "delay": 2
       },
       {
-        "content": "role 1: Đừng quên mang laptop.",
+        "content": "role 1: Mình muốn ốp trong suốt.",
         "delay": 2
       },
       {
-        "content": "role 2: Biết rồi mà.",
+        "content": "role 2: Mình thích loại chống sốc.",
         "delay": 2
       },
       {
-        "content": "role 1: Hy vọng mọi người hợp tác tốt.",
+        "content": "role 1: Mua mỗi người một kiểu.",
         "delay": 2
       },
       {
-        "content": "role 2: Mình tin là sẽ ổn thôi.",
+        "content": "role 2: Haha, chuẩn luôn.",
         "delay": 2
       },
       {
-        "content": "role 1: Sau họp mình sẽ tạo group chat riêng.",
+        "content": "role 1: Xong mua máy thì đi ăn nhé.",
         "delay": 2
       },
       {
-        "content": "role 2: Ý tưởng hay đấy.",
+        "content": "role 2: Đồng ý, coi như ăn mừng.",
         "delay": 2
       },
       {
-        "content": "role 1: Để tiện cập nhật tiến độ mà.",
+        "content": "role 1: Hy vọng có khuyến mãi ngon.",
         "delay": 2
       },
       {
-        "content": "role 2: Cậu đúng là leader xịn luôn.",
+        "content": "role 2: Để mình săn voucher trước.",
         "delay": 2
       },
       {
-        "content": "role 1: Haha, cố gắng thôi.",
+        "content": "role 1: Bạn đúng là cao thủ mua sắm.",
         "delay": 2
       },
       {
-        "content": "role 2: Thôi, mình về chuẩn bị tài liệu đây.",
+        "content": "role 2: Phải tiết kiệm chứ.",
         "delay": 2
       },
       {
-        "content": "role 1: Ok, mai gặp ở lớp nhé.",
+        "content": "role 1: Thôi, chốt kế hoạch nha.",
         "delay": 2
       },
       {
-        "content": "role 2: Mai gặp, nhớ đừng quên USB nha.",
+        "content": "role 2: Chốt, cuối tuần đi săn máy thôi!",
         "delay": 2
       }
     ]

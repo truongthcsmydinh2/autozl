@@ -124,15 +124,21 @@ class AutomationWorker(QThread):
 
 class DeviceCheckBox(QCheckBox):
     """Custom checkbox for device selection with enhanced styling"""
-    def __init__(self, device_id, phone_number):
+    def __init__(self, device_id, phone_number, note=""):
         super().__init__()
         self.device_id = device_id
         self.phone_number = phone_number
+        self.note = note
         
-        # Create display text
+        # Create display text with note
         display_text = f"📱 {device_id}"
         if phone_number and phone_number != "Chưa có số":
-            display_text += f" ({phone_number})"
+            display_text += f" ({phone_number}"
+            if note:
+                display_text += f" - Máy: {note}"
+            display_text += ")"
+        elif note:
+            display_text += f" (Máy: {note})"
         
         self.setText(display_text)
         self.setStyleSheet("""
@@ -652,8 +658,9 @@ class ZaloAutomationWidget(QWidget):
             for device in devices_with_phone:
                 device_id = device.get('device_id', 'Unknown')
                 phone_number = phone_mapping.get(device_id, "Chưa có số")
+                note = device.get('note', '')
                 
-                checkbox = DeviceCheckBox(device_id, phone_number)
+                checkbox = DeviceCheckBox(device_id, phone_number, note)
                 self.device_checkboxes.append(checkbox)
                 self.device_list_layout.addWidget(checkbox)
             

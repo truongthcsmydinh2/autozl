@@ -288,7 +288,7 @@ class DevicesPage(QWidget):
         card = QFrame(); card.setStyleSheet(CARD_STYLE)
         head = QHBoxLayout(card); head.setContentsMargins(12,12,12,12); head.setSpacing(8)
 
-        self.search = QLineEdit(); self.search.setPlaceholderText("Tìm theo IP hoặc số điện thoại…"); self.search.setStyleSheet(INPUT_STYLE)
+        self.search = QLineEdit(); self.search.setPlaceholderText("Tìm theo IP, số điện thoại hoặc ghi chú…"); self.search.setStyleSheet(INPUT_STYLE)
         self.search.textChanged.connect(self._apply_filter)
         btn_refresh = QPushButton("Refresh"); btn_refresh.setStyleSheet(BTN_STYLE(PRIMARY, PRIMARY_HOVER)); btn_refresh.clicked.connect(self.load_devices)
         btn_all = QPushButton("Chọn tất cả"); btn_all.setStyleSheet(BTN_STYLE(SUCCESS, SUCCESS_HOVER)); btn_all.clicked.connect(self._select_all)
@@ -354,7 +354,14 @@ class DevicesPage(QWidget):
             if item and item.widget():
                 item.widget().deleteLater()
         for d in devices:
-            cb = QCheckBox(f"{d['ip']}  ( {d['phone']} )")
+            # Format device label with note
+            note = d.get('note', '').strip()
+            if not note:
+                note = 'Không có'
+            
+            device_label = f"{d['ip']} ({d['phone']} - Máy: {note})"
+            
+            cb = QCheckBox(device_label)
             cb.setStyleSheet(CHECK_STYLE)
             cb.device = d
             cb.stateChanged.connect(self._emit_selection)
@@ -381,7 +388,8 @@ class DevicesPage(QWidget):
         for d in self.all_devices:
             ip = (d.get('ip') or '').lower()
             ph = (d.get('phone') or '').lower()
-            if q in ip or q in ph:
+            note = (d.get('note') or '').lower()
+            if q in ip or q in ph or q in note:
                 filtered.append(d)
         self._populate(filtered)
 
@@ -438,7 +446,14 @@ class PairPage(QWidget):
     def _render_pairs(self):
         self.list_pairs.clear()
         for i, (a,b) in enumerate(self.pairs, 1):
-            self.list_pairs.addItem(QListWidgetItem(f"Cặp {i}: {a['ip']} ( {a['phone']} )  ↔  {b['ip']} ( {b['phone']} )"))
+            # Format device info with note for pairs display
+            note_a = a.get('note', '').strip() or 'Không có'
+            note_b = b.get('note', '').strip() or 'Không có'
+            
+            device_a_label = f"{a['ip']} ({a['phone']} - Máy: {note_a})"
+            device_b_label = f"{b['ip']} ({b['phone']} - Máy: {note_b})"
+            
+            self.list_pairs.addItem(QListWidgetItem(f"Cặp {i}: {device_a_label}  ↔  {device_b_label}"))
 
 class ConversationsPage(QWidget):
     conversations_changed = pyqtSignal(list)  # emits List[str]

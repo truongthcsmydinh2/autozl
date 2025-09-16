@@ -97,15 +97,18 @@ class AutomationWorker(QThread):
 
 class DeviceCheckBox(QCheckBox):
     """Custom checkbox for device selection with enhanced styling"""
-    def __init__(self, device_id, phone_number):
+    def __init__(self, device_id, phone_number, note="Không có"):
         super().__init__()
         self.device_id = device_id
         self.phone_number = phone_number
+        self.note = note
         
         # Create display text
         display_text = f"📱 {device_id}"
         if phone_number and phone_number != "Chưa có số":
-            display_text += f" ({phone_number})"
+            display_text += f" ({phone_number} - Máy: {note})"
+        else:
+            display_text += f" (Máy: {note})"
         
         self.setText(display_text)
         self.setStyleSheet("""
@@ -1235,8 +1238,10 @@ if __name__ == '__main__':
         else:
             for device in devices:
                 phone_number = device['phone'] if device['phone'] else "Chưa có số"
+                # Lấy note từ device data, sử dụng 'Không có' nếu trống
+                note = device.get('note', '') or 'Không có'
                 
-                checkbox = DeviceCheckBox(device['ip'], phone_number)
+                checkbox = DeviceCheckBox(device['ip'], phone_number, note)
                 # Store device info in checkbox
                 checkbox.device_info = device
                 checkbox.stateChanged.connect(self.update_device_counter)
@@ -1269,14 +1274,16 @@ if __name__ == '__main__':
             # Filter devices with multiple criteria
             filtered_devices = []
             for device in self.all_devices:
-                # Search in IP and phone number
+                # Search in IP, phone number and note
                 ip_text = device.get('ip', '').lower()
                 phone_text = device.get('phone', '').lower()
+                note_text = device.get('note', '').lower()
                 
-                # Check if search text matches IP or phone
+                # Check if search text matches IP, phone or note
                 if (search_text in ip_text or 
                     search_text in phone_text or
-                    search_text in f"{ip_text} {phone_text}"):
+                    search_text in note_text or
+                    search_text in f"{ip_text} {phone_text} {note_text}"):
                     filtered_devices.append(device)
             
             self.display_devices(filtered_devices)
