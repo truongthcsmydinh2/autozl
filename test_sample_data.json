@@ -1,0 +1,33 @@
+{
+  "conversation": [
+    {"role": "device_a", "content": "may dat ve du lich chua"},
+    {"role": "device_b", "content": "chua, di dau day"},
+    {"role": "device_a", "content": "Da Lat di"},
+    {"role": "device_b", "content": "o mat me"},
+    {"role": "device_a", "content": "di 3 ngay 2 dem"},
+    {"role": "device_b", "content": "ok"},
+    {"role": "device_a", "content": "di xe khach cho re"},
+    {"role": "device_b", "content": "um"},
+    {"role": "device_a", "content": "o homestay gan trung tam"},
+    {"role": "device_b", "content": "co view dep khong"},
+    {"role": "device_a", "content": "co ban cong nhin nui"},
+    {"role": "device_b", "content": "qua hop"},
+    {"role": "device_a", "content": "di choi vuon hoa"},
+    {"role": "device_b", "content": "chup hinh song ao"},
+    {"role": "device_a", "content": "di thac nua"},
+    {"role": "device_b", "content": "nghe me"},
+    {"role": "device_a", "content": "toi ra cho dem an uong"},
+    {"role": "device_b", "content": "dung y tao"},
+    {"role": "device_a", "content": "dat ve xong roi"},
+    {"role": "device_b", "content": "nhanh ghe"},
+    {"role": "device_a", "content": "haha"},
+    {"role": "device_b", "content": "bao gio di"},
+    {"role": "device_a", "content": "thu sau"},
+    {"role": "device_b", "content": "ok deal"}
+  ],
+  "summary": {
+    "noidung": "May A va May B ban nhau di Da Lat 3 ngay 2 dem. Ho chon xe khach, homestay view nui, di choi vuon hoa, thac, cho dem va chup hinh.",
+    "hoancanh": "Cuoc tro chuyen truoc chuyen du lich Da Lat.",
+    "socau": 60
+  }
+}

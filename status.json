@@ -1,86 +1,86 @@
 {
   "devices": {
-    "192.168.5.92:5555": {
-      "status": "checking_login",
-      "message": "Kiểm tra trạng thái đăng nhập...",
-      "progress": 35,
-      "current_message_id": null,
-      "last_update": 1758013002.3882494,
-      "timestamp": "2025-09-16 15:56:42"
-    },
-    "192.168.5.85:5555": {
-      "status": "checking_login",
-      "message": "Kiểm tra trạng thái đăng nhập...",
-      "progress": 35,
-      "current_message_id": null,
-      "last_update": 1758013001.6520379,
-      "timestamp": "2025-09-16 15:56:41"
-    },
-    "192.168.4.156:5555": {
-      "status": "checking_login",
-      "message": "Kiểm tra trạng thái đăng nhập...",
-      "progress": 35,
-      "current_message_id": null,
-      "last_update": 1758013002.949926,
-      "timestamp": "2025-09-16 15:56:42"
-    },
-    "192.168.5.77:5555": {
-      "status": "running",
-      "message": "Đang chạy cuộc hội thoại...",
+    "192.168.5.74:5555": {
+      "status": "testing",
+      "message": "Test message",
       "progress": 50,
       "current_message_id": null,
-      "last_update": 1758013012.391032,
-      "timestamp": "2025-09-16 15:56:52"
+      "last_update": 1758115337.3777716,
+      "timestamp": "2025-09-17 20:22:17"
     },
-    "192.168.5.78:5555": {
-      "status": "checking_login",
-      "message": "Kiểm tra trạng thái đăng nhập...",
-      "progress": 35,
+    "192.168.5.88:5555": {
+      "status": "completed",
+      "message": "Hoàn thành automation",
+      "progress": 100,
       "current_message_id": null,
-      "last_update": 1758013003.9686866,
-      "timestamp": "2025-09-16 15:56:43"
-    },
-    "192.168.5.81:5555": {
-      "status": "running",
-      "message": "Đang chạy cuộc hội thoại...",
-      "progress": 50,
-      "current_message_id": null,
-      "last_update": 1758013012.845738,
-      "timestamp": "2025-09-16 15:56:52"
+      "last_update": 1758095386.1023588,
+      "timestamp": "2025-09-17 14:49:46"
     },
     "192.168.5.86:5555": {
-      "status": "checking_login",
-      "message": "Kiểm tra trạng thái đăng nhập...",
-      "progress": 35,
+      "status": "completed",
+      "message": "Hoàn thành automation",
+      "progress": 100,
       "current_message_id": null,
-      "last_update": 1758013003.4773538,
-      "timestamp": "2025-09-16 15:56:43"
+      "last_update": 1758095536.9549532,
+      "timestamp": "2025-09-17 14:52:16"
     },
-    "192.168.5.82:5555": {
-      "status": "ready_for_conversation",
-      "message": "Sẵn sàng cho cuộc hội thoại",
-      "progress": 80,
+    "192.168.5.78:5555": {
+      "status": "completed",
+      "message": "Hoàn thành automation",
+      "progress": 100,
       "current_message_id": null,
-      "last_update": 1758013013.8661675,
-      "timestamp": "2025-09-16 15:56:53"
-    },
-    "192.168.5.93:5555": {
-      "status": "ready_for_conversation",
-      "message": "Sẵn sàng cho cuộc hội thoại",
-      "progress": 80,
-      "current_message_id": null,
-      "last_update": 1758013014.32602,
-      "timestamp": "2025-09-16 15:56:54"
+      "last_update": 1758095562.0824847,
+      "timestamp": "2025-09-17 14:52:42"
     },
     "192.168.5.76:5555": {
-      "status": "running",
-      "message": "Đang chạy cuộc hội thoại...",
-      "progress": 50,
+      "status": "completed",
+      "message": "Hoàn thành automation",
+      "progress": 100,
       "current_message_id": null,
-      "last_update": 1758013010.4203131,
-      "timestamp": "2025-09-16 15:56:50"
+      "last_update": 1758095352.8492167,
+      "timestamp": "2025-09-17 14:49:12"
+    },
+    "192.168.4.156:5555": {
+      "status": "completed",
+      "message": "Hoàn thành automation",
+      "progress": 100,
+      "current_message_id": null,
+      "last_update": 1758095553.416018,
+      "timestamp": "2025-09-17 14:52:33"
+    },
+    "192.168.5.82:5555": {
+      "status": "completed",
+      "message": "Hoàn thành automation",
+      "progress": 100,
+      "current_message_id": null,
+      "last_update": 1758095581.3867455,
+      "timestamp": "2025-09-17 14:53:01"
+    },
+    "192.168.5.92:5555": {
+      "status": "completed",
+      "message": "Hoàn thành automation",
+      "progress": 100,
+      "current_message_id": null,
+      "last_update": 1758095356.3542404,
+      "timestamp": "2025-09-17 14:49:16"
+    },
+    "192.168.5.85:5555": {
+      "status": "completed",
+      "message": "Hoàn thành automation",
+      "progress": 100,
+      "current_message_id": null,
+      "last_update": 1758096060.8219328,
+      "timestamp": "2025-09-17 15:01:00"
+    },
+    "192.168.5.81:5555": {
+      "status": "completed",
+      "message": "Hoàn thành automation",
+      "progress": 100,
+      "current_message_id": null,
+      "last_update": 1758096089.9995062,
+      "timestamp": "2025-09-17 15:01:29"
     }
   },
-  "overall_status": "running",
-  "last_update": 1758013014.32602
+  "overall_status": "idle",
+  "last_update": 1758115337.3777716
 }

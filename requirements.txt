@@ -16,6 +16,16 @@ requests>=2.31.0
 # For file watching and hot reload in realtime mode
 watchdog>=3.0.0
 
+# For Supabase database integration
+supabase>=2.18.0
+
+# For environment variables management
+python-dotenv==1.0.0
+
+# For Flask web server and API
+flask>=2.3.0
+flask-cors>=4.0.0
+
 # For JSON handling (built-in, but listed for clarity)
 # json - built-in module
 

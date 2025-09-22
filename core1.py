@@ -6,8 +6,28 @@
 #   (hoặc) set DEVICE=192.168.5.151:5555 & python core_uiautomator2.py
 # Sửa vùng "=== FLOW START/END ===" bên dưới rồi Ctrl+S -> tool tự chạy lại flow trên máy test.
 
-import os, sys, time, subprocess, threading, re, traceback, argparse, json, datetime
+import os
+import sys
+import time
+import json
+import threading
+import subprocess
+import random
+import re
+import argparse
+from datetime import datetime
 import uiautomator2 as u2
+from typing import Dict, List, Optional, Any
+
+# === SUPABASE IMPORTS ===
+from utils.supabase_data_manager import SupabaseDataManager
+from database.supabase_manager import SupabaseManager
+from database.device_repository import DeviceRepository
+from database.log_repository import LogRepository
+
+# Initialize Supabase data manager
+supabase_data_manager = SupabaseDataManager()
+
 
 # === UI DUMP FUNCTION FOR DEBUGGING ===
 def dump_ui_and_log(dev, debug=False):
@@ -78,11 +98,27 @@ class Device:
         self.device_id = device_id
         self.d = None
         self.screen_info = None
+        self.group_id = None
+        self.role_in_group = None
+        self.group_devices = None
         
     def connect(self):
         """Kết nối tới device qua uiautomator2"""
         try:
-            # Kết nối device
+            # Dọn sạch tiến trình uiautomator cũ TRƯỚC khi kết nối
+            try:
+                kill_cmd = ["adb", "-s", self.device_id, "shell", "am", "force-stop", "com.genfarmer.uiautomator"]
+                kill_result = subprocess.run(kill_cmd, capture_output=True, text=True, timeout=10)
+                if kill_result.returncode == 0:
+                    print(f"🧹 Đã dừng com.genfarmer.uiautomator trên {self.device_id}")
+                else:
+                    stderr_output = (kill_result.stderr or "").strip()
+                    if stderr_output:
+                        print(f"⚠️ Không thể dừng com.genfarmer.uiautomator trên {self.device_id}: {stderr_output}")
+            except Exception as kill_error:
+                print(f"⚠️ Lỗi khi dừng com.genfarmer.uiautomator trên {self.device_id}: {kill_error}")
+            
+            # Kết nối device SAU khi đã kill process
             if ":" in self.device_id:
                 # Network device
                 self.d = u2.connect(self.device_id)
@@ -789,85 +825,71 @@ DEFAULT_PHONE_MAP = {
 # Global PHONE_MAP sẽ được load từ các nguồn khác nhau
 PHONE_MAP = {}
 
+
+
 def load_phone_map_from_file():
-    """Load phone mapping từ file config - ưu tiên master_config.json"""
+    """Load phone mapping từ Supabase - thay thế JSON operations"""
     try:
-        # Ưu tiên đọc từ master_config.json
-        if os.path.exists(MASTER_CONFIG_FILE):
-            with open(MASTER_CONFIG_FILE, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                devices = data.get('devices', {})
-                # Chuyển đổi từ format devices sang phone_mapping
-                phone_mapping = {}
-                for device_id, device_info in devices.items():
-                    phone = device_info.get('phone', '')
-                    if phone:
-                        phone_mapping[device_id] = phone
-                print(f"✅ Loaded phone mapping từ master config: {len(phone_mapping)} devices")
-                return phone_mapping
-        
-        # Fallback về file cũ
-        if os.path.exists(PHONE_CONFIG_FILE):
-            with open(PHONE_CONFIG_FILE, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                phone_mapping = data.get('phone_mapping', {})
-                print(f"⚠️ Loaded phone mapping từ legacy file: {len(phone_mapping)} devices")
-                return phone_mapping
-                
+        print("📡 Loading phone mapping từ Supabase...")
+        phone_mapping = supabase_data_manager.load_phone_mapping()
+        print(f"✅ Loaded {len(phone_mapping)} phone mappings từ Supabase")
+        return phone_mapping
     except Exception as e:
-        print(f"⚠️ Lỗi đọc file config: {e}")
-    return {}
+        print(f"⚠️ Lỗi load phone mapping từ Supabase: {e}")
+        print("🔄 Fallback về JSON file...")
+        
+        # Fallback về JSON nếu Supabase fail
+        try:
+            import json
+            if os.path.exists(PHONE_CONFIG_FILE):
+                with open(PHONE_CONFIG_FILE, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    phone_mapping = data.get('phone_mapping', {})
+                    print(f"⚠️ Loaded phone mapping từ JSON fallback: {len(phone_mapping)} devices")
+                    return phone_mapping
+        except Exception as json_error:
+            print(f"❌ Lỗi JSON fallback: {json_error}")
+        
+        return {}
 
 def save_phone_map_to_file(phone_map):
-    """Lưu phone mapping vào master_config.json"""
+    """Lưu phone mapping vào Supabase với fallback JSON"""
     try:
-        # Đảm bảo thư mục config tồn tại
-        os.makedirs('config', exist_ok=True)
+        print("📡 Saving phone mapping vào Supabase...")
+        success = supabase_data_manager.save_phone_mapping(phone_map, created_by="core1.py CLI")
         
-        # Load master config hiện tại hoặc tạo mới
-        master_config = {}
-        if os.path.exists(MASTER_CONFIG_FILE):
-            with open(MASTER_CONFIG_FILE, 'r', encoding='utf-8') as f:
-                master_config = json.load(f)
-        
-        # Đảm bảo có section devices
-        if 'devices' not in master_config:
-            master_config['devices'] = {}
-        
-        # Cập nhật phone mapping vào devices
-        for device_id, phone in phone_map.items():
-            if device_id not in master_config['devices']:
-                master_config['devices'][device_id] = {
-                    'phone': phone,
-                    'zalo_number': '',
-                    'device_info': {
-                        'model': 'Unknown',
-                        'android_version': 'Unknown', 
-                        'resolution': 'Unknown',
-                        'status': 'device'
-                    },
-                    'last_updated': time.strftime("%Y-%m-%d %H:%M:%S")
-                }
-            else:
-                master_config['devices'][device_id]['phone'] = phone
-                master_config['devices'][device_id]['last_updated'] = time.strftime("%Y-%m-%d %H:%M:%S")
-        
-        # Cập nhật metadata
-        if 'metadata' not in master_config:
-            master_config['metadata'] = {}
-        master_config['metadata']['last_updated'] = time.strftime("%Y-%m-%d %H:%M:%S")
-        master_config['metadata']['updated_by'] = 'core1.py CLI'
-        
-        # Lưu master config
-        with open(MASTER_CONFIG_FILE, 'w', encoding='utf-8') as f:
-            json.dump(master_config, f, indent=2, ensure_ascii=False)
-        
-        print(f"✅ Đã lưu phone mapping vào {MASTER_CONFIG_FILE}")
-        return True
-        
+        if success:
+            print(f"✅ Đã lưu {len(phone_map)} phone mappings vào Supabase")
+            return True
+        else:
+            print("❌ Lỗi lưu phone mapping vào Supabase")
+            return False
+            
     except Exception as e:
-        print(f"❌ Lỗi lưu master config: {e}")
-        return False
+        print(f"⚠️ Lỗi save phone mapping vào Supabase: {e}")
+        print("🔄 Fallback về JSON file...")
+        
+        # Fallback về JSON nếu Supabase fail
+        try:
+            import json
+            import time
+            
+            # Tạo data structure cho JSON
+            data = {
+                "phone_mapping": phone_map,
+                "timestamp": time.time(),
+                "created_by": "core1.py CLI (Supabase fallback)"
+            }
+            
+            with open(PHONE_CONFIG_FILE, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            
+            print(f"⚠️ Đã lưu phone mapping vào JSON fallback")
+            return True
+            
+        except Exception as json_error:
+            print(f"❌ Lỗi JSON fallback: {json_error}")
+            return False
 
 def parse_device_map_string(device_map_str):
     """Parse device map string từ CLI argument"""
@@ -1487,15 +1509,19 @@ def show_current_config():
         print(f"  {ip} -> {phone}")
 
 def load_phone_map():
-    """Load phone mapping từ các nguồn theo thứ tự ưu tiên"""
+    """Load phone mapping từ Supabase với fallback default"""
     global PHONE_MAP
     
-    # 1. Từ file config
-    file_map = load_phone_map_from_file()
+    # 1. Từ Supabase
+    supabase_map = load_phone_map_from_file()
     
-    # 2. Merge với default
-    PHONE_MAP = DEFAULT_PHONE_MAP.copy()
-    PHONE_MAP.update(file_map)
+    # 2. Nếu Supabase trống, sử dụng default
+    if supabase_map:
+        PHONE_MAP = supabase_map.copy()
+        print(f"📡 Loaded {len(PHONE_MAP)} phone mappings từ Supabase")
+    else:
+        PHONE_MAP = DEFAULT_PHONE_MAP.copy()
+        print(f"⚠️ Sử dụng default phone mapping: {len(PHONE_MAP)} devices")
     
     return PHONE_MAP
 
@@ -1814,6 +1840,9 @@ def run_zalo_automation(device_pairs, conversations, phone_mapping, progress_cal
                     dev = Device(device_ip)
                     if dev.connect():
                         connected_devices.append(dev)
+                        dev.group_id = pair_index
+                        dev.group_devices = device_ips
+                        dev.role_in_group = len(connected_devices)
                         connection_results[device_ip] = {"status": "connected", "result": None}
                         print(f"✅ Kết nối thành công: {device_ip}")
                     else:
@@ -1852,6 +1881,10 @@ def run_zalo_automation(device_pairs, conversations, phone_mapping, progress_cal
                 
                 # Tạo và start threads với staggered delays
                 for device_index, dev in enumerate(connected_devices):
+                    dev.group_id = pair_index
+                    dev.role_in_group = device_index + 1
+                    dev.group_devices = device_ips
+
                     done_event = threading.Event()
                     done_events.append(done_event)
                     
@@ -2036,7 +2069,6 @@ if __name__ == "__main__":
 
 # ===================== EDIT PHÍA DƯỚI NÀY =====================
 # === FLOW START ===
-import re, time
 
 PKG = "com.zing.zalo"
 RID_SEARCH_BTN   = "com.zing.zalo:id/action_bar_search_btn"
@@ -2435,11 +2467,50 @@ def send_message(dev, message, debug=False):
     """Wrapper function để maintain compatibility"""
     return send_message_human_like(dev, message, debug)
 
+
+
 def load_conversation_from_file(group_id):
-    """Load cuộc hội thoại từ file conversation_data.json như trong main.py"""
+    """Load cuộc hội thoại từ Supabase - thay thế JSON operations"""
+    try:
+        print(f"📡 Loading conversation cho group {group_id} từ Supabase...")
+        conversation = supabase_data_manager.load_conversation_by_group(group_id)
+        
+        if conversation:
+            print(f"✅ Loaded {len(conversation)} messages cho group {group_id} từ Supabase")
+            return conversation
+        else:
+            print(f"⚠️ Không tìm thấy conversation cho group {group_id} trong Supabase")
+            
+    except Exception as e:
+        print(f"⚠️ Lỗi load conversation từ Supabase: {e}")
+        print("🔄 Fallback về JSON file...")
+    
+    # Fallback về JSON operations
     try:
         import json
-        import os
+        
+        # Thử load từ conversations.json trước
+        if os.path.exists('conversations.json'):
+            with open('conversations.json', 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                conversations = data.get('conversations', [])
+                
+                # Tìm conversation cho group này
+                for conv in conversations:
+                    if conv.get('group_id') == group_id:
+                        messages = conv.get('messages', [])
+                        # Convert format từ conversations.json sang format cũ
+                        converted_messages = []
+                        for i, msg in enumerate(messages, 1):
+                            converted_messages.append({
+                                "message_id": i,
+                                "device_number": 1 if msg.get('device_role') == 'device_a' else 2,
+                                "content": msg.get('content', '')
+                            })
+                        print(f"⚠️ Loaded {len(converted_messages)} messages từ conversations.json")
+                        return converted_messages
+        
+        # Fallback về conversation_data.json
         if os.path.exists('conversation_data.json'):
             with open('conversation_data.json', 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -2449,45 +2520,26 @@ def load_conversation_from_file(group_id):
             pair_key = f"pair_{group_id}"
             
             if pair_key in conversations:
-                return conversations[pair_key].get('conversation', [])
+                messages = conversations[pair_key].get('conversation', [])
+                print(f"⚠️ Loaded {len(messages)} messages từ conversation_data.json")
+                return messages
                 
     except Exception as e:
-        print(f"[DEBUG] Lỗi load conversation từ file: {e}")
+        print(f"❌ Lỗi load từ JSON fallback: {e}")
     
     # Fallback conversation đơn giản nếu không load được
+    print("⚠️ Sử dụng fallback conversation mặc định")
     return [
-    {"message_id": 1, "device_number": 1, "content": "Cậu đang làm gì đấy"},
-    {"message_id": 2, "device_number": 2, "content": "Đang xem phim nè"},
-    {"message_id": 3, "device_number": 1, "content": "Phim gì thế"},
-    {"message_id": 4, "device_number": 2, "content": "Phim hài vui lắm"},
-    {"message_id": 5, "device_number": 1, "content": "Cho tớ link đi"},
-    {"message_id": 6, "device_number": 2, "content": "Xíu gửi nha"},
-    {"message_id": 7, "device_number": 1, "content": "Ok luôn"},
-    {"message_id": 8, "device_number": 2, "content": "Cậu ăn cơm chưa"},
-    {"message_id": 9, "device_number": 1, "content": "Chưa đói nên chưa ăn"},
-    {"message_id": 10, "device_number": 2, "content": "Ăn sớm đi kẻo đói"},
-    {"message_id": 11, "device_number": 1, "content": "Ừ biết rồi"},
-    {"message_id": 12, "device_number": 2, "content": "Chiều nay rảnh không"},
-    {"message_id": 13, "device_number": 1, "content": "Cũng rảnh một chút"},
-    {"message_id": 14, "device_number": 2, "content": "Đi cà phê không"},
-    {"message_id": 15, "device_number": 1, "content": "Đi luôn chứ sao"},
-    {"message_id": 16, "device_number": 2, "content": "Ở quán cũ nhé"},
-    {"message_id": 17, "device_number": 1, "content": "Ok quán đó yên tĩnh"},
-    {"message_id": 18, "device_number": 2, "content": "Có chuyện muốn kể"},
-    {"message_id": 19, "device_number": 1, "content": "Chuyện gì thế"},
-    {"message_id": 20, "device_number": 2, "content": "Bị người ta nói xấu sau lưng"},
-    {"message_id": 21, "device_number": 1, "content": "Ai mà tệ vậy"},
-    {"message_id": 22, "device_number": 2, "content": "Người trong nhóm luôn"},
-    {"message_id": 23, "device_number": 1, "content": "Nghe mà tức thật"},
-    {"message_id": 24, "device_number": 2, "content": "Ừ tớ cũng giận lắm"},
-    {"message_id": 25, "device_number": 1, "content": "Thôi chiều ra cà phê tâm sự"},
-    {"message_id": 26, "device_number": 2, "content": "Ừ gặp rồi kể rõ hơn"},
-    {"message_id": 27, "device_number": 1, "content": "Ok deal luôn"},
-    {"message_id": 28, "device_number": 2, "content": "Cậu có muốn nói gì thêm không"},
-    {"message_id": 29, "device_number": 1, "content": "Chưa có"},
-    {"message_id": 30, "device_number": 2, "content": "Ok"},
-    {"message_id": 31, "device_number": 1, "content": "Cậu có muốn nói gì thêm không"},
-    {"message_id": 32, "device_number": 2, "content": "Ok"}
+        {"message_id": 1, "device_number": 1, "content": "Cậu đang làm gì đấy"},
+        {"message_id": 2, "device_number": 2, "content": "Đang xem phim nè"},
+        {"message_id": 3, "device_number": 1, "content": "Phim gì thế"},
+        {"message_id": 4, "device_number": 2, "content": "Phim hài vui lắm"},
+        {"message_id": 5, "device_number": 1, "content": "Cho tớ link đi"},
+        {"message_id": 6, "device_number": 2, "content": "Xíu gửi nha"},
+        {"message_id": 7, "device_number": 1, "content": "Ok luôn"},
+        {"message_id": 8, "device_number": 2, "content": "Cậu ăn cơm chưa"},
+        {"message_id": 9, "device_number": 1, "content": "Chưa đói nên chưa ăn"},
+        {"message_id": 10, "device_number": 2, "content": "Ăn sớm đi kẻo đói"}
     ]
 
 def send_friend_request(dev, debug=False):
@@ -2827,11 +2879,20 @@ def get_sync_file_path(group_id):
     return f"sync_group_{group_id}.json"
 
 def read_current_message_id(group_id):
-    """Đọc current message_id từ file sync"""
-    import json
-    import os
-    sync_file = get_sync_file_path(group_id)
+    """Đọc current message_id từ Supabase với fallback JSON"""
     try:
+        # Đọc từ Supabase trước
+        sync_data = supabase_data_manager.get_sync_data(group_id)
+        if sync_data:
+            return sync_data.get('current_message_id', 1)
+    except Exception as e:
+        print(f"⚠️ Lỗi đọc sync data từ Supabase: {e}")
+        
+    # Fallback về JSON file
+    try:
+        import json
+        import os
+        sync_file = get_sync_file_path(group_id)
         if os.path.exists(sync_file):
             with open(sync_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -2841,10 +2902,25 @@ def read_current_message_id(group_id):
     return 1
 
 def update_current_message_id(group_id, message_id):
-    """Cập nhật current message_id vào file sync với broadcast signal"""
-    import json
-    sync_file = get_sync_file_path(group_id)
+    """Cập nhật current message_id vào Supabase với fallback JSON"""
     try:
+        # Cập nhật vào Supabase trước
+        data = {
+            'current_message_id': message_id, 
+            'timestamp': time.time(),
+            'broadcast_signal': f'msg_{message_id}_{int(time.time() * 1000)}'
+        }
+        success = supabase_data_manager.update_sync_data(group_id, data)
+        if success:
+            print(f"📡 Nhóm {group_id} - Broadcast signal cho message_id {message_id} (Supabase)")
+            return True
+    except Exception as e:
+        print(f"⚠️ Lỗi cập nhật sync data vào Supabase: {e}")
+        
+    # Fallback về JSON file
+    try:
+        import json
+        sync_file = get_sync_file_path(group_id)
         data = {
             'current_message_id': message_id, 
             'timestamp': time.time(),
@@ -2852,39 +2928,59 @@ def update_current_message_id(group_id, message_id):
         }
         with open(sync_file, 'w', encoding='utf-8') as f:
             json.dump(data, f)
-        print(f"📡 Nhóm {group_id} - Broadcast signal cho message_id {message_id}")
+        print(f"📡 Nhóm {group_id} - Broadcast signal cho message_id {message_id} (JSON fallback)")
         return True
     except Exception:
         return False
 
 def wait_for_message_turn(group_id, target_message_id, role_in_group, timeout=600):
-    """Đợi đến lượt gửi message_id cụ thể với timeout và broadcast signal detection"""
+    """Đợi đến lượt gửi message_id cụ thể với timeout và broadcast signal detection
+    
+    Sử dụng Supabase để đọc sync data với fallback đến JSON file.
+    """
     import time as time_module
     start_time = time_module.time()
     last_log_time = start_time
     last_broadcast_signal = None
     
     while time_module.time() - start_time < timeout:
-        # Đọc sync file để lấy cả message_id và broadcast signal
-        sync_file = get_sync_file_path(group_id)
+        # Đọc sync data từ Supabase trước, fallback đến JSON file
         try:
-            if os.path.exists(sync_file):
-                with open(sync_file, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    current_id = data.get('current_message_id', 1)
-                    broadcast_signal = data.get('broadcast_signal')
-                    
-                    # Kiểm tra broadcast signal mới
-                    if broadcast_signal and broadcast_signal != last_broadcast_signal:
-                        print(f"📡 Nhóm {group_id} - Nhận broadcast signal: {broadcast_signal}")
-                        last_broadcast_signal = broadcast_signal
-                    
-                    if current_id == target_message_id:
-                        return True
+            # Thử đọc từ Supabase trước
+            from utils.supabase_data_manager import SupabaseDataManager
+            supabase_manager = SupabaseDataManager()
+            sync_data = supabase_manager.get_sync_data(group_id)
+            
+            if sync_data:
+                current_id = sync_data.get('current_message_id', 1)
+                broadcast_signal = sync_data.get('broadcast_signal')
+                print(f"📡 Nhóm {group_id} - Đọc sync data từ Supabase (current_id: {current_id})")
             else:
-                current_id = 1
-        except Exception:
+                # Fallback đến JSON file
+                sync_file = get_sync_file_path(group_id)
+                if os.path.exists(sync_file):
+                    with open(sync_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        current_id = data.get('current_message_id', 1)
+                        broadcast_signal = data.get('broadcast_signal')
+                        print(f"📡 Nhóm {group_id} - Đọc sync data từ JSON fallback (current_id: {current_id})")
+                else:
+                    current_id = 1
+                    broadcast_signal = None
+                    
+        except Exception as e:
+            # Fallback cuối cùng
             current_id = read_current_message_id(group_id)
+            broadcast_signal = None
+            print(f"⚠️ Nhóm {group_id} - Lỗi đọc sync data, fallback: {e}")
+        
+        # Kiểm tra broadcast signal mới
+        if broadcast_signal and broadcast_signal != last_broadcast_signal:
+            print(f"📡 Nhóm {group_id} - Nhận broadcast signal: {broadcast_signal}")
+            last_broadcast_signal = broadcast_signal
+        
+        if current_id == target_message_id:
+            return True
         
         # Log progress mỗi 30 giây để theo dõi
         current_time = time_module.time()
@@ -2924,15 +3020,47 @@ def run_conversation(dev, device_role, debug=False, all_devices=None, stop_event
     import time as time_module
     
     # Lấy IP của device hiện tại
-    device_ip = dev.device_id.split(":")[0] if ":" in dev.device_id else dev.device_id
-    
-    # Nếu không có all_devices, fallback về logic cũ
-    if not all_devices:
-        all_devices = [device_ip]
-    
-    # Xác định nhóm và role trong nhóm
-    group_id, role_in_group = determine_group_and_role(device_ip, all_devices)
-    
+    device_identifier = dev.device_id
+    device_ip = device_identifier.split(":")[0] if ":" in device_identifier else device_identifier
+
+    group_id_attr = getattr(dev, "group_id", None)
+    role_in_group_attr = getattr(dev, "role_in_group", None)
+    group_devices_attr = getattr(dev, "group_devices", None)
+
+    if all_devices is None:
+        if group_devices_attr is not None:
+            if isinstance(group_devices_attr, (tuple, set)):
+                all_devices = list(group_devices_attr)
+            elif isinstance(group_devices_attr, list):
+                all_devices = list(group_devices_attr)
+            elif isinstance(group_devices_attr, str):
+                all_devices = [group_devices_attr]
+            else:
+                all_devices = [group_devices_attr]
+        else:
+            all_devices = [device_identifier]
+    else:
+        if isinstance(all_devices, str):
+            all_devices = [all_devices]
+        elif not isinstance(all_devices, list):
+            all_devices = list(all_devices)
+
+    normalized_devices = [d.split(':')[0] if ':' in d else d for d in all_devices]
+
+    group_id = group_id_attr
+    role_in_group = role_in_group_attr
+
+    if group_id is None or role_in_group is None:
+        try:
+            group_id, role_in_group = determine_group_and_role(device_ip, normalized_devices)
+        except ValueError:
+            group_id = group_id or 1
+            role_in_group = role_in_group or 1
+
+    dev.group_id = group_id
+    dev.role_in_group = role_in_group
+    dev.group_devices = list(all_devices)
+
     print(f"💬 Device {device_ip} - Nhóm {group_id}, Role {role_in_group}")
     
     # Load conversation từ file như trong main.py
@@ -3533,84 +3661,154 @@ def get_status_file_path():
         # Fallback nếu __file__ không có
         return os.path.join(os.getcwd(), 'status.json')
 
+
+
 def update_shared_status(device_ip, status, message="", progress=0, current_message_id=None):
-    """Cập nhật trạng thái shared cho device"""
-    import json
-    import time as time_module
-    import os
-    
-    status_file = get_status_file_path()
-    
-    # Retry logic để handle concurrent access
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            # Đọc dữ liệu hiện tại
-            data = {}
-            if os.path.exists(status_file):
-                with open(status_file, 'r', encoding='utf-8') as f:
-                    try:
-                        data = json.load(f)
-                    except:
-                        data = {}
-            
-            # Cập nhật trạng thái device
-            if 'devices' not in data:
-                data['devices'] = {}
-            
-            data['devices'][device_ip] = {
-                'status': status,
-                'message': message,
-                'progress': progress,
-                'current_message_id': current_message_id,
-                'last_update': time.time(),
-                'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
-            }
-            
-            # Cập nhật overall status
-            device_statuses = [d['status'] for d in data['devices'].values()]
-            if all(s == 'completed' for s in device_statuses):
-                data['overall_status'] = 'completed'
-            elif any(s == 'error' for s in device_statuses):
-                data['overall_status'] = 'error'
-            elif any(s == 'running' for s in device_statuses):
-                data['overall_status'] = 'running'
-            else:
-                data['overall_status'] = 'idle'
-            
-            data['last_update'] = time.time()
-            
-            # Ghi lại file
-            with open(status_file, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-            
+    """Cập nhật trạng thái shared cho device - sử dụng Supabase"""
+    try:
+        print(f"📡 Updating device status vào Supabase: {device_ip} -> {status}")
+        
+        # Cập nhật status vào Supabase
+        success = supabase_data_manager.update_device_status(
+            device_id=device_ip,
+            status=status,
+            message=message,
+            progress=progress,
+            current_message_id=current_message_id
+        )
+        
+        if success:
+            print(f"✅ Đã cập nhật status cho {device_ip}")
             return True
+        else:
+            print(f"❌ Lỗi cập nhật status cho {device_ip}")
+            return False
             
-        except Exception as e:
-            if attempt < max_retries - 1:
-                time_module.sleep(0.1 * (attempt + 1))
-            else:
-                print(f"⚠️ Lỗi update shared status: {e}")
-                return False
-    
-    return False
+    except Exception as e:
+        print(f"⚠️ Lỗi update status vào Supabase: {e}")
+        print("🔄 Fallback về JSON file...")
+        
+        # Fallback về JSON operations
+        import json
+        import time as time_module
+        
+        status_file = get_status_file_path()
+        
+        # Retry logic để handle concurrent access
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                # Đọc dữ liệu hiện tại
+                data = {}
+                if os.path.exists(status_file):
+                    with open(status_file, 'r', encoding='utf-8') as f:
+                        try:
+                            data = json.load(f)
+                        except:
+                            data = {}
+                
+                # Cập nhật trạng thái device
+                if 'devices' not in data:
+                    data['devices'] = {}
+                
+                data['devices'][device_ip] = {
+                    'status': status,
+                    'message': message,
+                    'progress': progress,
+                    'current_message_id': current_message_id,
+                    'last_update': time.time(),
+                    'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+                }
+                
+                # Cập nhật overall status
+                device_statuses = [d['status'] for d in data['devices'].values()]
+                if all(s == 'completed' for s in device_statuses):
+                    data['overall_status'] = 'completed'
+                elif any(s == 'error' for s in device_statuses):
+                    data['overall_status'] = 'error'
+                elif any(s == 'running' for s in device_statuses):
+                    data['overall_status'] = 'running'
+                else:
+                    data['overall_status'] = 'idle'
+                
+                data['last_update'] = time.time()
+                
+                # Ghi lại file
+                with open(status_file, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+                
+                print(f"⚠️ Đã cập nhật status vào JSON fallback")
+                return True
+                
+            except Exception as retry_error:
+                if attempt < max_retries - 1:
+                    time_module.sleep(0.1 * (attempt + 1))
+                else:
+                    print(f"❌ Lỗi JSON fallback: {retry_error}")
+                    return False
+        
+        return False
 
 def read_shared_status():
-    """Đọc trạng thái shared hiện tại"""
-    import json
-    import os
-    
-    status_file = get_status_file_path()
-    
+    """Đọc trạng thái shared hiện tại từ Supabase với fallback JSON"""
     try:
-        if os.path.exists(status_file):
-            with open(status_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        else:
-            return {'devices': {}, 'overall_status': 'idle', 'last_update': 0}
+        print("📡 Reading shared status từ Supabase...")
+        status_data = supabase_data_manager.get_all_device_status()
+        
+        # Convert Supabase format về format cũ
+        devices = {}
+        overall_status = 'idle'
+        
+        for device_status in status_data:
+            device_ip = device_status.get('device_ip')
+            devices[device_ip] = {
+                'status': device_status.get('status'),
+                'message': device_status.get('message', ''),
+                'progress': device_status.get('progress', 0),
+                'current_message_id': device_status.get('current_message_id'),
+                'last_update': device_status.get('last_update', 0),
+                'timestamp': device_status.get('timestamp', '')
+            }
+        
+        # Tính overall status
+        if devices:
+            device_statuses = [d['status'] for d in devices.values()]
+            if all(s == 'completed' for s in device_statuses):
+                overall_status = 'completed'
+            elif any(s == 'error' for s in device_statuses):
+                overall_status = 'error'
+            elif any(s == 'running' for s in device_statuses):
+                overall_status = 'running'
+        
+        result = {
+            'devices': devices,
+            'overall_status': overall_status,
+            'last_update': max([d.get('last_update', 0) for d in devices.values()], default=0)
+        }
+        
+        print(f"✅ Loaded status cho {len(devices)} devices từ Supabase")
+        return result
+        
     except Exception as e:
-        print(f"⚠️ Lỗi đọc shared status: {e}")
-        return {'devices': {}, 'overall_status': 'error', 'last_update': 0}
+        print(f"⚠️ Lỗi read status từ Supabase: {e}")
+        print("🔄 Fallback về JSON file...")
+        
+        # Fallback về JSON
+        import json
+        import os
+        status_file = get_status_file_path()
+        
+        try:
+            if os.path.exists(status_file):
+                with open(status_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                print(f"⚠️ Loaded status từ JSON fallback")
+                return data
+            else:
+                return {'devices': {}, 'overall_status': 'idle', 'last_update': 0}
+        except Exception as json_error:
+            print(f"❌ Lỗi JSON fallback: {json_error}")
+            return {'devices': {}, 'overall_status': 'error', 'last_update': 0}
 
 def cleanup_shared_status():
     """Cleanup shared status file"""
@@ -3624,15 +3822,36 @@ def cleanup_shared_status():
         print(f"⚠️ Lỗi cleanup shared status: {e}")
 
 def get_device_status(device_ip):
-    """Lấy trạng thái của device cụ thể"""
-    data = read_shared_status()
-    return data.get('devices', {}).get(device_ip, {
-        'status': 'unknown',
-        'message': '',
-        'progress': 0,
-        'current_message_id': None,
-        'last_update': 0
-    })
+    """Lấy trạng thái của device cụ thể từ Supabase"""
+    try:
+        print(f"📡 Getting device status từ Supabase: {device_ip}")
+        device_status = supabase_data_manager.get_device_status(device_ip)
+        
+        if device_status:
+            print(f"✅ Found status cho {device_ip}: {device_status['status']}")
+            return device_status
+        else:
+            print(f"⚠️ Không tìm thấy status cho {device_ip} trong Supabase")
+            return {
+                'status': 'unknown',
+                'message': '',
+                'progress': 0,
+                'current_message_id': None,
+                'last_update': 0
+            }
+    except Exception as e:
+        print(f"⚠️ Lỗi get device status từ Supabase: {e}")
+        print("🔄 Fallback về JSON file...")
+        
+        # Fallback về JSON
+        data = read_shared_status()
+        return data.get('devices', {}).get(device_ip, {
+            'status': 'unknown',
+            'message': '',
+            'progress': 0,
+            'current_message_id': None,
+            'last_update': 0
+        })
 
 # === UI CHECKS AND VALIDATION ===
 def wait_for_edit_text(dev, timeout=10, debug=False):
@@ -4392,24 +4611,41 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     
     print(f"[DEBUG] Current PHONE_MAP after reload: {PHONE_MAP}")
     
-    # Xác định nhóm và role trong nhóm
-    if all_devices and len(all_devices) > 1:
-        # Chuẩn hóa all_devices để chỉ chứa IP không có port cho việc xác định role
-        normalized_devices = []
-        for device in all_devices:
+    group_id_attr = getattr(dev, "group_id", None)
+    role_in_group_attr = getattr(dev, "role_in_group", None)
+    group_devices_attr = getattr(dev, "group_devices", None)
+
+    effective_all_devices = group_devices_attr or all_devices
+
+    target_phone = ""
+    partner_ip = ""
+
+    normalized_devices = []
+    if effective_all_devices:
+        for device in effective_all_devices:
             clean_ip = device.split(':')[0] if ':' in device else device
             normalized_devices.append(clean_ip)
-        
-        group_id, role_in_group = determine_group_and_role(ip, normalized_devices)
+
+    group_id = group_id_attr
+    role_in_group = role_in_group_attr
+    device_role = role_in_group_attr or 1
+
+    if effective_all_devices and len(effective_all_devices) > 1:
+        if group_id is None or role_in_group is None:
+            group_id, role_in_group = determine_group_and_role(ip, normalized_devices)
+        dev.group_id = group_id
+        dev.role_in_group = role_in_group
+        dev.group_devices = list(effective_all_devices)
+        device_role = role_in_group
+
         print(f"📱 Device {ip} - Nhóm {group_id}, Role {role_in_group}")
-        print(f"[DEBUG] All devices: {all_devices}")
+        print(f"[DEBUG] All devices: {effective_all_devices}")
         print(f"[DEBUG] Normalized devices: {normalized_devices}")
-        
-        # Tìm partner trong cùng nhóm
+
         sorted_devices = sorted(normalized_devices)
         print(f"[DEBUG] Sorted devices: {sorted_devices}")
         print(f"[DEBUG] Current device IP: {ip}")
-        
+
         try:
             device_index = sorted_devices.index(ip)
             print(f"[DEBUG] Device index: {device_index}")
@@ -4420,8 +4656,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
             device_role = 1
             print(f"[DEBUG] Fallback: target_phone={target_phone}, partner_ip={partner_ip}")
             return "SUCCESS"
-        
-        # FIXED: Logic xác định partner dựa trên device_index thay vì group logic phức tạp
+
         # Ghép cặp: device 0 <-> device 1, device 2 <-> device 3, device 4 <-> device 5
         if device_index % 2 == 0:
             # Device chẵn ghép với device lẻ tiếp theo
@@ -4429,9 +4664,9 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         else:
             # Device lẻ ghép với device chẵn trước đó
             partner_index = device_index - 1
-        
+
         print(f"[DEBUG] Device index: {device_index}, Partner index: {partner_index}")
-        
+
         if 0 <= partner_index < len(sorted_devices):
             partner_ip = sorted_devices[partner_index]
             # Tìm target_phone trong PHONE_MAP với cả 2 format: có port và không có port
@@ -4440,11 +4675,11 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
             print(f"[DEBUG] Partner IP: {partner_ip}")
             print(f"[DEBUG] Trying PHONE_MAP keys: {partner_ip_with_port}, {partner_ip}")
             print(f"[DEBUG] Target phone from PHONE_MAP: {target_phone}")
-            
+
             if not target_phone:
                 print(f"[DEBUG] No phone mapping found for partner {partner_ip}")
                 print(f"[DEBUG] Available PHONE_MAP keys: {list(PHONE_MAP.keys())}")
-                # Fallback to first available phone if no mapping found
+                # Lấy phone đầu tiên có sẵn trong PHONE_MAP
                 available_phones = [v for v in PHONE_MAP.values() if v]
                 if available_phones:
                     target_phone = available_phones[0]
@@ -4455,8 +4690,16 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
             print(f"[DEBUG] Partner index {partner_index} out of range (total devices: {len(sorted_devices)})")
     else:
         # Fallback về logic cũ cho 1 máy hoặc không có all_devices
+        if group_id is None:
+            group_id = 1
+        if role_in_group is None:
+            role_in_group = 1
+        dev.group_id = group_id
+        dev.role_in_group = role_in_group
+        dev.group_devices = list(group_devices_attr) if group_devices_attr else [dev.device_id]
+        device_role = role_in_group
+
         print(f"[DEBUG] Using fallback mode - single device or no all_devices list")
-        device_role = 1
         # Lấy phone đầu tiên có sẵn trong PHONE_MAP
         available_phones = [v for v in PHONE_MAP.values() if v]
         if available_phones:
@@ -4465,7 +4708,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         else:
             target_phone = "569924311"  # Hard fallback
             print(f"[DEBUG] Hard fallback target_phone: {target_phone}")
-    
+
     # Kiểm tra stop signal trước chuyển tab
     if stop_event and stop_event.is_set():
         print(f"[DEBUG] Stop signal received before switching to messages tab for {device_ip}")
@@ -4539,10 +4782,10 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         print("💬 Bắt đầu cuộc hội thoại tự động...")
         update_shared_status(device_ip, 'running', 'Đang chạy cuộc hội thoại...', 50)
         
-        if all_devices:
-            run_conversation(dev, role_in_group, debug=True, all_devices=all_devices, stop_event=stop_event, status_callback=status_callback)
-        else:
-            run_conversation(dev, device_role, debug=True, stop_event=stop_event, status_callback=status_callback)
+        effective_all_devices_for_convo = getattr(dev, "group_devices", None) or effective_all_devices or all_devices
+        print(f"[DEBUG] Calling run_conversation with device_role=1, all_devices={effective_all_devices_for_convo}")
+        conversation_result = run_conversation(dev, 1, debug=True, all_devices=effective_all_devices_for_convo, stop_event=stop_event, status_callback=status_callback)
+        print(f"[DEBUG] run_conversation completed with result: {conversation_result}")
     else:
         print("❌ Không thể vào chat")
     
@@ -4550,16 +4793,18 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     update_shared_status(device_ip, 'completed', 'Hoàn thành automation', 100)
     
     # Cleanup barrier file nếu có
-    if all_devices and len(all_devices) > 1:
+    cleanup_devices = effective_all_devices_for_convo or all_devices
+    if cleanup_devices and len(cleanup_devices) > 1:
         try:
-            ip = device_ip.split(":")[0] if ":" in device_ip else device_ip
-            normalized_devices = [d.split(':')[0] if ':' in d else d for d in all_devices]
+            ip = device_ip.split(':')[0] if ':' in device_ip else device_ip
+            normalized_devices = [d.split(':')[0] if ':' in d else d for d in cleanup_devices]
             group_id, _ = determine_group_and_role(ip, normalized_devices)
             cleanup_barrier_file(group_id)
         except Exception:
             pass
-    
+
     return "SUCCESS"
+
 # === FLOW END ===
 
 def run_automation_from_gui(selected_devices, conversation_text=None):

@@ -1,0 +1,14 @@
+{
+  "conversation": [
+    {"role": "device_b", "content": "hello"},
+    {"role": "device_a", "content": "hi there"},
+    {"role": "device_b", "content": "how are you"},
+    {"role": "device_a", "content": "I am fine"},
+    {"role": "device_b", "content": "good to hear"}
+  ],
+  "summary": {
+    "noidung": "Simple greeting conversation",
+    "hoancanh": "Morning chat",
+    "socau": 5
+  }
+}

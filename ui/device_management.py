@@ -429,17 +429,12 @@ class DeviceManagementWidget(QWidget):
         # Phone mapping - quick setup removed
         
     def refresh_devices(self):
-        """Refresh device list"""
+        """Refresh device list - only display, no auto-save"""
         if not self.device_manager:
             return
             
         try:
-            # Đồng bộ với ADB devices trước
-            from utils.data_manager import data_manager
-            device_count = data_manager.sync_with_adb_devices()
-            print(f"Synced {device_count} devices with ADB")
-            
-            # Get connected devices
+            # Get connected devices without auto-sync
             devices = self.device_manager.get_devices()
             
             # Clear and repopulate list

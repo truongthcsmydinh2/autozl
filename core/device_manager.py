@@ -15,6 +15,7 @@ from typing import List, Dict, Optional, Tuple
 from PyQt6.QtCore import QObject, pyqtSignal, QThread
 import uiautomator2 as u2
 from utils.data_manager import data_manager
+from database import get_device_repository, get_log_repository
 
 class Device:
     """Device class tích hợp từ core1.py với GUI support"""
@@ -221,6 +222,8 @@ class DeviceManager(QObject):
         self.connected_devices = {}  # device_id -> Device object
         self.workers = {}  # device_id -> DeviceWorker
         self.phone_mapping = {}  # IP -> phone number (cached from DataManager)
+        self.device_repo = get_device_repository()
+        self.log_repo = get_log_repository()
         
         # Load phone mapping từ DataManager
         self.load_phone_mapping()
@@ -261,9 +264,27 @@ class DeviceManager(QObject):
             self.connected_devices[device_id] = device
             self.device_connected.emit(device_id)
             self.log_message.emit(f"✅ Đã kết nối device: {device_id}", "SUCCESS")
+            
+            # Log device connection
+            self.log_repo.create_log({
+                'level': 'INFO',
+                'component': 'device_manager',
+                'message': f"Connected to device: {device_id}",
+                'metadata': {'device_id': device_id}
+            })
+            
             return True
         else:
             self.log_message.emit(f"❌ Không thể kết nối device: {device_id}", "ERROR")
+            
+            # Log connection failure
+            self.log_repo.create_log({
+                'level': 'ERROR',
+                'component': 'device_manager',
+                'message': f"Failed to connect to device: {device_id}",
+                'metadata': {'device_id': device_id}
+            })
+            
             return False
     
     def disconnect_device(self, device_id: str):
@@ -273,6 +294,14 @@ class DeviceManager(QObject):
             del self.connected_devices[device_id]
             self.device_disconnected.emit(device_id)
             self.log_message.emit(f"🔌 Đã ngắt kết nối device: {device_id}", "INFO")
+            
+            # Log device disconnection
+            self.log_repo.create_log({
+                'level': 'INFO',
+                'component': 'device_manager',
+                'message': f"Disconnected from device: {device_id}",
+                'metadata': {'device_id': device_id}
+            })
     
     def get_device(self, device_id: str) -> Optional[Device]:
         """Lấy device object"""
@@ -302,18 +331,30 @@ class DeviceManager(QObject):
         return self.get_devices()
     
     def load_phone_mapping(self):
-        """Load phone mapping từ DataManager"""
+        """Load phone mapping từ DataManager and Database"""
         try:
             self.phone_mapping = data_manager.get_phone_mapping()
-            self.log_message.emit(f"📞 Đã load {len(self.phone_mapping)} phone mappings từ master config", "INFO")
+            # Also load from database
+            devices_data = self.device_repo.get_all_devices()
+            for device_data in devices_data:
+                if device_data.get('ip_address') and device_data.get('metadata', {}).get('phone_number'):
+                    self.phone_mapping[device_data['ip_address']] = device_data['metadata']['phone_number']
+            self.log_message.emit(f"📞 Đã load {len(self.phone_mapping)} phone mappings từ master config và database", "INFO")
         except Exception as e:
             self.log_message.emit(f"⚠️ Lỗi load phone mapping: {e}", "WARNING")
     
     def save_phone_mapping(self):
-        """Lưu phone mapping vào DataManager"""
+        """Lưu phone mapping vào DataManager và Database"""
         try:
             # DataManager tự động lưu khi set phone mapping
-            self.log_message.emit(f"💾 Phone mapping đã được lưu vào master config", "SUCCESS")
+            # Also save to database
+            for ip, phone in self.phone_mapping.items():
+                existing_device = self.device_repo.get_device_by_ip(ip)
+                if existing_device:
+                    metadata = existing_device.get('metadata', {})
+                    metadata['phone_number'] = phone
+                    self.device_repo.update_device(existing_device['id'], {'metadata': metadata})
+            self.log_message.emit(f"💾 Phone mapping đã được lưu vào master config và database", "SUCCESS")
             return True
         except Exception as e:
             self.log_message.emit(f"❌ Lỗi lưu phone mapping: {e}", "ERROR")

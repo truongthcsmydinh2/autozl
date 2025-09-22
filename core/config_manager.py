@@ -10,6 +10,7 @@ import json
 import time
 from typing import Dict, Any, Optional
 from PyQt6.QtCore import QObject, pyqtSignal, QSettings
+from dotenv import load_dotenv
 from utils.data_manager import data_manager
 
 class ConfigManager(QObject):
@@ -23,6 +24,9 @@ class ConfigManager(QObject):
     
     def __init__(self):
         super().__init__()
+        # Load environment variables
+        load_dotenv()
+        
         self.config_dir = "config"
         # Legacy config file for app settings only
         self.config_file = os.path.join(self.config_dir, "app_config.json")
@@ -37,7 +41,10 @@ class ConfigManager(QObject):
                 "log_level": "INFO",
                 "max_log_lines": 1000,
                 "screenshot_dir": "screenshots",
-                "backup_flows": True
+                "backup_flows": True,
+                "use_supabase": True,
+                "supabase_url": os.getenv('SUPABASE_URL'),
+                "supabase_anon_key": os.getenv('SUPABASE_ANON_KEY')
             },
             "device": {
                 "connection_timeout": 10,

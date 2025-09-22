@@ -320,8 +320,7 @@ class DevicesPage(QWidget):
         try:
             devices = []
             if _DATA_MANAGER is not None:
-                _DATA_MANAGER.sync_with_adb_devices()
-                _DATA_MANAGER.reload_data()
+                # Only get devices without auto-sync
                 devices = _DATA_MANAGER.get_devices_with_phone_numbers() or []
             # Normalize shape: {ip, phone, note?}
             self.all_devices = [
@@ -484,11 +483,14 @@ class PairDetailsDialog(QDialog):
         details_layout.addWidget(QLabel(device_a.get('ip', 'N/A')), row, 1)
         details_layout.addWidget(QLabel(device_b.get('ip', 'N/A')), row, 2)
         row += 1
-        
         # Phone number
         details_layout.addWidget(QLabel("📞 Số điện thoại:"), row, 0)
-        details_layout.addWidget(QLabel(device_a.get('phone', 'Chưa có số')), row, 1)
-        details_layout.addWidget(QLabel(device_b.get('phone', 'Chưa có số')), row, 2)
+        phone_a = QLabel(device_a.get('phone', 'Chưa có số'))
+        phone_a.setStyleSheet(f"color: {TEXT}; padding: 2px;")
+        phone_b = QLabel(device_b.get('phone', 'Chưa có số'))
+        phone_b.setStyleSheet(f"color: {TEXT}; padding: 2px;")
+        details_layout.addWidget(phone_a, row, 1)
+        details_layout.addWidget(phone_b, row, 2)
         row += 1
         
         # Note/Name
