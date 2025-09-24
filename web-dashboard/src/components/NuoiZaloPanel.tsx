@@ -190,7 +190,7 @@ export default function NuoiZaloPanel({ devices, onRefreshDevices, isLoading = f
       }
       
       // Send to backend for persistence
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/devices/pair`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/devices/pair`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -288,7 +288,7 @@ export default function NuoiZaloPanel({ devices, onRefreshDevices, isLoading = f
       eventSource.close();
     }
 
-    const newEventSource = new EventSource(`${process.env.NEXT_PUBLIC_API_BASE_URL}/logs/stream/${runId}`);
+    const newEventSource = new EventSource(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/logs/stream/${runId}`);
     
     newEventSource.onopen = () => {
       addLog('🔗 Kết nối log stream thành công');
@@ -374,7 +374,7 @@ export default function NuoiZaloPanel({ devices, onRefreshDevices, isLoading = f
           // Use temp_pair_id instead of id for API call
           const pairId = pair.temp_pair_id || pair.id;
           console.log(`📡 Fetching summaries for pair ${pair.id} using temp_pair_id: ${pairId}`);
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/summaries/latest/${pairId}`);
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/summaries/latest/${pairId}`);
           if (response.ok) {
             const result = await response.json();
             if (result.success && result.summary) {
@@ -471,6 +471,15 @@ export default function NuoiZaloPanel({ devices, onRefreshDevices, isLoading = f
     setAutomationProgress(initialProgress);
 
     try {
+      // DEBUG: Log device pairs before extraction
+      console.log('[DEBUG] ===== DEVICE EXTRACTION FROM PAIRS =====');
+      console.log('[DEBUG] Device pairs count:', devicePairs.length);
+      devicePairs.forEach((pair, index) => {
+        console.log(`[DEBUG] Pair ${index + 1}:`);
+        console.log(`[DEBUG]   Device A: ${pair.deviceA.ip} (name: ${pair.deviceA.name})`);
+        console.log(`[DEBUG]   Device B: ${pair.deviceB.ip} (name: ${pair.deviceB.name})`);
+      });
+      
       // Extract devices from devicePairs for API compatibility
       const devices = devicePairs.flatMap(pair => [
         {
@@ -487,22 +496,41 @@ export default function NuoiZaloPanel({ devices, onRefreshDevices, isLoading = f
         }
       ]);
       
+      console.log('[DEBUG] Extracted devices (before dedup):', devices);
+      
       // Remove duplicates based on device ID
       const uniqueDevices = devices.filter((device, index, self) => 
         index === self.findIndex(d => d.id === device.id)
       );
       
+      console.log('[DEBUG] Unique devices (after dedup):', uniqueDevices);
+      console.log('[DEBUG] ========================================');
+      
       addLog(`📤 Gửi ${uniqueDevices.length} thiết bị đến API automation`);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/automation/start`, {
+      // DEBUG: Log payload details
+      console.log('[DEBUG] ===== FRONTEND AUTOMATION REQUEST =====');
+      console.log('[DEBUG] Unique devices:', uniqueDevices);
+      console.log('[DEBUG] Device count:', uniqueDevices.length);
+      uniqueDevices.forEach((device, index) => {
+        console.log(`[DEBUG] Device ${index + 1}: ${device.ip} (id: ${device.id})`);
+      });
+      console.log('[DEBUG] ==========================================');
+      
+      const payload = {
+        devices: uniqueDevices,
+        conversations: [] // Tạm thời gửi rỗng, sẽ implement sau
+      };
+      
+      console.log('[DEBUG] Full payload being sent:', payload);
+      addLog(`🔍 Debug: Gửi ${uniqueDevices.length} devices: ${uniqueDevices.map(d => d.ip).join(', ')}`);
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/automation/start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          devices: uniqueDevices,
-          conversations: [] // Tạm thời gửi rỗng, sẽ implement sau
-        })
+        body: JSON.stringify(payload)
       });
       
       const result = await response.json();
@@ -545,7 +573,7 @@ export default function NuoiZaloPanel({ devices, onRefreshDevices, isLoading = f
         requestBody.run_id = currentRunId;
       }
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/automation/stop`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/automation/stop`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

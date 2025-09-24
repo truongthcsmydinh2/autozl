@@ -43,7 +43,7 @@ const ConversationInputComponent: React.FC<ConversationInputProps> = ({
   // Fetch available pairs for suggestions
   const fetchAvailablePairs = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/pairs`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pairs`);
       if (response.ok) {
         const data = await response.json();
         const pairIds = data.pairs?.map((pair: any) => pair.id) || [];
@@ -163,8 +163,8 @@ const ConversationInputComponent: React.FC<ConversationInputProps> = ({
           
           // Use demo endpoint if pairId is 'demo'
           const endpoint = pairId === 'demo' 
-            ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/conversation/demo`
-        : `${process.env.NEXT_PUBLIC_API_BASE_URL}/conversation/${pairId}`;
+            ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/conversation/demo`
+        : `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/conversation/${pairId}`;
           
           console.log(`📡 Gửi request đến: ${endpoint}`);
           

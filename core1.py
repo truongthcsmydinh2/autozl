@@ -3735,6 +3735,12 @@ def get_status_file_path():
 def update_shared_status(device_ip, status, message="", progress=0, current_message_id=None):
     """Cập nhật trạng thái shared cho device - sử dụng Supabase"""
     try:
+        print(f"[DEBUG] ===== STATUS UPDATE =====")
+        print(f"[DEBUG] Device: {device_ip}")
+        print(f"[DEBUG] Status: {status}")
+        print(f"[DEBUG] Message: {message}")
+        print(f"[DEBUG] Progress: {progress}")
+        print(f"[DEBUG] ============================")
         print(f"📡 Updating device status vào Supabase: {device_ip} -> {status}")
         
         # Cập nhật status vào Supabase
@@ -4341,8 +4347,11 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None, context=N
     
     # DEBUG: Log thông tin device
     device_ip = dev.device_id
+    print(f"[DEBUG] ===== FLOW START FOR DEVICE {device_ip} =====")
     print(f"[DEBUG] Starting flow for device: {device_ip}")
     print(f"[DEBUG] All devices passed to flow: {all_devices}")
+    print(f"[DEBUG] Thread ID: {threading.get_ident()}")
+    print(f"[DEBUG] ================================================")
     
     # Log với context nếu có
     if context:
@@ -4358,6 +4367,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None, context=N
         return "STOPPED"
     
     # Cập nhật trạng thái ban đầu
+    print(f"[DEBUG] Updating status for {device_ip} to 'running'")
     update_shared_status(device_ip, 'running', 'Khởi tạo automation...', 0)
     
     # Xác định nhóm và số lượng devices trong nhóm để setup barrier - Enhanced Sync
@@ -4901,8 +4911,9 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None, context=N
 
 # === FLOW END ===
 
-def run_automation_from_gui(selected_devices, conversation_text=None, context=None):
-    """Function để chạy automation từ GUI
+def run_automation_from_gui(selected_devices, conversation_text=None, context=None, parallel_mode=True):
+    """
+    Function để chạy automation từ GUI
     
     Args:
         selected_devices: List các device IPs được chọn từ GUI
@@ -4914,6 +4925,12 @@ def run_automation_from_gui(selected_devices, conversation_text=None, context=No
     """
     print(f"\n🚀 Bắt đầu automation từ GUI với {len(selected_devices)} devices")
     print(f"📱 Devices: {selected_devices}")
+    print(f"[DEBUG] ===== RUN_AUTOMATION_FROM_GUI DEBUG INFO =====")
+    print(f"[DEBUG] Selected devices received: {selected_devices}")
+    print(f"[DEBUG] Type of selected_devices: {type(selected_devices)}")
+    for i, device in enumerate(selected_devices):
+        print(f"[DEBUG] Device {i+1}: {device} (type: {type(device)})")
+    print(f"[DEBUG] ================================================")
     
     # Log với context nếu có
     if context:
@@ -4931,7 +4948,10 @@ def run_automation_from_gui(selected_devices, conversation_text=None, context=No
     connected_devices = []
     
     # Kết nối tất cả devices
-    for device_ip in selected_devices:
+    print(f"[DEBUG] Starting device connection loop for {len(selected_devices)} devices")
+    for i, device_ip in enumerate(selected_devices):
+        print(f"[DEBUG] Processing device {i+1}/{len(selected_devices)}: {device_ip}")
+        
         # Check cancel_event trước khi kết nối
         if context and context.is_cancelled():
             context.log_info("Automation cancelled during device connection")
@@ -4939,26 +4959,33 @@ def run_automation_from_gui(selected_devices, conversation_text=None, context=No
             
         try:
             print(f"\n🔌 Kết nối device: {device_ip}")
+            print(f"[DEBUG] Creating Device object for: {device_ip}")
             if context:
                 context.log_info(f"Connecting to device: {device_ip}")
                 
             dev = Device(device_ip)
+            print(f"[DEBUG] Device object created, attempting connection...")
             if dev.connect():
                 connected_devices.append(dev)
                 results[device_ip] = {"status": "connected", "result": None}
                 print(f"✅ Kết nối thành công: {device_ip}")
+                print(f"[DEBUG] Device {device_ip} connected successfully, total connected: {len(connected_devices)}")
                 if context:
                     context.log_info(f"Successfully connected to {device_ip}")
             else:
                 results[device_ip] = {"status": "connection_failed", "result": None}
                 print(f"❌ Kết nối thất bại: {device_ip}")
+                print(f"[DEBUG] Device {device_ip} connection failed")
                 if context:
                     context.log_error(f"Failed to connect to {device_ip}")
         except Exception as e:
             results[device_ip] = {"status": "error", "result": str(e)}
             print(f"❌ Lỗi kết nối {device_ip}: {e}")
+            print(f"[DEBUG] Exception during connection to {device_ip}: {e}")
             if context:
                 context.log_error(f"Error connecting to {device_ip}: {str(e)}")
+    
+    print(f"[DEBUG] Device connection loop completed. Total connected: {len(connected_devices)}")
     
     if not connected_devices:
         print("❌ Không có device nào kết nối được")
@@ -4969,34 +4996,87 @@ def run_automation_from_gui(selected_devices, conversation_text=None, context=No
     # Chạy automation trên tất cả devices đã kết nối
     device_ips = [dev.device_id for dev in connected_devices]
     print(f"\n🎯 Bắt đầu automation với {len(connected_devices)} devices")
+    print(f"[DEBUG] Device IPs for automation: {device_ips}")
     if context:
         context.log_info(f"Starting automation on {len(connected_devices)} connected devices")
     
-    for dev in connected_devices:
-        # Check cancel_event trước mỗi device
-        if context and context.is_cancelled():
-            context.log_info("Automation cancelled during device processing")
-            break
-            
-        device_ip = dev.device_id
-        try:
-            print(f"\n📱 Chạy automation trên {device_ip}")
-            if context:
-                context.log_info(f"Running automation on device: {device_ip}")
-                
-            # Pass context to flow function để check cancel_event trong automation
-            result = flow(dev, all_devices=device_ips, context=context)
+    # Chọn execution mode
+    if parallel_mode and len(connected_devices) > 1:
+        print(f"[DEBUG] Using PARALLEL execution mode for {len(connected_devices)} devices")
+        # Parallel execution using threading
+        import threading
+        import queue
+        
+        result_queue = queue.Queue()
+        threads = []
+        
+        def run_device_automation(dev, device_index):
+            device_ip = dev.device_id
+            try:
+                print(f"[DEBUG] Starting parallel automation for device {device_ip} (thread {device_index})")
+                result = flow(dev, all_devices=device_ips, context=context)
+                result_queue.put((device_ip, "completed", result))
+                print(f"[DEBUG] Completed parallel automation for device {device_ip}")
+            except Exception as e:
+                result_queue.put((device_ip, "error", str(e)))
+                print(f"[DEBUG] Error in parallel automation for device {device_ip}: {e}")
+        
+        # Start threads
+        for i, dev in enumerate(connected_devices):
+            thread = threading.Thread(target=run_device_automation, args=(dev, i), name=f"Device-{dev.device_id}")
+            threads.append(thread)
+            thread.start()
+            print(f"[DEBUG] Started thread for device {dev.device_id}")
+        
+        # Wait for all threads to complete
+        for thread in threads:
+            thread.join()
+            print(f"[DEBUG] Thread {thread.name} completed")
+        
+        # Collect results
+        while not result_queue.empty():
+            device_ip, status, result = result_queue.get()
+            results[device_ip]["status"] = status
             results[device_ip]["result"] = result
-            results[device_ip]["status"] = "completed"
-            print(f"✅ Hoàn thành automation trên {device_ip}: {result}")
-            if context:
-                context.log_info(f"Completed automation on {device_ip}: {result}")
-        except Exception as e:
-            results[device_ip]["result"] = str(e)
-            results[device_ip]["status"] = "error"
-            print(f"❌ Lỗi automation trên {device_ip}: {e}")
-            if context:
-                context.log_error(f"Error on {device_ip}: {str(e)}")
+            print(f"[DEBUG] Collected result for {device_ip}: {status}")
+        
+        print(f"[DEBUG] Parallel automation completed for all devices")
+    else:
+        print(f"[DEBUG] Using SEQUENTIAL execution mode for {len(connected_devices)} devices")
+        print(f"[DEBUG] Starting automation loop for {len(connected_devices)} devices")
+        for i, dev in enumerate(connected_devices):
+            print(f"[DEBUG] Processing automation for device {i+1}/{len(connected_devices)}: {dev.device_id}")
+            
+            # Check cancel_event trước mỗi device
+            if context and context.is_cancelled():
+                context.log_info("Automation cancelled during device processing")
+                break
+                
+            device_ip = dev.device_id
+            try:
+                print(f"\n📱 Chạy automation trên {device_ip}")
+                print(f"[DEBUG] Launching automation thread for {device_ip}")
+                if context:
+                    context.log_info(f"Running automation on device: {device_ip}")
+                    
+                # Pass context to flow function để check cancel_event trong automation
+                print(f"[DEBUG] Calling flow() for device {device_ip} with all_devices={device_ips}")
+                result = flow(dev, all_devices=device_ips, context=context)
+                results[device_ip]["result"] = result
+                results[device_ip]["status"] = "completed"
+                print(f"✅ Hoàn thành automation trên {device_ip}: {result}")
+                print(f"[DEBUG] Flow completed for {device_ip} with result: {result}")
+                if context:
+                    context.log_info(f"Completed automation on {device_ip}: {result}")
+            except Exception as e:
+                results[device_ip]["result"] = str(e)
+                results[device_ip]["status"] = "error"
+                print(f"❌ Lỗi automation trên {device_ip}: {e}")
+                print(f"[DEBUG] Exception in automation for {device_ip}: {e}")
+                if context:
+                    context.log_error(f"Error on {device_ip}: {str(e)}")
+        
+        print(f"[DEBUG] Sequential automation loop completed for {len(connected_devices)} devices")
     
     # Ngắt kết nối tất cả devices
     for dev in connected_devices:

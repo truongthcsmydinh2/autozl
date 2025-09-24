@@ -235,6 +235,11 @@ def start_automation():
         selected_devices = data.get('devices', [])
         conversations = data.get('conversations', [])
         
+        # DEBUG: Log incoming payload từ Web Dashboard
+        print(f"[DEBUG] Incoming devices from dashboard: {selected_devices}")
+        print(f"[DEBUG] Full request payload: {data}")
+        print(f"[DEBUG] Conversations data: {conversations}")
+        
         if not selected_devices:
             return jsonify({
                 'success': False,
@@ -243,14 +248,22 @@ def start_automation():
         
         # Extract device IPs from device objects
         device_ips = []
-        for device in selected_devices:
+        for i, device in enumerate(selected_devices):
+            print(f"[DEBUG] Processing device {i+1}: {device} (type: {type(device)})")
             if isinstance(device, dict):
                 # Try different possible IP fields
                 ip = device.get('ip') or device.get('device_id') or device.get('id')
                 if ip:
                     device_ips.append(ip)
+                    print(f"[DEBUG] Extracted IP from device {i+1}: {ip}")
+                else:
+                    print(f"[DEBUG] No IP found in device {i+1}: {device}")
             elif isinstance(device, str):
                 device_ips.append(device)
+                print(f"[DEBUG] Device {i+1} is string: {device}")
+        
+        print(f"[DEBUG] Final device IPs list: {device_ips}")
+        print(f"[DEBUG] Total devices to process: {len(device_ips)}")
         
         if not device_ips:
             return jsonify({
@@ -268,8 +281,15 @@ def start_automation():
                 # Join conversations into single text
                 conversation_text = '\n'.join([str(conv) for conv in conversations])
             
-            # Start automation in background
-            result = run_automation_from_gui(device_ips, conversation_text)
+            print(f"[DEBUG] Calling run_automation_from_gui with {len(device_ips)} devices")
+            print(f"[DEBUG] Device IPs passed to core1: {device_ips}")
+            print(f"[DEBUG] Conversation text: {conversation_text[:100] if conversation_text else 'None'}...")
+            
+            # Start automation in background with parallel mode
+            result = run_automation_from_gui(device_ips, conversation_text, context=None, parallel_mode=True)
+            
+            print(f"[DEBUG] run_automation_from_gui returned: {result}")
+            
             return jsonify({
                 'success': True,
                 'message': 'Automation started successfully',
@@ -757,4 +777,4 @@ if __name__ == '__main__':
     
     print("[OK] API server ready!")
     # Enable debug mode to see error stack traces
-    app.run(host='0.0.0.0', port=8001, debug=True, use_reloader=False)
+    app.run(host='0.0.0.0', port=8001, debug=True, use_reloader=False)
