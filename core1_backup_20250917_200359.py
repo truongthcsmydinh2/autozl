@@ -4112,7 +4112,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     print(f"[DEBUG] All devices passed to flow: {all_devices}")
     
     # Cập nhật trạng thái ban đầu
-    update_shared_status(device_ip, 'starting', 'Khởi tạo automation...', 0)
+    update_shared_status(device_ip, 'running', 'Khởi tạo automation...', 0)
     
     # Xác định nhóm và số lượng devices trong nhóm để setup barrier - Enhanced Sync
     if all_devices and len(all_devices) > 1:
@@ -4125,7 +4125,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         
         print(f"🚧 Nhóm {group_id} - Thiết lập Enhanced Barrier cho {devices_in_group} devices")
         print(f"📋 Nhóm {group_id} - Devices trong nhóm: {normalized_devices[:devices_in_group]}")
-        update_shared_status(device_ip, 'syncing', f'Đồng bộ Enhanced với nhóm {group_id}...', 10)
+        update_shared_status(device_ip, 'running', f'Đồng bộ Enhanced với nhóm {group_id}...', 10)
         
         # Enhanced barrier synchronization với multiple retry attempts
         barrier_success = False
@@ -4150,7 +4150,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
                 if wait_for_group_barrier(group_id, devices_in_group, timeout=barrier_timeout):
                     print(f"✅ Nhóm {group_id} - Barrier thành công sau {barrier_attempt + 1} attempts")
                     barrier_success = True
-                    update_shared_status(device_ip, 'synced', f'Đã đồng bộ với nhóm {group_id}', 20)
+                    update_shared_status(device_ip, 'completed', f'Đã đồng bộ với nhóm {group_id}', 20)
                     break
                 else:
                     print(f"⚠️ Nhóm {group_id} - Barrier timeout on attempt {barrier_attempt + 1}")
@@ -4168,7 +4168,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         if not barrier_success:
             print(f"⚠️ Nhóm {group_id} - Không thể đồng bộ sau {barrier_attempts} attempts, tiếp tục độc lập...")
             print(f"💡 Nhóm {group_id} - Máy sẽ chạy với delay ngẫu nhiên để tránh conflict")
-            update_shared_status(device_ip, 'warning', 'Chạy độc lập (không đồng bộ)', 15)
+            update_shared_status(device_ip, 'running', 'Chạy độc lập (không đồng bộ)', 15)
             
             # Thêm delay ngẫu nhiên lớn hơn khi không đồng bộ được
             import random
@@ -4185,7 +4185,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         if stop_event and stop_event.is_set():
             print(f"[DEBUG] Stop signal received during post-barrier delay for {device_ip}")
             cleanup_barrier_file(group_id)
-            update_shared_status(device_ip, 'stopped', 'Đã dừng theo yêu cầu', 0)
+            update_shared_status(device_ip, 'error', 'Đã dừng theo yêu cầu', 0)
             return "STOPPED"
         
         time.sleep(post_barrier_delay)
@@ -4205,7 +4205,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     # BARRIER SYNC TRƯỚC KHI CLEAR APPS - Đảm bảo tất cả máy bắt đầu clear apps ĐỒNG THỜI
     if all_devices and len(all_devices) > 1:
         print(f"[DEBUG] Waiting for all devices to be ready to clear apps (pre-clear barrier sync)...")
-        update_shared_status(device_ip, 'syncing_pre_clear', 'Đợi tất cả máy sẵn sàng clear apps...', 22)
+        update_shared_status(device_ip, 'running', 'Đợi tất cả máy sẵn sàng clear apps...', 22)
         
         try:
             # Signal ready to clear apps
@@ -4228,7 +4228,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     
     # Clear apps trước khi mở Zalo với logic đơn giản - ĐỒNG BỘ
     print(f"[DEBUG] Clearing apps before opening Zalo on {device_ip}...")
-    update_shared_status(device_ip, 'clearing_apps', 'Đang clear apps đồng bộ...', 23)
+    update_shared_status(device_ip, 'running', 'Đang clear apps đồng bộ...', 23)
     
     try:
         # Bấm nút recent apps
@@ -4276,7 +4276,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     # BARRIER SYNC TRƯỚC KHI MỞ ZALO - Đảm bảo tất cả máy mở Zalo ĐỒNG THỜI
     if all_devices and len(all_devices) > 1:
         print(f"[DEBUG] Waiting for all devices to be ready to open Zalo (pre-open barrier sync)...")
-        update_shared_status(device_ip, 'syncing_pre_open', 'Đợi tất cả máy sẵn sàng mở Zalo...', 24)
+        update_shared_status(device_ip, 'running', 'Đợi tất cả máy sẵn sàng mở Zalo...', 24)
         
         try:
             # Signal ready to open app
@@ -4299,7 +4299,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     
     # Mở app Zalo với retry logic và delay - ĐỒNG BỘ
     print(f"[DEBUG] Opening Zalo app on {device_ip}...")
-    update_shared_status(device_ip, 'opening_app', 'Đang mở ứng dụng Zalo đồng bộ...', 25)
+    update_shared_status(device_ip, 'running', 'Đang mở ứng dụng Zalo đồng bộ...', 25)
     
     # Enhanced retry logic cho việc mở app với better error handling
     max_retries = 5  # Tăng số lần retry
@@ -4387,7 +4387,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     
     # Barrier sync sau khi mở app thành công để đảm bảo cả 2 máy đều đã mở Zalo
     print(f"[DEBUG] Waiting for all devices to open Zalo app (barrier sync)...")
-    update_shared_status(device_ip, 'syncing', 'Đợi tất cả máy mở Zalo...', 30)
+    update_shared_status(device_ip, 'running', 'Đợi tất cả máy mở Zalo...', 30)
     
     try:
         # Signal ready at barrier first
@@ -4411,7 +4411,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     
     # Kiểm tra đăng nhập
     print(f"[DEBUG] Checking login status for {device_ip}...")
-    update_shared_status(device_ip, 'checking_login', 'Kiểm tra trạng thái đăng nhập...', 35)
+    update_shared_status(device_ip, 'running', 'Kiểm tra trạng thái đăng nhập...', 35)
     
     if is_login_required(dev, debug=True):
         ip = dev.device_id.split(":")[0] if ":" in dev.device_id else dev.device_id
@@ -4598,7 +4598,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         # Flow kết bạn đã được xử lý trong click_first_search_result
         # Chỉ cần đợi UI ổn định và tiếp tục conversation
         print("✅ Flow kết bạn đã được xử lý (nếu cần) - chuẩn bị conversation")
-        update_shared_status(device_ip, 'ready_for_conversation', 'Sẵn sàng cho cuộc hội thoại', 80)
+        update_shared_status(device_ip, 'running', 'Sẵn sàng cho cuộc hội thoại', 80)
         
         print("✅ Đợi 3 giây trước khi bắt đầu cuộc hội thoại...")
         

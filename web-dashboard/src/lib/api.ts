@@ -1,6 +1,6 @@
 // API service for communicating with Python backend
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://quocan.click';
 
 export interface SyncDevicesResponse {
   success: boolean;

@@ -181,8 +181,12 @@ class DevicePairManager:
         """Sync version of find_or_create_pair"""
         supabase = self._get_client()
         try:
-            pair_id = self.create_pair_id(device_a, device_b)
-            pair_hash = self.create_pair_hash(device_a, device_b)  # Keep for backward compatibility
+            # Ensure device_a and device_b are strings
+            device_a_str = str(device_a)
+            device_b_str = str(device_b)
+            
+            pair_id = self.create_pair_id(device_a_str, device_b_str)
+            pair_hash = self.create_pair_hash(device_a_str, device_b_str)  # Keep for backward compatibility
             
             # Try to find existing pair by pair_id first, then by pair_hash
             try:
@@ -220,8 +224,8 @@ class DevicePairManager:
             temp_pair_id = self.generate_temp_pair_id()
             new_pair = {
                 'id': pair_id,  # Use standardized pair_id as primary key
-                'device_a': device_a,
-                'device_b': device_b,
+                'device_a': device_a_str,
+                'device_b': device_b_str,
                 'pair_hash': pair_hash,
                 'temp_pair_id': temp_pair_id
             }

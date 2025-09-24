@@ -1713,35 +1713,64 @@ def main():
         # Multi-device mode - sử dụng group-based conversation
         main_multi_device(valid_devices)
 
-def run_device_automation(dev, device_index, delay, done_event):
+def run_device_automation(dev, device_index, delay, done_event, result_queue=None):
     """Wrapper function to run automation on a single device"""
+    device_ip = dev.device_id
+    result = {"status": "error", "result": None}
+    
     try:
-        print(f"[DEBUG] Starting run_device_automation for device {device_index} with delay {delay}s")
+        print(f"[DEBUG] Starting run_device_automation for device {device_ip} (index {device_index}) with delay {delay}s")
         
         # Apply delay before starting
         if delay > 0:
+            print(f"[DEBUG] Device {device_ip} waiting {delay}s before start...")
             time.sleep(delay)
         
         # Check if we should stop before starting
         if done_event and done_event.is_set():
-            print(f"[DEBUG] Stop signal received for device {device_index}")
+            print(f"[DEBUG] Stop signal received for device {device_ip}")
+            result = {"status": "stopped", "result": "Stop signal received"}
             return
         
-        # Call the main flow function
-        result = flow(dev)
+        print(f"[DEBUG] Device {device_ip} starting flow execution...")
         
-        print(f"[DEBUG] Flow completed for device {device_index} with result: {result}")
+        # Call the main flow function
+        flow_result = flow(dev)
+        
+        print(f"[DEBUG] Flow completed for device {device_ip} with result: {flow_result}")
+        
+        # Determine result status based on flow result
+        if flow_result and flow_result.get("status") == "completed":
+            result = {"status": "completed", "result": flow_result}
+        elif flow_result and flow_result.get("result") == "APP_OPEN_FAILED":
+            result = {"status": "completed", "result": "APP_OPEN_FAILED"}
+        elif flow_result and flow_result.get("result") == "LOGIN_REQUIRED":
+            result = {"status": "completed", "result": "LOGIN_REQUIRED"}
+        else:
+            result = {"status": "completed", "result": flow_result or "Unknown result"}
         
     except Exception as e:
-        print(f"[ERROR] Exception in run_device_automation for device {device_index}: {e}")
+        error_msg = f"Exception in run_device_automation for device {device_ip}: {e}"
+        print(f"[ERROR] {error_msg}")
         import traceback
         traceback.print_exc()
+        result = {"status": "error", "result": error_msg}
     
     finally:
+        # Put result into queue if provided
+        if result_queue:
+            try:
+                result_queue.put((device_ip, result))
+                print(f"[DEBUG] Device {device_ip} result added to queue: {result['status']}")
+            except Exception as e:
+                print(f"[ERROR] Failed to put result in queue for {device_ip}: {e}")
+        
         # Signal that this device is done
         if done_event:
             done_event.set()
-        print(f"[DEBUG] Device {device_index} automation completed")
+            print(f"[DEBUG] Device {device_ip} done_event set")
+        
+        print(f"[DEBUG] Device {device_ip} automation completed with status: {result['status']}")
 
 def run_zalo_automation(device_pairs, conversations, phone_mapping, progress_callback=None, stop_event=None, status_callback=None):
     """
@@ -1880,6 +1909,12 @@ def run_zalo_automation(device_pairs, conversations, phone_mapping, progress_cal
                 done_events = []
                 
                 # Tạo và start threads với staggered delays
+                print(f"[DEBUG] ===== THREAD CREATION FOR PAIR {pair_index} =====")
+                print(f"[DEBUG] Connected devices count: {len(connected_devices)}")
+                for i, dev in enumerate(connected_devices):
+                    print(f"[DEBUG] Device {i+1}: {dev.device_id}")
+                print(f"[DEBUG] ============================================")
+                
                 for device_index, dev in enumerate(connected_devices):
                     dev.group_id = pair_index
                     dev.role_in_group = device_index + 1
@@ -1889,14 +1924,27 @@ def run_zalo_automation(device_pairs, conversations, phone_mapping, progress_cal
                     done_events.append(done_event)
                     
                     delay = device_index * 2  # 2s delay giữa các devices
+                    
+                    print(f"[DEBUG] Creating thread for device {dev.device_id}:")
+                    print(f"[DEBUG]   - device_index: {device_index}")
+                    print(f"[DEBUG]   - delay: {delay}s")
+                    print(f"[DEBUG]   - group_id: {dev.group_id}")
+                    print(f"[DEBUG]   - role_in_group: {dev.role_in_group}")
+                    
                     thread = threading.Thread(
                         target=run_device_automation,
-                        args=(dev, device_index, delay, done_event),
+                        args=(dev, device_index, delay, done_event, result_queue),
                         name=f"Device-{dev.device_id}"
                     )
                     threads.append(thread)
+                    
+                    print(f"[DEBUG] Starting thread for device {dev.device_id}...")
                     thread.start()
-                    print(f"🚀 Started thread cho device {dev.device_id} với delay {delay}s")
+                    print(f"🚀 Started thread cho device {dev.device_id} với delay {delay}s (result_queue passed)")
+                    print(f"[DEBUG] Thread {thread.name} is_alive: {thread.is_alive()}")
+                    
+                print(f"[DEBUG] Total threads created: {len(threads)}")
+                print(f"[DEBUG] Total done_events created: {len(done_events)}")
                 
                 print(f"⏳ Cặp {pair_index}: Đợi {len(threads)} devices hoàn thành...")
                 if progress_callback:
@@ -3014,7 +3062,7 @@ def calculate_smart_delay(message_length, is_first_message=False):
     else:  # 30% chance for slow messages
         return random.uniform(30, 60)
 
-def run_conversation(dev, device_role, debug=False, all_devices=None, stop_event=None, status_callback=None):
+def run_conversation(dev, device_role, debug=False, all_devices=None, stop_event=None, status_callback=None, context=None):
     """Chạy cuộc hội thoại với message_id synchronization và smart timing"""
     import random
     import time as time_module
@@ -3022,6 +3070,18 @@ def run_conversation(dev, device_role, debug=False, all_devices=None, stop_event
     # Lấy IP của device hiện tại
     device_identifier = dev.device_id
     device_ip = device_identifier.split(":")[0] if ":" in device_identifier else device_identifier
+    
+    # Log với context nếu có
+    if context:
+        context.log_info(f"Starting conversation for device: {device_ip}, role: {device_role}")
+    
+    # Check cancel_event ngay từ đầu
+    if context and context.is_cancelled():
+        context.log_info("Conversation cancelled before starting")
+        return False
+    if stop_event and stop_event.is_set():
+        print(f"[DEBUG] Stop signal received before starting conversation for {device_ip}")
+        return False
 
     group_id_attr = getattr(dev, "group_id", None)
     role_in_group_attr = getattr(dev, "role_in_group", None)
@@ -3107,7 +3167,10 @@ def run_conversation(dev, device_role, debug=False, all_devices=None, stop_event
     for msg in conversation:
         message_id = msg["message_id"]
         
-        # Kiểm tra stop signal trước xử lý mỗi message
+        # Kiểm tra stop signal và cancel_event trước xử lý mỗi message
+        if context and context.is_cancelled():
+            context.log_info(f"Conversation cancelled during message {message_id}")
+            return False
         if stop_event and stop_event.is_set():
             print(f"[DEBUG] Stop signal received during conversation for {device_ip}")
             return False
@@ -3130,7 +3193,10 @@ def run_conversation(dev, device_role, debug=False, all_devices=None, stop_event
                 print(f"❌ Nhóm {group_id} - Timeout đợi message_id {message_id}, bỏ qua")
                 continue
             
-            # Kiểm tra stop signal sau wait
+            # Kiểm tra stop signal và cancel_event sau wait
+            if context and context.is_cancelled():
+                context.log_info(f"Conversation cancelled after waiting for message {message_id}")
+                return False
             if stop_event and stop_event.is_set():
                 print(f"[DEBUG] Stop signal received after waiting for message turn for {device_ip}")
                 return False
@@ -3154,7 +3220,10 @@ def run_conversation(dev, device_role, debug=False, all_devices=None, stop_event
                         'role_in_group': role_in_group
                     })
                 
-                # Kiểm tra stop signal trước smart delay
+                # Kiểm tra stop signal và cancel_event trước smart delay
+                if context and context.is_cancelled():
+                    context.log_info(f"Conversation cancelled during delay for message {message_id}")
+                    return False
                 if stop_event and stop_event.is_set():
                     print(f"[DEBUG] Stop signal received during smart delay for {device_ip}")
                     return False
@@ -4267,7 +4336,7 @@ def check_recent_apps_empty(dev):
         print(f"[DEBUG] Error checking recent apps empty state: {e}")
         return False
 
-def flow(dev, all_devices=None, stop_event=None, status_callback=None):
+def flow(dev, all_devices=None, stop_event=None, status_callback=None, context=None):
     """Main flow function - UIAutomator2 version với group-based conversation automation"""
     
     # DEBUG: Log thông tin device
@@ -4275,8 +4344,21 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     print(f"[DEBUG] Starting flow for device: {device_ip}")
     print(f"[DEBUG] All devices passed to flow: {all_devices}")
     
+    # Log với context nếu có
+    if context:
+        context.log_info(f"Starting flow for device: {device_ip}")
+        context.log_info(f"All devices: {all_devices}")
+    
+    # Check cancel_event ngay từ đầu
+    if context and context.is_cancelled():
+        context.log_info("Flow cancelled before starting")
+        return "CANCELLED"
+    if stop_event and stop_event.is_set():
+        print(f"[DEBUG] Stop signal received before starting flow for {device_ip}")
+        return "STOPPED"
+    
     # Cập nhật trạng thái ban đầu
-    update_shared_status(device_ip, 'starting', 'Khởi tạo automation...', 0)
+    update_shared_status(device_ip, 'running', 'Khởi tạo automation...', 0)
     
     # Xác định nhóm và số lượng devices trong nhóm để setup barrier - Enhanced Sync
     if all_devices and len(all_devices) > 1:
@@ -4289,7 +4371,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         
         print(f"🚧 Nhóm {group_id} - Thiết lập Enhanced Barrier cho {devices_in_group} devices")
         print(f"📋 Nhóm {group_id} - Devices trong nhóm: {normalized_devices[:devices_in_group]}")
-        update_shared_status(device_ip, 'syncing', f'Đồng bộ Enhanced với nhóm {group_id}...', 10)
+        update_shared_status(device_ip, 'running', f'Đồng bộ Enhanced với nhóm {group_id}...', 10)
         
         # Enhanced barrier synchronization với multiple retry attempts
         barrier_success = False
@@ -4314,7 +4396,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
                 if wait_for_group_barrier(group_id, devices_in_group, timeout=barrier_timeout):
                     print(f"✅ Nhóm {group_id} - Barrier thành công sau {barrier_attempt + 1} attempts")
                     barrier_success = True
-                    update_shared_status(device_ip, 'synced', f'Đã đồng bộ với nhóm {group_id}', 20)
+                    update_shared_status(device_ip, 'completed', f'Đã đồng bộ với nhóm {group_id}', 20)
                     break
                 else:
                     print(f"⚠️ Nhóm {group_id} - Barrier timeout on attempt {barrier_attempt + 1}")
@@ -4332,7 +4414,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         if not barrier_success:
             print(f"⚠️ Nhóm {group_id} - Không thể đồng bộ sau {barrier_attempts} attempts, tiếp tục độc lập...")
             print(f"💡 Nhóm {group_id} - Máy sẽ chạy với delay ngẫu nhiên để tránh conflict")
-            update_shared_status(device_ip, 'warning', 'Chạy độc lập (không đồng bộ)', 15)
+            update_shared_status(device_ip, 'running', 'Chạy độc lập (không đồng bộ)', 15)
             
             # Thêm delay ngẫu nhiên lớn hơn khi không đồng bộ được
             import random
@@ -4345,11 +4427,16 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         post_barrier_delay = random.uniform(0.5, 1.5)
         print(f"[DEBUG] Post-barrier delay: {post_barrier_delay:.2f}s")
         
-        # Kiểm tra stop signal trước delay
+        # Kiểm tra stop signal và cancel_event trước delay
+        if context and context.is_cancelled():
+            context.log_info("Flow cancelled during post-barrier delay")
+            cleanup_barrier_file(group_id)
+            update_shared_status(device_ip, 'error', 'Đã dừng theo yêu cầu', 0)
+            return "CANCELLED"
         if stop_event and stop_event.is_set():
             print(f"[DEBUG] Stop signal received during post-barrier delay for {device_ip}")
             cleanup_barrier_file(group_id)
-            update_shared_status(device_ip, 'stopped', 'Đã dừng theo yêu cầu', 0)
+            update_shared_status(device_ip, 'error', 'Đã dừng theo yêu cầu', 0)
             return "STOPPED"
         
         time.sleep(post_barrier_delay)
@@ -4359,7 +4446,10 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         initial_delay = random.uniform(1, 3)
         print(f"[DEBUG] Single device mode - Initial delay: {initial_delay:.2f}s")
         
-        # Kiểm tra stop signal trước delay
+        # Kiểm tra stop signal và cancel_event trước delay
+        if context and context.is_cancelled():
+            context.log_info("Flow cancelled during initial delay")
+            return "CANCELLED"
         if stop_event and stop_event.is_set():
             print(f"[DEBUG] Stop signal received during initial delay for {device_ip}")
             return "STOPPED"
@@ -4369,7 +4459,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     # BARRIER SYNC TRƯỚC KHI CLEAR APPS - Đảm bảo tất cả máy bắt đầu clear apps ĐỒNG THỜI
     if all_devices and len(all_devices) > 1:
         print(f"[DEBUG] Waiting for all devices to be ready to clear apps (pre-clear barrier sync)...")
-        update_shared_status(device_ip, 'syncing_pre_clear', 'Đợi tất cả máy sẵn sàng clear apps...', 22)
+        update_shared_status(device_ip, 'running', 'Đợi tất cả máy sẵn sàng clear apps...', 22)
         
         try:
             # Signal ready to clear apps
@@ -4392,7 +4482,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     
     # Clear apps trước khi mở Zalo với logic đơn giản - ĐỒNG BỘ
     print(f"[DEBUG] Clearing apps before opening Zalo on {device_ip}...")
-    update_shared_status(device_ip, 'clearing_apps', 'Đang clear apps đồng bộ...', 23)
+    update_shared_status(device_ip, 'running', 'Đang clear apps đồng bộ...', 23)
     
     try:
         # Bấm nút recent apps
@@ -4440,7 +4530,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     # BARRIER SYNC TRƯỚC KHI MỞ ZALO - Đảm bảo tất cả máy mở Zalo ĐỒNG THỜI
     if all_devices and len(all_devices) > 1:
         print(f"[DEBUG] Waiting for all devices to be ready to open Zalo (pre-open barrier sync)...")
-        update_shared_status(device_ip, 'syncing_pre_open', 'Đợi tất cả máy sẵn sàng mở Zalo...', 24)
+        update_shared_status(device_ip, 'running', 'Đợi tất cả máy sẵn sàng mở Zalo...', 24)
         
         try:
             # Signal ready to open app
@@ -4463,7 +4553,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     
     # Mở app Zalo với retry logic và delay - ĐỒNG BỘ
     print(f"[DEBUG] Opening Zalo app on {device_ip}...")
-    update_shared_status(device_ip, 'opening_app', 'Đang mở ứng dụng Zalo đồng bộ...', 25)
+    update_shared_status(device_ip, 'running', 'Đang mở ứng dụng Zalo đồng bộ...', 25)
     
     # Enhanced retry logic cho việc mở app với better error handling
     max_retries = 5  # Tăng số lần retry
@@ -4551,7 +4641,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     
     # Barrier sync sau khi mở app thành công để đảm bảo cả 2 máy đều đã mở Zalo
     print(f"[DEBUG] Waiting for all devices to open Zalo app (barrier sync)...")
-    update_shared_status(device_ip, 'syncing', 'Đợi tất cả máy mở Zalo...', 30)
+    update_shared_status(device_ip, 'running', 'Đợi tất cả máy mở Zalo...', 30)
     
     try:
         # Signal ready at barrier first
@@ -4575,7 +4665,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
     
     # Kiểm tra đăng nhập
     print(f"[DEBUG] Checking login status for {device_ip}...")
-    update_shared_status(device_ip, 'checking_login', 'Kiểm tra trạng thái đăng nhập...', 35)
+    update_shared_status(device_ip, 'running', 'Kiểm tra trạng thái đăng nhập...', 35)
     
     if is_login_required(dev, debug=True):
         ip = dev.device_id.split(":")[0] if ":" in dev.device_id else dev.device_id
@@ -4762,7 +4852,7 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         # Flow kết bạn đã được xử lý trong click_first_search_result
         # Chỉ cần đợi UI ổn định và tiếp tục conversation
         print("✅ Flow kết bạn đã được xử lý (nếu cần) - chuẩn bị conversation")
-        update_shared_status(device_ip, 'ready_for_conversation', 'Sẵn sàng cho cuộc hội thoại', 80)
+        update_shared_status(device_ip, 'running', 'Sẵn sàng cho cuộc hội thoại', 80)
         
         print("✅ Đợi 3 giây trước khi bắt đầu cuộc hội thoại...")
         
@@ -4784,8 +4874,12 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
         
         effective_all_devices_for_convo = getattr(dev, "group_devices", None) or effective_all_devices or all_devices
         print(f"[DEBUG] Calling run_conversation with device_role=1, all_devices={effective_all_devices_for_convo}")
-        conversation_result = run_conversation(dev, 1, debug=True, all_devices=effective_all_devices_for_convo, stop_event=stop_event, status_callback=status_callback)
+        if context:
+            context.log_info(f"Starting conversation with devices: {effective_all_devices_for_convo}")
+        conversation_result = run_conversation(dev, 1, debug=True, all_devices=effective_all_devices_for_convo, stop_event=stop_event, status_callback=status_callback, context=context)
         print(f"[DEBUG] run_conversation completed with result: {conversation_result}")
+        if context:
+            context.log_info(f"Conversation completed with result: {conversation_result}")
     else:
         print("❌ Không thể vào chat")
     
@@ -4807,12 +4901,13 @@ def flow(dev, all_devices=None, stop_event=None, status_callback=None):
 
 # === FLOW END ===
 
-def run_automation_from_gui(selected_devices, conversation_text=None):
+def run_automation_from_gui(selected_devices, conversation_text=None, context=None):
     """Function để chạy automation từ GUI
     
     Args:
         selected_devices: List các device IPs được chọn từ GUI
         conversation_text: Text hội thoại từ GUI (optional)
+        context: RunContext object cho cancel_event và logging (optional)
     
     Returns:
         dict: Kết quả automation cho từng device
@@ -4820,8 +4915,14 @@ def run_automation_from_gui(selected_devices, conversation_text=None):
     print(f"\n🚀 Bắt đầu automation từ GUI với {len(selected_devices)} devices")
     print(f"📱 Devices: {selected_devices}")
     
+    # Log với context nếu có
+    if context:
+        context.log_info(f"Starting automation with {len(selected_devices)} devices: {selected_devices}")
+    
     if conversation_text:
         print(f"💬 Conversation text: {conversation_text[:50]}...")
+        if context:
+            context.log_info(f"Using conversation text: {conversation_text[:100]}...")
         # Update global conversation nếu có
         global CONVERSATION
         CONVERSATION = conversation_text.strip().split('\n')
@@ -4831,40 +4932,71 @@ def run_automation_from_gui(selected_devices, conversation_text=None):
     
     # Kết nối tất cả devices
     for device_ip in selected_devices:
+        # Check cancel_event trước khi kết nối
+        if context and context.is_cancelled():
+            context.log_info("Automation cancelled during device connection")
+            break
+            
         try:
             print(f"\n🔌 Kết nối device: {device_ip}")
+            if context:
+                context.log_info(f"Connecting to device: {device_ip}")
+                
             dev = Device(device_ip)
             if dev.connect():
                 connected_devices.append(dev)
                 results[device_ip] = {"status": "connected", "result": None}
                 print(f"✅ Kết nối thành công: {device_ip}")
+                if context:
+                    context.log_info(f"Successfully connected to {device_ip}")
             else:
                 results[device_ip] = {"status": "connection_failed", "result": None}
                 print(f"❌ Kết nối thất bại: {device_ip}")
+                if context:
+                    context.log_error(f"Failed to connect to {device_ip}")
         except Exception as e:
             results[device_ip] = {"status": "error", "result": str(e)}
             print(f"❌ Lỗi kết nối {device_ip}: {e}")
+            if context:
+                context.log_error(f"Error connecting to {device_ip}: {str(e)}")
     
     if not connected_devices:
         print("❌ Không có device nào kết nối được")
+        if context:
+            context.log_error("No devices could be connected")
         return results
     
     # Chạy automation trên tất cả devices đã kết nối
     device_ips = [dev.device_id for dev in connected_devices]
     print(f"\n🎯 Bắt đầu automation với {len(connected_devices)} devices")
+    if context:
+        context.log_info(f"Starting automation on {len(connected_devices)} connected devices")
     
     for dev in connected_devices:
+        # Check cancel_event trước mỗi device
+        if context and context.is_cancelled():
+            context.log_info("Automation cancelled during device processing")
+            break
+            
         device_ip = dev.device_id
         try:
             print(f"\n📱 Chạy automation trên {device_ip}")
-            result = flow(dev, all_devices=device_ips)
+            if context:
+                context.log_info(f"Running automation on device: {device_ip}")
+                
+            # Pass context to flow function để check cancel_event trong automation
+            result = flow(dev, all_devices=device_ips, context=context)
             results[device_ip]["result"] = result
             results[device_ip]["status"] = "completed"
             print(f"✅ Hoàn thành automation trên {device_ip}: {result}")
+            if context:
+                context.log_info(f"Completed automation on {device_ip}: {result}")
         except Exception as e:
             results[device_ip]["result"] = str(e)
             results[device_ip]["status"] = "error"
             print(f"❌ Lỗi automation trên {device_ip}: {e}")
+            if context:
+                context.log_error(f"Error on {device_ip}: {str(e)}")
     
     # Ngắt kết nối tất cả devices
     for dev in connected_devices:
@@ -4874,6 +5006,11 @@ def run_automation_from_gui(selected_devices, conversation_text=None):
             pass
     
     print(f"\n🏁 Hoàn thành automation từ GUI")
+    if context:
+        if context.is_cancelled():
+            context.log_info("Automation completed (cancelled by user)")
+        else:
+            context.log_info("Automation completed successfully")
     return results
 
 def get_available_devices_for_gui():

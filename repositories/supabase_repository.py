@@ -81,7 +81,7 @@ class DeviceMappingRepository:
                 'last_update': datetime.now().isoformat()
             }
             
-            result = self.supabase.table(self.table_name).upsert(upsert_data).execute()
+            result = self.supabase.table(self.table_name).upsert(upsert_data, on_conflict='device_id').execute()
             return len(result.data) > 0
         except Exception as e:
             print(f"Error setting phone mapping for device {device_id}: {e}")
@@ -162,7 +162,7 @@ class DeviceStatusRepository:
                 'last_update': datetime.now().isoformat()
             }
             
-            result = self.supabase.table(self.table_name).upsert(upsert_data).execute()
+            result = self.supabase.table(self.table_name).upsert(upsert_data, on_conflict='device_id').execute()
             return len(result.data) > 0
         except Exception as e:
             print(f"Error updating device status: {e}")

@@ -60,6 +60,8 @@ export default function NuoiZaloPanel({ devices, onRefreshDevices, isLoading = f
   const [isAutomationRunning, setIsAutomationRunning] = useState(false);
   const [automationProgress, setAutomationProgress] = useState<AutomationProgress[]>([]);
   const [logs, setLogs] = useState<string[]>([]);
+  const [currentRunId, setCurrentRunId] = useState<string | null>(null);
+  const [eventSource, setEventSource] = useState<EventSource | null>(null);
 
   // New conversation management states
   const [pairSummaries, setPairSummaries] = useState<Record<string, Summary[]>>({});
@@ -188,7 +190,7 @@ export default function NuoiZaloPanel({ devices, onRefreshDevices, isLoading = f
       }
       
       // Send to backend for persistence
-      const response = await fetch('http://localhost:8001/api/devices/pair', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/devices/pair`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -201,20 +203,18 @@ export default function NuoiZaloPanel({ devices, onRefreshDevices, isLoading = f
       const result = await response.json();
       
       if (result.success) {
-        // Use backend response but ensure we have standardized IDs
+        // Use backend response pair_id directly (already standardized)
         console.log(`🔍 Backend response pairs:`, result.data.pairs);
         const backendPairs: DevicePair[] = result.data.pairs.map((pair: any) => {
-          const device1Id = pair.device1.id || pair.device1.ip;
-          const device2Id = pair.device2.id || pair.device2.ip;
-          const standardizedId = generatePairId(device1Id, device2Id);
           console.log(`🔍 Backend pair mapping:`);
+          console.log(`  Backend pair_id: ${pair.pair_id}`);
           console.log(`  Backend temp_pair_id: ${pair.temp_pair_id}`);
-          console.log(`  Device1: ${device1Id}, Device2: ${device2Id}`);
-          console.log(`  Standardized ID: ${standardizedId}`);
-          addLog(`🔍 Backend pair: ${pair.temp_pair_id} → ${standardizedId}`);
+          console.log(`  Device1: ${pair.device1.id || pair.device1.ip}, Device2: ${pair.device2.id || pair.device2.ip}`);
+          addLog(`🔍 Backend pair: ${pair.pair_id} (temp: ${pair.temp_pair_id})`);
           return {
-            id: standardizedId,
+            id: pair.pair_id,  // Use backend's standardized pair_id
             temp_pair_id: pair.temp_pair_id,
+            backend_id: pair.backend_id,
             deviceA: pair.device1,
             deviceB: pair.device2,
             createdAt: new Date()
@@ -281,6 +281,67 @@ export default function NuoiZaloPanel({ devices, onRefreshDevices, isLoading = f
     setLogs(prev => [...prev, `[${timestamp}] ${message}`]);
   };
 
+  // Setup SSE connection for real-time logs
+  const setupLogStream = (runId: string) => {
+    // Close existing connection
+    if (eventSource) {
+      eventSource.close();
+    }
+
+    const newEventSource = new EventSource(`${process.env.NEXT_PUBLIC_API_BASE_URL}/logs/stream/${runId}`);
+    
+    newEventSource.onopen = () => {
+      addLog('🔗 Kết nối log stream thành công');
+    };
+
+    newEventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'log') {
+          const logData = data.data;
+          const timestamp = new Date(logData.timestamp).toLocaleTimeString();
+          const levelIcon = {
+            'INFO': '📝',
+            'ERROR': '❌',
+            'WARNING': '⚠️',
+            'DEBUG': '🔍'
+          }[logData.level] || '📝';
+          
+          setLogs(prev => [...prev, `[${timestamp}] ${levelIcon} ${logData.message}`]);
+        } else if (data.type === 'connected') {
+          addLog('✅ Log stream đã kết nối');
+        } else if (data.type === 'end') {
+          addLog('🏁 Log stream kết thúc');
+          newEventSource.close();
+          setEventSource(null);
+          setCurrentRunId(null);
+        }
+      } catch (error) {
+        console.error('Error parsing SSE data:', error);
+      }
+    };
+
+    newEventSource.onerror = (error) => {
+      console.error('SSE Error:', error);
+      addLog('❌ Lỗi kết nối log stream');
+      newEventSource.close();
+      setEventSource(null);
+    };
+
+    setEventSource(newEventSource);
+    setCurrentRunId(runId);
+  };
+
+  // Cleanup SSE on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+    };
+  }, [eventSource]);
+
   // Load demo data and pair summaries on component mount
   useEffect(() => {
     console.log('🚀 NuoiZaloPanel component mounted!');
@@ -313,7 +374,7 @@ export default function NuoiZaloPanel({ devices, onRefreshDevices, isLoading = f
           // Use temp_pair_id instead of id for API call
           const pairId = pair.temp_pair_id || pair.id;
           console.log(`📡 Fetching summaries for pair ${pair.id} using temp_pair_id: ${pairId}`);
-          const response = await fetch(`http://localhost:8001/api/summaries/latest/${pairId}`);
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/summaries/latest/${pairId}`);
           if (response.ok) {
             const result = await response.json();
             if (result.success && result.summary) {
@@ -433,7 +494,7 @@ export default function NuoiZaloPanel({ devices, onRefreshDevices, isLoading = f
       
       addLog(`📤 Gửi ${uniqueDevices.length} thiết bị đến API automation`);
       
-      const response = await fetch('http://localhost:8001/api/automation/start', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/automation/start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -449,32 +510,21 @@ export default function NuoiZaloPanel({ devices, onRefreshDevices, isLoading = f
       if (result.success) {
         addLog(result.message);
         
-        // Simulate automation progress
-        for (let i = 0; i < devicePairs.length; i++) {
-          const pair = devicePairs[i];
-          addLog(`🔄 Bắt đầu xử lý cặp ${i + 1}: ${pair.deviceA.ip} ↔ ${pair.deviceB.ip}`);
+        // Setup real-time log streaming
+        if (result.data && result.data.run_id) {
+          addLog(`🆔 Run ID: ${result.data.run_id}`);
+          setupLogStream(result.data.run_id);
           
-          // Simulate progress updates
-          for (let progress = 0; progress <= 100; progress += 20) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            setAutomationProgress(prev => prev.map(p => 
-              p.pairId === pair.id 
-                ? { ...p, progress, message: `Đang xử lý... ${progress}%` }
-                : p
-            ));
-          }
-          
-          setAutomationProgress(prev => prev.map(p => 
-            p.pairId === pair.id 
-              ? { ...p, status: 'completed', message: 'Hoàn thành' }
-              : p
-          ));
-          
-          addLog(`✅ Hoàn thành cặp ${i + 1}`);
+          // Update progress to show running state
+          setAutomationProgress(prev => prev.map(p => ({
+            ...p,
+            status: 'running',
+            progress: 10,
+            message: 'Đang chạy automation...'
+          })));
+        } else {
+          addLog('⚠️ Không nhận được run_id từ server');
         }
-        
-        addLog('🎉 Automation hoàn thành!');
       } else {
         addLog(`❌ Lỗi: ${result.error}`);
         setAutomationProgress(prev => prev.map(p => ({ ...p, status: 'error', message: 'Lỗi' })));
@@ -490,11 +540,17 @@ export default function NuoiZaloPanel({ devices, onRefreshDevices, isLoading = f
   // Stop automation
   const handleStopAutomation = async () => {
     try {
-      const response = await fetch('http://localhost:8001/api/automation/stop', {
+      const requestBody: any = {};
+      if (currentRunId) {
+        requestBody.run_id = currentRunId;
+      }
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/automation/stop`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
+        body: JSON.stringify(requestBody)
       });
       
       const result = await response.json();
@@ -503,6 +559,13 @@ export default function NuoiZaloPanel({ devices, onRefreshDevices, isLoading = f
         setIsAutomationRunning(false);
         setAutomationProgress([]);
         addLog(`⏹️ ${result.message}`);
+        
+        // Close SSE connection
+        if (eventSource) {
+          eventSource.close();
+          setEventSource(null);
+        }
+        setCurrentRunId(null);
       } else {
         addLog(`❌ Lỗi dừng automation: ${result.error}`);
       }
@@ -510,6 +573,13 @@ export default function NuoiZaloPanel({ devices, onRefreshDevices, isLoading = f
       addLog(`❌ Lỗi kết nối: ${error}`);
       setIsAutomationRunning(false);
       setAutomationProgress([]);
+      
+      // Cleanup on error
+      if (eventSource) {
+        eventSource.close();
+        setEventSource(null);
+      }
+      setCurrentRunId(null);
     }
   };
 

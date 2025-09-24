@@ -1,0 +1,10 @@
+{
+  "ready_devices": [
+    "192.168.4.151",
+    "192.168.4.156"
+  ],
+  "ready_count": 2,
+  "group_id": "pre_app_open",
+  "created_at": 1758532688.4229228,
+  "last_update": 1758534148.860371
+}

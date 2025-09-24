@@ -1,6 +1,7 @@
 export interface DevicePair {
   id: string;
   temp_pair_id?: string;
+  backend_id?: string; // Backend's internal pair ID
   deviceA: {
     id: string;
     ip: string;

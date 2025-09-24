@@ -20,7 +20,7 @@ from utils.data_manager import data_manager
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=['http://localhost:3000', 'http://localhost:5173', 'https://quocan.click', 'https://api.quocan.click'], 
+CORS(app, origins=['http://localhost:3000', 'http://localhost:5173', 'https://quocan.click', 'https://api.quocan.click', 'https://quocan.click'], 
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
      allow_headers=['Content-Type', 'Authorization'])
 
@@ -342,26 +342,43 @@ def pair_devices():
                 device1 = devices_copy[i]
                 device2 = devices_copy[i + 1]
                 
+                # Extract device IDs from device objects (consistent with frontend logic)
+                def extract_device_id(device):
+                    """Extract device ID from device object, prioritizing ip, then device_id, then id"""
+                    if isinstance(device, dict):
+                        # Priority: ip > device_id > id > name
+                        return device.get('ip') or device.get('device_id') or device.get('id') or device.get('name') or 'unknown'
+                    else:
+                        # If it's already a string/number, use as-is
+                        return device
+                
+                device1_id = extract_device_id(device1)
+                device2_id = extract_device_id(device2)
+                
                 # Create standardized pair ID using utility function
                 from utils.pair_utils import generate_pair_id
-                pair_id = generate_pair_id(device1, device2)
+                pair_id = generate_pair_id(device1_id, device2_id)
                 
                 # Check if pair exists or create new one
                 try:
-                    pair = pair_manager.find_or_create_pair(device1, device2)
+                    pair = pair_manager.find_or_create_pair(device1_id, device2_id)
+                    # Always use standardized pair_id as the main ID
                     pairs.append({
                         'device1': device1,
                         'device2': device2,
-                        'pair_id': pair.id,
-                        'temp_pair_id': pair.temp_pair_id
+                        'pair_id': pair_id,  # Use standardized ID
+                        'temp_pair_id': pair.temp_pair_id,
+                        'backend_id': pair.id  # Keep backend ID for reference
                     })
                 except Exception as pair_error:
+                    print(f"Error creating pair: {pair_error}")
                     # Fallback to simple pair creation
                     pairs.append({
                         'device1': device1,
                         'device2': device2,
-                        'pair_id': pair_id,
-                        'temp_pair_id': None
+                        'pair_id': pair_id,  # Use standardized ID
+                        'temp_pair_id': None,
+                        'backend_id': None
                     })
         
         # If odd number of devices, last one remains unpaired
@@ -418,9 +435,22 @@ def create_device_pair():
                 'error': 'Both device_a and device_b are required'
             }), 400
         
+        # Extract device IDs from device objects (consistent with frontend logic)
+        def extract_device_id(device):
+            """Extract device ID from device object, prioritizing ip, then device_id, then id"""
+            if isinstance(device, dict):
+                # Priority: ip > device_id > id > name
+                return device.get('ip') or device.get('device_id') or device.get('id') or device.get('name') or 'unknown'
+            else:
+                # If it's already a string/number, use as-is
+                return device
+        
+        device_a_id = extract_device_id(device_a)
+        device_b_id = extract_device_id(device_b)
+        
         # Create standardized pair ID using utility function
         from utils.pair_utils import generate_pair_id
-        pair_id = generate_pair_id(device_a, device_b)
+        pair_id = generate_pair_id(device_a_id, device_b_id)
         
         conversation_manager = ConversationManager()
         pair_manager = conversation_manager.pair_manager
@@ -444,7 +474,7 @@ def create_device_pair():
             }
         else:
             # Create new pair
-            pair = pair_manager.find_or_create_pair(device_a, device_b)
+            pair = pair_manager.find_or_create_pair(device_a_id, device_b_id)
             response_data = {
                 'success': True,
                 'pair': {
